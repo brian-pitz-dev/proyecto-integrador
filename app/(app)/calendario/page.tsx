@@ -6,11 +6,12 @@ import { getWeeks } from "@/lib/training-plan";
 export const metadata: Metadata = {
   title: "Calendario · Plan de Vida 2026",
   description: "Plan de gimnasio semana a semana: sesiones, fases de entrenamiento y eventos.",
+  alternates: { canonical: "/calendario" },
 };
 
 /** Equivalente a getCompletedDates() de plan_vida_2026.html. */
 async function fetchCompletedDates(): Promise<string[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase
     .from("registro")
     .select("fecha")

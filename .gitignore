@@ -44,3 +44,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# legacy pre-Next.js app — anon key hardcoded, superseded by the Next.js app
+/Deploy_V1/
+/plan_vida_2026.html

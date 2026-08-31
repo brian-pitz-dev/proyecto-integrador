@@ -2,11 +2,6 @@ import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Sidebar } from "@/components/nav/sidebar";
-import { MobileDrawer } from "@/components/nav/mobile-drawer";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
 const jetBrainsMono = JetBrains_Mono({
@@ -14,9 +9,21 @@ const jetBrainsMono = JetBrains_Mono({
   variable: "--font-sans",
 });
 
+const isProduction = process.env.CONTEXT === "production";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: "Plan de Vida 2026",
   description: "Registro de ejercicio, dieta y calendario de entrenamiento",
+  openGraph: {
+    title: "Plan de Vida 2026",
+    description: "Registro de ejercicio, dieta y calendario de entrenamiento",
+    type: "website",
+  },
+  // Per-page overrides (e.g. app/login) can still opt out individually;
+  // this is the site-wide default driven by the Netlify build context —
+  // see research.md Decision 9.
+  robots: isProduction ? { index: true, follow: true } : { index: false, follow: false },
 };
 
 export default function RootLayout({
@@ -30,27 +37,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <div className="flex min-h-full">
-            <Sidebar />
-
-            <div className="flex min-h-full flex-1 flex-col">
-              <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background px-4 py-2.5 lg:justify-end">
-                <div className="lg:hidden">
-                  <MobileDrawer />
-                </div>
-                <ThemeToggle />
-              </header>
-
-              <SiteHeader />
-
-              <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 lg:px-8">
-                {children}
-              </main>
-
-              <SiteFooter />
-            </div>
-          </div>
-
+          {children}
           <Toaster />
         </ThemeProvider>
       </body>

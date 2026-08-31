@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { addDays, toISO } from "@/lib/date";
 import type { PlanWeek } from "@/lib/training-plan";
 import { getMealsForDay } from "@/lib/meal-plan";
-import { getCalorieTargetForDate } from "@/app/nutricion/actions";
+import { getCalorieTargetForDate } from "@/app/(app)/nutricion/actions";
 import type { CalorieTarget } from "@/lib/calorie-target";
 import { WeekSelector } from "@/components/week-selector/week-selector";
 import { MealCard } from "@/components/nutrition/meal-card";

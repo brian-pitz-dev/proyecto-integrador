@@ -49,7 +49,7 @@ export async function getCalorieTarget(
 ): Promise<CalorieTarget | null> {
   const phaseKey = getPhaseKeyForDate(dateObj);
   const fechaISO = toISO(dateObj);
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const [{ data: calLogs }, { data: pesoLogs }] = await Promise.all([
     supabase

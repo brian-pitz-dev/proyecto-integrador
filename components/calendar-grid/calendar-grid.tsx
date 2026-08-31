@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Check } from "lucide-react";
-import { toggleDayDone } from "@/app/calendario/actions";
+import { toggleDayDone } from "@/app/(app)/calendario/actions";
 import { getSessionsForDate, type PlanWeek, type Session } from "@/lib/training-plan";
 import { toISO, addDays, MONTHS_ES } from "@/lib/date";
 import { WeekSelector } from "@/components/week-selector/week-selector";

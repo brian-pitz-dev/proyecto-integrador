@@ -1,18 +1,27 @@
 import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-/**
- * Sin autenticación en esta etapa (ver Clarifications en spec.md), por lo que no
- * hay sesión de usuario que sincronizar vía cookies — solo se usa el anon key,
- * igual que la app actual.
- */
-export function createClient() {
+export async function createClient() {
+  const cookieStore = await cookies();
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => [],
-        setAll: () => {},
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // Called from a Server Component render — safe to ignore
+            // because proxy.ts refreshes the session on every request.
+          }
+        },
       },
     },
   );

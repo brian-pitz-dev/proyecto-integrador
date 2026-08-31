@@ -20,10 +20,11 @@ import type { Registro } from "@/lib/types";
 export const metadata: Metadata = {
   title: "Estadísticas · Plan de Vida 2026",
   description: "Resumen de logros, progreso de peso y registro de datos diarios.",
+  alternates: { canonical: "/estadisticas" },
 };
 
 async function fetchData() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [
     { data: completadoRows },
     { data: pesoRows },
