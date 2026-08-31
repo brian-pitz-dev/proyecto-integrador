@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { addDays, toISO } from "@/lib/date";
+import { addDays, fromISO, toISO } from "@/lib/date";
 import type { PlanWeek } from "@/lib/training-plan";
 import { getMealsForDay } from "@/lib/meal-plan";
 import { getCalorieTargetForDate } from "@/app/(app)/nutricion/actions";
@@ -15,7 +15,10 @@ const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sába
 
 function currentWeekNum(weeks: PlanWeek[], today: Date): number {
   const todayNorm = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const w = weeks.find((wk) => todayNorm >= wk.start && todayNorm <= addDays(wk.start, 6));
+  const w = weeks.find((wk) => {
+    const start = fromISO(wk.start);
+    return todayNorm >= start && todayNorm <= addDays(start, 6);
+  });
   return w?.num ?? weeks[0]?.num ?? 1;
 }
 
@@ -45,7 +48,7 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
     if (day >= 5) return;
     const weekObj = weeks.find((w) => w.num === week);
     if (!weekObj) return;
-    const dateISO = toISO(addDays(weekObj.start, day));
+    const dateISO = toISO(addDays(fromISO(weekObj.start), day));
     let cancelled = false;
     getCalorieTargetForDate(dateISO).then((target) => {
       if (!cancelled) setCalorieTarget(target);

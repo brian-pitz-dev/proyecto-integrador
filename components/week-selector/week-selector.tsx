@@ -6,8 +6,10 @@ import type { PlanWeek } from "@/lib/training-plan";
 
 const MONTH_LABELS = ["Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-function monthKey(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth()}`;
+/** `w.start` es ISO YYYY-MM-DD: se parsea el string directo, sin pasar por `Date`, para no arrastrar el desfase de timezone (ver lib/date.ts fromISO). */
+function monthKey(iso: string): string {
+  const [year, month] = iso.split("-");
+  return `${year}-${Number(month) - 1}`;
 }
 
 interface WeekSelectorProps {

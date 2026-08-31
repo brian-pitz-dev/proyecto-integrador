@@ -4,6 +4,8 @@
  * igual que en la app original.
  */
 
+import { toISO } from "@/lib/date";
+
 export type SessionTag =
   | "core"
   | "run"
@@ -327,7 +329,8 @@ export function getPhaseKeyForDate(date: Date): string | null {
 
 export interface PlanWeek {
   num: number;
-  start: Date;
+  /** ISO YYYY-MM-DD — no `Date`: cruzar un `Date` de Server a Client Component lo reinterpreta en el timezone del navegador y desfasa el día (ver lib/date.ts fromISO). */
+  start: string;
   phaseKey: string;
   phaseLabel: string;
   /** La semana contiene la fecha de un evento (10K, Luján o 21K). */
@@ -347,7 +350,7 @@ export function getWeeks(): PlanWeek[] {
 
   return weeks.map((w, i) => ({
     num: w.num,
-    start: w.start,
+    start: toISO(w.start),
     phaseKey: w.phase.key,
     phaseLabel: w.phase.label,
     isEventWeek: containsEvent(w),

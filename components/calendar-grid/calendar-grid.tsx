@@ -5,12 +5,15 @@ import { toast } from "sonner";
 import { Check } from "lucide-react";
 import { toggleDayDone } from "@/app/(app)/calendario/actions";
 import { getSessionsForDate, type PlanWeek, type Session } from "@/lib/training-plan";
-import { toISO, addDays, MONTHS_ES } from "@/lib/date";
+import { toISO, fromISO, addDays, MONTHS_ES } from "@/lib/date";
 import { WeekSelector } from "@/components/week-selector/week-selector";
 import { ExerciseBlock } from "@/components/calendar-grid/exercise-block";
 
 function currentWeekNum(weeks: PlanWeek[], todayNorm: Date): number {
-  const w = weeks.find((wk) => todayNorm >= wk.start && todayNorm <= addDays(wk.start, 6));
+  const w = weeks.find((wk) => {
+    const start = fromISO(wk.start);
+    return todayNorm >= start && todayNorm <= addDays(start, 6);
+  });
   return w?.num ?? weeks[0]?.num ?? 1;
 }
 
@@ -34,7 +37,7 @@ export function CalendarGrid({
   const [isPending, startTransition] = useTransition();
 
   const weekObj = weeks.find((w) => w.num === selectedWeek) ?? weeks[0];
-  const weekStart = weekObj.start;
+  const weekStart = fromISO(weekObj.start);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   function handleToggle(date: Date) {
@@ -63,7 +66,7 @@ export function CalendarGrid({
       <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
         <p className="font-medium text-foreground">{weekObj.phaseLabel}</p>
         <p className="text-muted-foreground">
-          Semana {weekObj.num} · {toISO(weekObj.start).slice(5)} al {toISO(addDays(weekObj.start, 6)).slice(5)}
+          Semana {weekObj.num} · {weekObj.start.slice(5)} al {toISO(addDays(weekStart, 6)).slice(5)}
         </p>
       </div>
 

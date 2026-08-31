@@ -6,6 +6,12 @@ export function toISO(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/** Inversa de toISO: fecha local a partir de YYYY-MM-DD (no usar `new Date(iso)`: lo interpreta como UTC). */
+export function fromISO(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 export function addDays(d: Date, n: number): Date {
   const r = new Date(d);
   r.setDate(r.getDate() + n);
