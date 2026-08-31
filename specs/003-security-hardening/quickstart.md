@@ -52,3 +52,4 @@ Manual validation guide, one section per user story (see `spec.md`). No test fra
 - [x] `Deploy_V1/plan_vida_2026 copy.html` and `plan_vida_2026.html` are no longer tracked by git (`git ls-files | grep -c plan_vida` returns `0`).
 - [x] No `NEXT_PUBLIC_`-prefixed env var contains a `service_role` or other elevated key (`grep -r "NEXT_PUBLIC_" .env.local` reviewed by hand — only URL, anon key, and the public Turnstile sitekey).
 - [x] `next build` output reviewed for unusually large route bundles (~912K total chunks, largest single chunk 224K — nothing anomalous).
+- [x] Deployed to production on Netlify (`plandevida2026.netlify.app`, linked to GitHub `master`). Verified live: `http://` → `301` to `https://` with HSTS, unauthenticated `/calendario` → `307` to `/login`, `robots.txt` returns `Allow: /` under the production context, Turnstile widget renders and validates, console clean on `/login`, and a real login with the owner's credentials succeeds.
