@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LoginForm } from "@/components/login-form";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
   title: "Iniciar sesión · Plan de Vida 2026",
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-[60vh] place-items-center">
+    <div className="relative grid min-h-[60vh] place-items-center">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="grid gap-4">
         <h1 className="sr-only">Iniciar sesión</h1>
         <LoginForm />

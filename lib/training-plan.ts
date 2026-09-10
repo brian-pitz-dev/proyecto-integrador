@@ -6,15 +6,7 @@
 
 import { toISO } from "@/lib/date";
 
-export type SessionTag =
-  | "core"
-  | "run"
-  | "gym"
-  | "long"
-  | "walk"
-  | "rest"
-  | "event"
-  | "luj";
+export type SessionTag = "core" | "run" | "gym" | "long" | "walk" | "rest" | "event" | "luj";
 
 export interface Session {
   tag: SessionTag;
@@ -100,13 +92,9 @@ function phase1Week(n: number): WeekConfig {
     mon: gymSession("empuje", true),
     tue: [cardioSession(s.tue)],
     wed: gymSession("inferior", true),
-    thu: s.thu
-      ? [cardioSession(s.thu)]
-      : [restDay("Descanso — piernas frescas")],
+    thu: s.thu ? [cardioSession(s.thu)] : [restDay("Descanso — piernas frescas")],
     fri: gymSession("tiron", true),
-    sat: s.sat
-      ? [longSession("Salida", s.sat)]
-      : [restDay("Descanso pre-carrera")],
+    sat: s.sat ? [longSession("Salida", s.sat)] : [restDay("Descanso pre-carrera")],
     sun: [restDay()],
   };
 }
@@ -119,17 +107,9 @@ function phase2Week(n: number): WeekConfig {
   ];
   return {
     mon: gymSession("empuje", true),
-    tue: [
-      cardioSession(
-        "5.5 km/h con inclinación 8-10% · 40 min · caminata en cinta",
-      ),
-    ],
+    tue: [cardioSession("5.5 km/h con inclinación 8-10% · 40 min · caminata en cinta")],
     wed: gymSession(n === 3 ? "inferiorLight" : "inferior", true),
-    thu: [
-      cardioSession(
-        "5.5 km/h con inclinación 8-10% · 40 min · caminata en cinta",
-      ),
-    ],
+    thu: [cardioSession("5.5 km/h con inclinación 8-10% · 40 min · caminata en cinta")],
     fri: n === 3 ? gymSession("tironLight", true) : gymSession("tiron", true),
     sat: [longSession("Caminata larga — prep Luján", walks[n - 1], "long")],
     sun: [restDay()],
@@ -188,19 +168,9 @@ function phase6Week(n: number): WeekConfig {
     mon: gymSession("empuje", true),
     tue: [cardioSession("8.0 km/h · 30-35 min · continuo")],
     wed: gymSession("inferior", true),
-    thu: [
-      cardioSession(
-        "5' a 7 km/h · 4×[2' a 9.5 km/h / 2' a 7 km/h] · 5' a 7 km/h",
-      ),
-    ],
+    thu: [cardioSession("5' a 7 km/h · 4×[2' a 9.5 km/h / 2' a 7 km/h] · 5' a 7 km/h")],
     fri: gymSession("tiron", true),
-    sat: [
-      longSession(
-        "Salida de mantenimiento",
-        runsSat[cycle],
-        cycle === 2 ? "walk" : "long",
-      ),
-    ],
+    sat: [longSession("Salida de mantenimiento", runsSat[cycle], cycle === 2 ? "walk" : "long")],
     sun: [restDay()],
   };
 }
@@ -290,8 +260,7 @@ function eventOverrideFor(date: Date): { sessions: Session[] } | null {
         {
           tag: "event",
           label: "CARRERA 10K",
-          detail:
-            "Objetivo: menos de 1:00:00 · Salí controlado los primeros 2km, después soltá.",
+          detail: "Objetivo: menos de 1:00:00 · Salí controlado los primeros 2km, después soltá.",
         },
       ],
     };
@@ -379,6 +348,14 @@ export function getEvents(): PlanEvent[] {
   ];
 }
 
+/** El próximo evento pendiente (fecha >= `today`), o null si los 3 ya pasaron. */
+export function getNextEvent(today: Date): PlanEvent | null {
+  const upcoming = getEvents()
+    .filter((e) => e.date >= today)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+  return upcoming[0] ?? null;
+}
+
 /** Meta de peso/composición del plan, mostrada en el header (portado de plan_vida_2026.html). */
 export const PLAN_GOAL = {
   weightKg: 80,
@@ -392,9 +369,7 @@ export function getSessionsForDate(date: Date): Session[] {
   if (override) return override.sessions;
   const w = weeks.find((wk) => date >= wk.start && date <= addDays(wk.start, 6));
   if (!w) return [restDay()];
-  const di = Math.round(
-    (date.getTime() - w.start.getTime()) / (1000 * 60 * 60 * 24),
-  );
+  const di = Math.round((date.getTime() - w.start.getTime()) / (1000 * 60 * 60 * 24));
   const dk = dowKeys[di];
   return w.cfg[dk] || [restDay()];
 }

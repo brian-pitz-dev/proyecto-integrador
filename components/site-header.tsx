@@ -1,15 +1,12 @@
-import { getEvents, getWeeks, PLAN_GOAL, PLAN_END } from "@/lib/training-plan";
+import { getEvents, getNextEvent, getWeeks, PLAN_GOAL, PLAN_END } from "@/lib/training-plan";
 import { DAYS_ES, MONTHS_ES, formatShort, todayNormalized } from "@/lib/date";
 
 function nextEventLabel(): string {
   const today = todayNormalized();
-  const upcoming = getEvents()
-    .filter((e) => e.date >= today)
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
+  const next = getNextEvent(today);
 
-  if (upcoming.length === 0) return "Próximo evento: ninguno programado";
+  if (!next) return "Próximo evento: ninguno programado";
 
-  const next = upcoming[0];
   const diffDays = Math.ceil((next.date.getTime() - today.getTime()) / 86_400_000);
   if (diffDays === 0) return `Próximo evento: ¡HOY ${next.name}!`;
   return `Próximo: ${next.name} (${formatShort(next.date)}) — en ${diffDays} días`;
