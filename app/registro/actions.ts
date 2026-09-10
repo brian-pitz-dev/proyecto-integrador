@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { saveLogSchema } from "@/lib/validation/registro";
+import { isSaveLogRateLimited, recordSaveLogAttempt } from "@/lib/rate-limit";
 import type { Categoria } from "@/lib/types";
 
 export interface ActionResult {
@@ -27,6 +28,11 @@ export async function saveLog(input: {
   if (!user) {
     return { ok: false, message: "No autenticado." };
   }
+
+  if (isSaveLogRateLimited(user.id)) {
+    return { ok: false, message: "Demasiados registros en poco tiempo, esperá un momento." };
+  }
+  recordSaveLogAttempt(user.id);
 
   const parsed = saveLogSchema.safeParse(input);
   if (!parsed.success) {
@@ -60,11 +66,7 @@ export async function deleteLog(id: number): Promise<ActionResult> {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("registro")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { error } = await supabase.from("registro").delete().eq("id", id).eq("user_id", user.id);
 
   if (error) {
     return { ok: false, message: "No se pudo borrar el registro." };

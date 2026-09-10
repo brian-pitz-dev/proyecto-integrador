@@ -37,3 +37,38 @@ export function recordFailedAttempt(key: string): void {
 export function clearAttempts(key: string): void {
   attempts.delete(key);
 }
+
+const SAVE_LOG_WINDOW_MS = 60 * 1000;
+const SAVE_LOG_MAX_SAVES = 20;
+
+// ponytail: process-local map, lost on restart/cold start and not shared
+// across instances — fine for a single-instance Netlify deploy; move to a
+// shared store (e.g. Upstash Ratelimit) only if the deploy target ever
+// becomes multi-instance.
+const saveLogAttempts = new Map<string, { count: number; windowStart: number }>();
+
+/** Returns true if `userId` is currently rate-limited on saveLog. */
+export function isSaveLogRateLimited(userId: string): boolean {
+  const entry = saveLogAttempts.get(userId);
+  if (!entry) return false;
+
+  if (Date.now() - entry.windowStart > SAVE_LOG_WINDOW_MS) {
+    saveLogAttempts.delete(userId);
+    return false;
+  }
+
+  return entry.count >= SAVE_LOG_MAX_SAVES;
+}
+
+/** Records a saveLog attempt for `userId`, starting a new window if needed. */
+export function recordSaveLogAttempt(userId: string): void {
+  const entry = saveLogAttempts.get(userId);
+  const now = Date.now();
+
+  if (!entry || now - entry.windowStart > SAVE_LOG_WINDOW_MS) {
+    saveLogAttempts.set(userId, { count: 1, windowStart: now });
+    return;
+  }
+
+  entry.count += 1;
+}
