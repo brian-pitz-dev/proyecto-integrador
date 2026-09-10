@@ -3,6 +3,7 @@ import { CircleCheck, Scale, Moon, Flame, PersonStanding, Footprints } from "luc
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GymStreakAlert } from "@/components/stats/gym-streak-alert";
 import { RunPaceAlert } from "@/components/stats/run-pace-alert";
+import { MissingDataAlert } from "@/components/stats/missing-data-alert";
 import { RegistroCategoryCard } from "@/components/log-form/registro-category-card";
 import { RunForm } from "@/components/log-form/run-form";
 import { WalkForm } from "@/components/log-form/walk-form";
@@ -12,7 +13,13 @@ import { SleepForm } from "@/components/log-form/sleep-form";
 import { createClient } from "@/lib/supabase/server";
 import { checkGymStreak, checkRunAlert } from "@/lib/streaks";
 import { getCalorieTarget, computeBmrCalibrado } from "@/lib/calorie-target";
-import { countTrainableVsCompleted, computeWeightProgress, formatSleepHours, buildMonthHistory } from "@/lib/stats-summary";
+import {
+  countTrainableVsCompleted,
+  computeWeightProgress,
+  formatSleepHours,
+  buildMonthHistory,
+  getMissingYesterdayItems,
+} from "@/lib/stats-summary";
 import { getMonday, todayNormalized } from "@/lib/date";
 import { formatPace, paceStrToSeconds } from "@/lib/pace";
 import type { Registro } from "@/lib/types";
@@ -34,11 +41,36 @@ async function fetchData() {
     { data: tiradaRows },
   ] = await Promise.all([
     supabase.from("registro").select("fecha").eq("categoria", "completado"),
-    supabase.from("registro").select("*").eq("categoria", "peso").order("fecha", { ascending: false }).limit(500),
-    supabase.from("registro").select("*").eq("categoria", "sueno").order("fecha", { ascending: false }).limit(500),
-    supabase.from("registro").select("*").eq("categoria", "calorias").order("fecha", { ascending: false }).limit(30),
-    supabase.from("registro").select("*").eq("categoria", "caminata").order("fecha", { ascending: false }).limit(200),
-    supabase.from("registro").select("*").eq("categoria", "tirada").order("fecha", { ascending: false }).limit(200),
+    supabase
+      .from("registro")
+      .select("*")
+      .eq("categoria", "peso")
+      .order("fecha", { ascending: false })
+      .limit(500),
+    supabase
+      .from("registro")
+      .select("*")
+      .eq("categoria", "sueno")
+      .order("fecha", { ascending: false })
+      .limit(500),
+    supabase
+      .from("registro")
+      .select("*")
+      .eq("categoria", "calorias")
+      .order("fecha", { ascending: false })
+      .limit(30),
+    supabase
+      .from("registro")
+      .select("*")
+      .eq("categoria", "caminata")
+      .order("fecha", { ascending: false })
+      .limit(200),
+    supabase
+      .from("registro")
+      .select("*")
+      .eq("categoria", "tirada")
+      .order("fecha", { ascending: false })
+      .limit(200),
   ]);
 
   return {
@@ -61,24 +93,40 @@ export default async function EstadisticasPage() {
 
   const gymAtRisk = checkGymStreak(completedDates);
   const runAtRisk = checkRunAlert(tirada);
-  const hasRisk = gymAtRisk || runAtRisk;
+  const missingYesterdayItems = getMissingYesterdayItems(sueno, calorias, new Date());
+  const hasRisk = gymAtRisk || runAtRisk || missingYesterdayItems.length > 0;
 
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const { trainable: monthTrainable, completed: monthCompleted } = countTrainableVsCompleted(monthStart, today, completedDates);
+  const { trainable: monthTrainable, completed: monthCompleted } = countTrainableVsCompleted(
+    monthStart,
+    today,
+    completedDates,
+  );
   const weekStart = getMonday(today);
-  const { trainable: weekTrainable, completed: weekCompleted } = countTrainableVsCompleted(weekStart, today, completedDates);
+  const { trainable: weekTrainable, completed: weekCompleted } = countTrainableVsCompleted(
+    weekStart,
+    today,
+    completedDates,
+  );
 
   const totalDist = caminata.reduce((a, r) => a + Number(r.valor || 0), 0);
-  const avgSleep = sueno.length ? sueno.reduce((a, r) => a + Number(r.valor || 0), 0) / sueno.length : null;
+  const avgSleep = sueno.length
+    ? sueno.reduce((a, r) => a + Number(r.valor || 0), 0) / sueno.length
+    : null;
   const totalRunKm = tirada.reduce((a, r) => a + Number(r.valor || 0), 0);
 
   const last3Paces = tirada
     .slice(0, 3)
     .map((r) => paceStrToSeconds(r.nota))
     .filter((p): p is number => p !== null);
-  const avgPaceLabel = last3Paces.length ? formatPace(last3Paces.reduce((a, b) => a + b, 0) / last3Paces.length) : "—";
+  const avgPaceLabel = last3Paces.length
+    ? formatPace(last3Paces.reduce((a, b) => a + b, 0) / last3Paces.length)
+    : "—";
 
-  const weightProgress = computeWeightProgress(peso.map((r) => Number(r.valor)), today);
+  const weightProgress = computeWeightProgress(
+    peso.map((r) => Number(r.valor)),
+    today,
+  );
   const calorieTarget = await getCalorieTarget(today);
   const monthHistory = buildMonthHistory(completedDates);
   const bmrCalibradoActual = peso[0] ? computeBmrCalibrado(Number(peso[0].valor)) : null;
@@ -111,6 +159,7 @@ export default async function EstadisticasPage() {
             <CardTitle className="text-destructive">Necesita atención</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2">
+            {missingYesterdayItems.length > 0 && <MissingDataAlert items={missingYesterdayItems} />}
             {gymAtRisk && <GymStreakAlert atRisk />}
             {runAtRisk && <RunPaceAlert atRisk />}
           </CardContent>
@@ -150,10 +199,14 @@ export default async function EstadisticasPage() {
             <div className="grid gap-2">
               <div className="flex flex-wrap justify-between gap-2 text-sm">
                 <span>
-                  Inicio: <strong className="text-foreground">{weightProgress.start.toFixed(1)} kg</strong>
+                  Inicio:{" "}
+                  <strong className="text-foreground">{weightProgress.start.toFixed(1)} kg</strong>
                 </span>
                 <span>
-                  Actual: <strong className="text-foreground">{weightProgress.current.toFixed(1)} kg</strong>
+                  Actual:{" "}
+                  <strong className="text-foreground">
+                    {weightProgress.current.toFixed(1)} kg
+                  </strong>
                 </span>
                 <span>
                   Meta: <strong className="text-foreground">{weightProgress.target} kg</strong>
@@ -181,72 +234,74 @@ export default async function EstadisticasPage() {
           Registro por categoría
         </h2>
         <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <RegistroCategoryCard
-          icon={<Scale className="size-4" aria-hidden="true" />}
-          title="Peso"
-          buttonLabel="Registrar peso"
-          entries={entriesOf(peso, (r) => `${r.valor} kg`)}
-        >
-          <WeightForm />
-        </RegistroCategoryCard>
+          <RegistroCategoryCard
+            icon={<Scale className="size-4" aria-hidden="true" />}
+            title="Peso"
+            buttonLabel="Registrar peso"
+            entries={entriesOf(peso, (r) => `${r.valor} kg`)}
+          >
+            <WeightForm />
+          </RegistroCategoryCard>
 
-        <RegistroCategoryCard
-          icon={<Moon className="size-4" aria-hidden="true" />}
-          title="Sueño"
-          buttonLabel="Registrar sueño"
-          entries={entriesOf(sueno, (r) => formatSleepHours(Number(r.valor)))}
-        >
-          <SleepForm />
-        </RegistroCategoryCard>
+          <RegistroCategoryCard
+            icon={<Moon className="size-4" aria-hidden="true" />}
+            title="Sueño"
+            buttonLabel="Registrar sueño"
+            entries={entriesOf(sueno, (r) => formatSleepHours(Number(r.valor)))}
+          >
+            <SleepForm />
+          </RegistroCategoryCard>
 
-        <RegistroCategoryCard
-          icon={<Flame className="size-4" aria-hidden="true" />}
-          title="Calorías"
-          buttonLabel="Registrar calorías"
-          entries={entriesOf(calorias, formatCalorias)}
-        >
-          <CalorieForm calorieTarget={calorieTarget} />
-        </RegistroCategoryCard>
+          <RegistroCategoryCard
+            icon={<Flame className="size-4" aria-hidden="true" />}
+            title="Calorías"
+            buttonLabel="Registrar calorías"
+            entries={entriesOf(calorias, formatCalorias)}
+          >
+            <CalorieForm calorieTarget={calorieTarget} />
+          </RegistroCategoryCard>
 
-        <RegistroCategoryCard
-          icon={<PersonStanding className="size-4" aria-hidden="true" />}
-          title="Caminata"
-          buttonLabel="Registrar caminata"
-          entries={entriesOf(caminata, (r) => `${r.valor} km`)}
-        >
-          <WalkForm />
-        </RegistroCategoryCard>
+          <RegistroCategoryCard
+            icon={<PersonStanding className="size-4" aria-hidden="true" />}
+            title="Caminata"
+            buttonLabel="Registrar caminata"
+            entries={entriesOf(caminata, (r) => `${r.valor} km`)}
+          >
+            <WalkForm />
+          </RegistroCategoryCard>
 
-        <RegistroCategoryCard
-          icon={<Footprints className="size-4" aria-hidden="true" />}
-          title="Tirada larga"
-          buttonLabel="Registrar tirada"
-          entries={entriesOf(tirada, (r) => `${r.valor} km${r.nota ? ` — ${r.nota}` : ""}`)}
-        >
-          <RunForm />
-        </RegistroCategoryCard>
+          <RegistroCategoryCard
+            icon={<Footprints className="size-4" aria-hidden="true" />}
+            title="Tirada larga"
+            buttonLabel="Registrar tirada"
+            entries={entriesOf(tirada, (r) => `${r.valor} km${r.nota ? ` — ${r.nota}` : ""}`)}
+          >
+            <RunForm />
+          </RegistroCategoryCard>
 
-        <Card>
-          <CardHeader className="border-b">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Histórico mensual</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {monthHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Todavía no cerró ningún mes</p>
-            ) : (
-              <ul className="grid gap-1.5">
-                {monthHistory.map((m) => (
-                  <li key={m.label} className="flex items-center justify-between text-sm">
-                    <span className="capitalize">{m.label}</span>
-                    <span className="text-muted-foreground">
-                      {m.completed}/{m.trainable}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="border-b">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Histórico mensual
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {monthHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Todavía no cerró ningún mes</p>
+              ) : (
+                <ul className="grid gap-1.5">
+                  {monthHistory.map((m) => (
+                    <li key={m.label} className="flex items-center justify-between text-sm">
+                      <span className="capitalize">{m.label}</span>
+                      <span className="text-muted-foreground">
+                        {m.completed}/{m.trainable}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>

@@ -1,7 +1,8 @@
 /** Resumen de logros (Stats) — portado de plan_vida_2026.html: countTrainableVsCompleted, buildMonthHistory, weight progress. */
 
 import { PLAN_START, PLAN_END, PLAN_GOAL, getSessionsForDate } from "@/lib/training-plan";
-import { addDays, toISO, MONTHS_ES } from "@/lib/date";
+import { addDays, toISO, fromISO, MONTHS_ES } from "@/lib/date";
+import type { Registro } from "@/lib/types";
 
 export function isTrainableDate(date: Date): boolean {
   return getSessionsForDate(date).some((s) => s.tag !== "rest");
@@ -10,7 +11,7 @@ export function isTrainableDate(date: Date): boolean {
 export function countTrainableVsCompleted(
   from: Date,
   to: Date,
-  completedDates: Set<string>
+  completedDates: Set<string>,
 ): { trainable: number; completed: number } {
   let trainable = 0;
   let completed = 0;
@@ -42,8 +43,16 @@ export function buildMonthHistory(completedDates: Set<string>): MonthHistoryRow[
     const clampedStart = cursor < PLAN_START ? PLAN_START : cursor;
     const clampedEnd = monthEnd > PLAN_END ? PLAN_END : monthEnd;
     if (clampedStart <= clampedEnd) {
-      const { trainable, completed } = countTrainableVsCompleted(clampedStart, clampedEnd, completedDates);
-      rows.push({ label: `${MONTHS_ES[cursor.getMonth()]} ${cursor.getFullYear()}`, completed, trainable });
+      const { trainable, completed } = countTrainableVsCompleted(
+        clampedStart,
+        clampedEnd,
+        completedDates,
+      );
+      rows.push({
+        label: `${MONTHS_ES[cursor.getMonth()]} ${cursor.getFullYear()}`,
+        completed,
+        trainable,
+      });
     }
     cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
   }
@@ -68,7 +77,7 @@ export interface WeightProgress {
 /** Progreso de peso hacia PLAN_GOAL.weightKg (weightData ordenado desc por fecha). */
 export function computeWeightProgress(
   weightValuesDesc: number[],
-  today: Date
+  today: Date,
 ): WeightProgress | null {
   if (weightValuesDesc.length === 0) return null;
 
@@ -88,4 +97,42 @@ export function computeWeightProgress(
         : `Ya bajaste ${Math.abs(diffToTarget).toFixed(1)} kg de más`;
 
   return { start, current, target, pct, diffLabel, daysLeft };
+}
+
+const BA_TIMEZONE = "America/Argentina/Buenos_Aires";
+
+/** Fecha (YYYY-MM-DD) y hora de `now` en horario de Buenos Aires, sin depender del TZ del server. */
+function getBuenosAiresParts(now: Date): { fecha: string; hour: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: BA_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  const hourRaw = get("hour");
+  // Algunos motores ICU devuelven "24" para medianoche con hour12: false.
+  const hour = hourRaw === "24" ? 0 : Number(hourRaw);
+  return { fecha: `${get("year")}-${get("month")}-${get("day")}`, hour };
+}
+
+/**
+ * Portado de plan_vida_2026.html: recordatorio post-10am de datos de ayer sin
+ * cargar (sueño/calorías; el peso tiene su propia alerta aparte).
+ */
+export function getMissingYesterdayItems(
+  sueno: Registro[],
+  calorias: Registro[],
+  now: Date,
+): string[] {
+  const { fecha: todayBA, hour } = getBuenosAiresParts(now);
+  if (hour < 10) return [];
+
+  const yesterdayISO = toISO(addDays(fromISO(todayBA), -1));
+  const missing: string[] = [];
+  if (!sueno.some((r) => r.fecha === yesterdayISO)) missing.push("sueño de anoche");
+  if (!calorias.some((r) => r.fecha === yesterdayISO)) missing.push("calorías de ayer");
+  return missing;
 }
