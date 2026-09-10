@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="relative grid min-h-[60vh] place-items-center">
+    <div className="relative grid min-h-dvh place-items-center">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>

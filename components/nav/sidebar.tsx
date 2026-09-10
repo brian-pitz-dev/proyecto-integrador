@@ -17,7 +17,7 @@ export function Sidebar() {
         Plan de Vida 2026
       </Link>
 
-      <nav className="flex flex-col gap-1">
+      <nav className="flex flex-1 flex-col justify-center gap-3">
         {NAV_ITEMS.map(({ href, label, Icon }) => {
           const active = pathname.startsWith(href);
           return (
@@ -26,13 +26,13 @@ export function Sidebar() {
               href={href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-3 text-base font-medium transition-colors",
                 active
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
-              <Icon className="size-4 shrink-0" aria-hidden="true" />
+              <Icon className="size-5 shrink-0" aria-hidden="true" />
               {label}
             </Link>
           );
