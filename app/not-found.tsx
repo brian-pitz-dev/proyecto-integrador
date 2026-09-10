@@ -8,9 +8,7 @@ export default function NotFound() {
       <div className="grid gap-3">
         <Compass className="mx-auto size-10 text-muted-foreground" aria-hidden="true" />
         <h1 className="text-2xl font-semibold">Página no encontrada</h1>
-        <p className="text-sm text-muted-foreground">
-          Esta sección no existe o se movió.
-        </p>
+        <p className="text-sm text-muted-foreground">Esta sección no existe o se movió.</p>
         <Button render={<Link href="/calendario" />} nativeButton={false}>
           Volver al inicio
         </Button>

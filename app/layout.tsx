@@ -26,9 +26,7 @@ export const metadata: Metadata = {
   robots: isProduction ? { index: true, follow: true } : { index: false, follow: false },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="es"

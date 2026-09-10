@@ -14,7 +14,7 @@ function useMounted() {
   return useSyncExternalStore(
     subscribeNoop,
     () => true,
-    () => false
+    () => false,
   );
 }
 

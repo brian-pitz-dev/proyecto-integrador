@@ -83,15 +83,23 @@ export function CalendarGrid({
             <div
               key={iso}
               className={`rounded-md border p-4 text-sm ${
-                isDone ? "border-accent bg-accent/10" : isToday ? "border-ring ring-2 ring-ring/40" : "border-border"
+                isDone
+                  ? "border-accent bg-accent/10"
+                  : isToday
+                    ? "border-ring ring-2 ring-ring/40"
+                    : "border-border"
               } ${isFuture ? "opacity-50" : ""}`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 flex-1 gap-4">
                   <div className="w-14 shrink-0 self-center text-center">
-                    <p className="text-xs font-medium text-muted-foreground">{DOW_LABELS[i].slice(0, 3)}</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {DOW_LABELS[i].slice(0, 3)}
+                    </p>
                     <p className="text-lg font-semibold text-foreground">{date.getDate()}</p>
-                    <p className="text-[0.65rem] uppercase text-muted-foreground">{MONTHS_ES[date.getMonth()]}</p>
+                    <p className="text-[0.65rem] uppercase text-muted-foreground">
+                      {MONTHS_ES[date.getMonth()]}
+                    </p>
                   </div>
 
                   <div className="min-w-0 flex-1 grid gap-2">

@@ -5,6 +5,7 @@ Internal contract between the login UI and the server actions it calls (`"use se
 ## `login(input)`
 
 **Input**:
+
 ```ts
 {
   email: string;
@@ -14,6 +15,7 @@ Internal contract between the login UI and the server actions it calls (`"use se
 ```
 
 **Behavior**:
+
 1. Validate `input` shape with `zod` (reject malformed input before any network call).
 2. Verify `turnstileToken` server-side via `fetch` to Cloudflare's siteverify endpoint. Reject on failure.
 3. Check the in-memory rate-limit counter for the requesting IP; reject with a throttling error if the window's failure threshold is exceeded.
@@ -22,6 +24,7 @@ Internal contract between the login UI and the server actions it calls (`"use se
 6. On failure (bad credentials, rate limit, bot check), increment the rate-limit counter (for credential failures) and return `{ ok: false, message }` — never leak whether the email exists.
 
 **Output**:
+
 ```ts
 { ok: boolean; message?: string }
 ```

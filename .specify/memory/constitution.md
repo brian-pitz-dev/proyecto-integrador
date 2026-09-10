@@ -13,6 +13,7 @@ Sync Impact Report
 ## Core Principles
 
 ### I. Next.js + TypeScript Stack
+
 El proyecto se implementa en Next.js con TypeScript en modo estricto. Todo código
 nuevo (páginas, rutas API, componentes, utilidades) MUST estar tipado; no se admite
 `any` implícito ni archivos `.js`/`.jsx` en código de aplicación nuevo. Las
@@ -20,6 +21,7 @@ convenciones de Next.js (App Router, convenciones de archivos, server/client
 components) MUST respetarse en lugar de reinventar soluciones equivalentes.
 
 ### II. Documentación Actualizada vía Context7 (NON-NEGOTIABLE)
+
 Antes de implementar cualquier funcionalidad que use APIs, convenciones o
 configuración de Next.js o Supabase, MUST consultarse la documentación vigente a
 través de context7 (`resolve-library-id` + `query-docs`). No se implementa a partir
@@ -28,12 +30,14 @@ un cambio reciente; el conocimiento previo del modelo se usa solo como punto de
 partida para formular la consulta, nunca como fuente final.
 
 ### III. Diseño Visual bajo ui-ux-pro-max
+
 Todo diseño de interfaz (layout, tipografía, color, componentes, accesibilidad,
 responsive) MUST seguir las convenciones y el skill `ui-ux-pro-max`. No se introduce
 un sistema de diseño, paleta o librería de estilos paralela sin pasar primero por
 ese skill.
 
 ### IV. Schema de Supabase Inmutable sin Aprobación Explícita
+
 El schema actual de Supabase (tablas, columnas, tipos, políticas RLS, funciones,
 triggers) se preserva tal como está. Ninguna migración, `ALTER`, `DROP` o cambio de
 schema se ejecuta o se genera como código sin aprobación explícita y previa del

@@ -4,15 +4,16 @@
 
 **Decision**: El menú lateral usa las 3 etiquetas pedidas por el usuario, mapeadas a rutas reales — dos ya existentes y una nueva página de contenido estático:
 
-| Label del menú | Ruta | Justificación |
-|---|---|---|
-| Plan de gimnasio | `/calendario` | `lib/training-plan.ts` ya modela el plan semanal con tags `gym`/`run`/`core`/`long`, y Calendario es donde ese plan se visualiza. |
-| Nutrición | `/nutricion` (**nueva**) | La app previa a la migración (`plan_vida_2026.html`) tenía una página `page-nutri` dedicada con el plan de comidas por día (banco de comidas, rotación semanal, reglas fijas). Esa página nunca se migró en 001-nextjs-migration ni quedó documentada como decisión de scope — es un gap de esa etapa, no una elección de diseño. El usuario confirmó portarla ahora como parte de 002 (ver spec.md, User Story 5, FR-015/016/017/018). |
-| Stats | `/estadisticas` | Coincidencia directa. |
+| Label del menú   | Ruta                     | Justificación                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plan de gimnasio | `/calendario`            | `lib/training-plan.ts` ya modela el plan semanal con tags `gym`/`run`/`core`/`long`, y Calendario es donde ese plan se visualiza.                                                                                                                                                                                                                                                                                                       |
+| Nutrición        | `/nutricion` (**nueva**) | La app previa a la migración (`plan_vida_2026.html`) tenía una página `page-nutri` dedicada con el plan de comidas por día (banco de comidas, rotación semanal, reglas fijas). Esa página nunca se migró en 001-nextjs-migration ni quedó documentada como decisión de scope — es un gap de esa etapa, no una elección de diseño. El usuario confirmó portarla ahora como parte de 002 (ver spec.md, User Story 5, FR-015/016/017/018). |
+| Stats            | `/estadisticas`          | Coincidencia directa.                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 **Rationale**: La primera versión de esta decisión (Nutrición→`/registro`, ver historial de esta sesión) asumía que no se podían agregar páginas nuevas. Al revisar `plan_vida_2026.html` para responder una pregunta del usuario sobre "dónde quedan las comidas por día", se confirmó que "Nutrición" siempre se refirió a una página propia, no a un alias de Registro. El usuario pidió agregarla al spec 002 en vez de diferirla a una etapa aparte.
 
 **Alternatives considered**:
+
 - Mapear Nutrición a `/registro` (decisión original de esta sesión) — descartada tras encontrar `page-nutri` en el HTML legado: describía mal el contenido y ocultaba una feature real que el usuario esperaba recuperar.
 - Diferir el plan de comidas a una etapa 003 separada — el usuario prefirió incorporarlo ahora al spec 002.
 - Modelar el plan de comidas en Supabase (tabla nueva) — rechazado: el patrón ya establecido para contenido de plan fijo es `lib/training-plan.ts` (constante en código, no dato de Supabase, según su propio comentario "Principio IV"); replicar ese patrón evita disparar el requisito de aprobación explícita de cambio de esquema.
@@ -21,9 +22,10 @@
 
 **Decision**: Un botón/card de acceso rápido por categoría (tirada, caminata, calorías, peso, sueño) que abre su propio modal ya enfocado en ese dato (pide únicamente valor + fecha + hora, sin selector de tipo). Los 5 `components/log-form/*.tsx` existentes migran su contenido a `<Dialog>` (ya instalado en `components/ui/dialog.tsx`), no se reemplazan por un formulario unificado.
 
-**Rationale**: Confirmado por el usuario ("Un modal por categoría (Recomendado)"). Aplica Ley de Hick reduciendo las opciones visibles *dentro* de cada modal (nada de selector de categoría) y es el cambio de menor diff sobre los 5 componentes de formulario ya existentes — cada uno ya sabe qué campo pide.
+**Rationale**: Confirmado por el usuario ("Un modal por categoría (Recomendado)"). Aplica Ley de Hick reduciendo las opciones visibles _dentro_ de cada modal (nada de selector de categoría) y es el cambio de menor diff sobre los 5 componentes de formulario ya existentes — cada uno ya sabe qué campo pide.
 
 **Alternatives considered**:
+
 - Modal único con selector de categoría — descartado por el usuario; agrega un paso extra dentro del modal.
 
 ## Decisión 3 — Modo oscuro y tokens de color
@@ -65,6 +67,7 @@
 **Rationale**: Confirmado por el usuario (agrupar por mes + semanas del mes, Recomendado). Los datos de fase/evento ya existen en `lib/training-plan.ts` — sólo faltaba exponerlos; construir un solo componente reutilizable evita duplicar la lógica de agrupación por mes entre Calendario y Nutrición.
 
 **Alternatives considered**:
+
 - Dropdown único con las ~20 semanas sin agrupar — descartado por el usuario a favor de la agrupación por mes.
 - Mantener solo "semana anterior/siguiente" sin salto directo — descartado por el usuario; pierde la posibilidad de ir directo a, por ejemplo, la semana de un evento.
 - Duplicar la lógica de selector en cada página en vez de un componente compartido — rechazado, mismo patrón de datos (semana → mes → fase/evento) en ambas páginas, duplicarlo violaría el rung 2 de la escalera de simplicidad (reusar lo que ya existe en el codebase).

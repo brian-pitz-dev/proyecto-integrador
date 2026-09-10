@@ -351,7 +351,12 @@ function pickCena(weekNum: number, dayIdx: number, meriendaMeal: Meal): Meal {
   return cena;
 }
 
-function pickMeal(type: "desayuno" | "media" | "merienda", weekNum: number, dayIdx: number, offset: number): Meal {
+function pickMeal(
+  type: "desayuno" | "media" | "merienda",
+  weekNum: number,
+  dayIdx: number,
+  offset: number,
+): Meal {
   const arr = mealBank[type];
   let idx = (weekNum + dayIdx + offset) % arr.length;
   if (dayIdx > 0) {
@@ -374,8 +379,10 @@ function reinforceBreakfast(meal: Meal): Meal {
 
 function reinforceWithBatido(meal: Meal): Meal {
   const reinforced = cloneMeal(meal);
-  if (!hasIngredient(reinforced, "batidoProte")) reinforced.ingredientes.push({ id: "batidoProte", cantidad: null });
-  if (!hasIngredient(reinforced, "lecheProte")) reinforced.ingredientes.push({ id: "lecheProte", cantidad: null });
+  if (!hasIngredient(reinforced, "batidoProte"))
+    reinforced.ingredientes.push({ id: "batidoProte", cantidad: null });
+  if (!hasIngredient(reinforced, "lecheProte"))
+    reinforced.ingredientes.push({ id: "lecheProte", cantidad: null });
   reinforced.detail = `${meal.detail} · + batido de proteína extra (refuerzo)`;
   return reinforced;
 }
@@ -449,7 +456,12 @@ export function getMealsForDay(weekNum: number, dayIdx: number): DayPlan {
       meal: pickMeal("media", weekNum, dayIdx, offsets.media),
       proteinG: 0,
     },
-    { type: "almuerzo", label: MEAL_LABELS.almuerzo, meal: almuerzoMeal, proteinG: almuerzoProtein },
+    {
+      type: "almuerzo",
+      label: MEAL_LABELS.almuerzo,
+      meal: almuerzoMeal,
+      proteinG: almuerzoProtein,
+    },
     { type: "merienda", label: MEAL_LABELS.merienda, meal: meriendaMeal, proteinG: 0 },
     {
       type: "cena",

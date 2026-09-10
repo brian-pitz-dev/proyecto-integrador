@@ -15,6 +15,7 @@ All Supabase Auth / `@supabase/ssr` / Next.js proxy (formerly middleware) APIs b
 **Decision**: Replace the current `lib/supabase/server.ts` cookie stub with a real `createServerClient` reading/writing cookies via Next.js's `cookies()` API (server components/actions) and `request.cookies` / `NextResponse` (proxy). `proxy.ts` calls `supabase.auth.getUser()` on every matched request and redirects to `/login` when there's no user. `lib/supabase/client.ts` (browser client) stays as-is — `createBrowserClient` already syncs the same cookies automatically, no localStorage code to remove because none exists.
 
 **Rationale**: This is the documented current pattern (context7, `supabase/supabase` examples `nextjs-supabase-auth.md` / `proxy.ts` under `examples/auth/nextjs-full/lib/supabase/proxy.ts`). Key points pulled directly from docs, not memory:
+
 - Cookie handlers MUST be `getAll`/`setAll` — the old `get`/`set`/`remove` trio is explicitly flagged by Supabase's own docs as a pattern that "WILL BREAK THE APPLICATION."
 - Nothing may run between `createServerClient(...)` and `supabase.auth.getUser()` in the proxy — an easy mistake there causes intermittent logouts.
 - The `supabaseResponse` object must be returned as-is (or its cookies copied onto a new response) or the browser/server session can desync.
@@ -69,6 +70,7 @@ All Supabase Auth / `@supabase/ssr` / Next.js proxy (formerly middleware) APIs b
 **Alternatives considered**: A Turnstile React wrapper package — rejected, the widget can be loaded with a plain `<script>` tag and a form-submitted token field, no dependency needed (ladder rung 6: one `fetch` call beats a new package).
 
 **Applied 2026-08-31**: Widget created via the Cloudflare dashboard (not the API/Wrangler-driven Spin wizard — the user created it manually and handed over the sitekey/secret, avoiding the need to grant this session a Cloudflare API token). Two issues hit during live validation, both fixed:
+
 1. Error `110200` ("Domain not authorized") on first load — the widget's domain allowlist didn't include `localhost`; fixed by the user adding it in the widget's Hostname Management settings.
 2. The widget didn't auto-render on a fresh page load even after the domain fix — relying on `next/script`'s `onLoad` callback was unreliable relative to `containerRef` being attached. Fixed by polling for `window.turnstile` + the container ref every 150ms in a `useEffect` instead of depending on `onLoad` timing.
 

@@ -44,9 +44,7 @@ export interface CalorieTarget {
 }
 
 /** Equivalente a getCalorieTarget() de plan_vida_2026.html. */
-export async function getCalorieTarget(
-  dateObj: Date,
-): Promise<CalorieTarget | null> {
+export async function getCalorieTarget(dateObj: Date): Promise<CalorieTarget | null> {
   const phaseKey = getPhaseKeyForDate(dateObj);
   const fechaISO = toISO(dateObj);
   const supabase = await createClient();
@@ -70,9 +68,7 @@ export async function getCalorieTarget(
 
   const pesoActual = Number((pesoLogs[0] as Registro).valor);
   const bmrCalibrado = computeBmrCalibrado(pesoActual);
-  const logDelDia = (calLogs as Registro[] | null)?.find(
-    (r) => r.fecha === fechaISO,
-  );
+  const logDelDia = (calLogs as Registro[] | null)?.find((r) => r.fecha === fechaISO);
 
   let gastoCalorico: number;
   let fuente: CalorieTarget["fuente"];

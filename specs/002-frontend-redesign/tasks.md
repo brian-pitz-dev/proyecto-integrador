@@ -1,5 +1,4 @@
 ---
-
 description: "Task list template for feature implementation"
 ---
 
@@ -23,7 +22,7 @@ description: "Task list template for feature implementation"
 
 **Purpose**: Generar los tokens de diseño base antes de aplicarlos en ninguna página
 
-- [X] T001 Ejecutar el skill `ui-ux-pro-max --design-system` con los dials `--variance`, `--motion`, `--density` (research.md Decisión 3) para generar la paleta, escala de motion y densidad nuevas que se van a volcar en `app/globals.css` durante US1
+- [x] T001 Ejecutar el skill `ui-ux-pro-max --design-system` con los dials `--variance`, `--motion`, `--density` (research.md Decisión 3) para generar la paleta, escala de motion y densidad nuevas que se van a volcar en `app/globals.css` durante US1
 
 ---
 
@@ -33,8 +32,8 @@ description: "Task list template for feature implementation"
 
 **⚠️ CRITICAL**: Ninguna user story empieza hasta completar esta fase
 
-- [X] T002 Montar `<ThemeProvider attribute="class" defaultTheme="dark" enableSystem>` de `next-themes` alrededor de `<body>` en `app/layout.tsx` (ya está en `package.json`, sin usar hoy)
-- [X] T003 [P] Cargar `JetBrains_Mono` vía `next/font/google` en `app/layout.tsx` (mismo patrón que `Plus_Jakarta_Sans`) y mapear su variable a `--font-mono` en `app/globals.css`, reemplazando la referencia húerfana a `--font-geist-mono` (research.md Decisión 4)
+- [x] T002 Montar `<ThemeProvider attribute="class" defaultTheme="dark" enableSystem>` de `next-themes` alrededor de `<body>` en `app/layout.tsx` (ya está en `package.json`, sin usar hoy)
+- [x] T003 [P] Cargar `JetBrains_Mono` vía `next/font/google` en `app/layout.tsx` (mismo patrón que `Plus_Jakarta_Sans`) y mapear su variable a `--font-mono` en `app/globals.css`, reemplazando la referencia húerfana a `--font-geist-mono` (research.md Decisión 4)
 
 **Checkpoint**: Modo oscuro y tipografía nueva disponibles — las user stories pueden empezar
 
@@ -48,11 +47,11 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 1
 
-- [X] T004 [US1] Reemplazar `--primary`/`--primary-foreground`/`--accent`/`--accent-foreground`/`--secondary`/`--muted`/`--destructive`/`--border`/`--input`/`--ring` (bloques `:root` y `.dark`) en `app/globals.css` con la paleta generada en T001 (FR-001, FR-002)
-- [X] T005 [P] [US1] Reemplazar `--chart-1` a `--chart-5` (bloques `:root` y `.dark`) en `app/globals.css` con la escala de color de gráficos generada en T001 (FR-001)
-- [X] T006 [P] [US1] Reemplazar `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring` (bloques `:root` y `.dark`) en `app/globals.css` con la paleta generada en T001 (FR-001; los consume el sidebar de US2)
-- [X] T007 [US1] Agregar un control de alternar tema (claro/oscuro) usando `useTheme()` de `next-themes` en `app/layout.tsx` (Acceptance Scenario 2)
-- [X] T008 [US1] Auditar `components/**/*.tsx` y `app/**/page.tsx` en busca de clases de color hardcodeadas (hue ~165 verde-azulado u otro color fuera de los tokens) y reemplazarlas por clases Tailwind basadas en los tokens de `app/globals.css` (FR-002, SC-002)
+- [x] T004 [US1] Reemplazar `--primary`/`--primary-foreground`/`--accent`/`--accent-foreground`/`--secondary`/`--muted`/`--destructive`/`--border`/`--input`/`--ring` (bloques `:root` y `.dark`) en `app/globals.css` con la paleta generada en T001 (FR-001, FR-002)
+- [x] T005 [P] [US1] Reemplazar `--chart-1` a `--chart-5` (bloques `:root` y `.dark`) en `app/globals.css` con la escala de color de gráficos generada en T001 (FR-001)
+- [x] T006 [P] [US1] Reemplazar `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring` (bloques `:root` y `.dark`) en `app/globals.css` con la paleta generada en T001 (FR-001; los consume el sidebar de US2)
+- [x] T007 [US1] Agregar un control de alternar tema (claro/oscuro) usando `useTheme()` de `next-themes` en `app/layout.tsx` (Acceptance Scenario 2)
+- [x] T008 [US1] Auditar `components/**/*.tsx` y `app/**/page.tsx` en busca de clases de color hardcodeadas (hue ~165 verde-azulado u otro color fuera de los tokens) y reemplazarlas por clases Tailwind basadas en los tokens de `app/globals.css` (FR-002, SC-002)
 
 **Checkpoint**: Paleta e identidad visual nuevas funcionando en las 5 pantallas, con modo oscuro
 
@@ -68,12 +67,12 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 2
 
-- [X] T009 [US2] Crear `components/nav/sidebar.tsx`: sidebar desktop con 3 ítems (Plan de gimnasio → `/calendario`, Nutrición → `/nutricion`, Stats → `/estadisticas`), usando los tokens `--sidebar-*` y marcando la ruta activa vía `usePathname()` (FR-003, research.md Decisión 1)
-- [X] T010 [US2] Crear `components/nav/mobile-drawer.tsx`: drawer off-canvas mobile con los mismos 3 ítems, construido sobre primitivos de `@base-ui/react` (FR-003, research.md Decisión 5)
-- [X] T011 [US2] Reemplazar el `<header>` y el `<nav>` inferior actuales de `app/layout.tsx` (líneas 30-60) por `Sidebar` (desktop) + `MobileDrawer` (mobile), manteniendo `<Toaster />` montado (FR-004)
-- [X] T012 [US2] Hacer que el sidebar/drawer permanezca accesible durante el scroll en páginas largas (`app/calendario/page.tsx`, `app/estadisticas/page.tsx`) sin que el usuario pierda la referencia de sección (FR-004, edge case)
-- [X] T013 [US2] Agregar una transición animada al cambiar de sección en `app/layout.tsx` (o vía `template.tsx`), respetando `prefers-reduced-motion` (Acceptance Scenario 2, FR-005)
-- [X] T014 [US2] Verificar en 360px, 768px y 1920px que el sidebar/drawer no introduce scroll horizontal ni elementos cortados (FR-010, SC-004 heredado de 001)
+- [x] T009 [US2] Crear `components/nav/sidebar.tsx`: sidebar desktop con 3 ítems (Plan de gimnasio → `/calendario`, Nutrición → `/nutricion`, Stats → `/estadisticas`), usando los tokens `--sidebar-*` y marcando la ruta activa vía `usePathname()` (FR-003, research.md Decisión 1)
+- [x] T010 [US2] Crear `components/nav/mobile-drawer.tsx`: drawer off-canvas mobile con los mismos 3 ítems, construido sobre primitivos de `@base-ui/react` (FR-003, research.md Decisión 5)
+- [x] T011 [US2] Reemplazar el `<header>` y el `<nav>` inferior actuales de `app/layout.tsx` (líneas 30-60) por `Sidebar` (desktop) + `MobileDrawer` (mobile), manteniendo `<Toaster />` montado (FR-004)
+- [x] T012 [US2] Hacer que el sidebar/drawer permanezca accesible durante el scroll en páginas largas (`app/calendario/page.tsx`, `app/estadisticas/page.tsx`) sin que el usuario pierda la referencia de sección (FR-004, edge case)
+- [x] T013 [US2] Agregar una transición animada al cambiar de sección en `app/layout.tsx` (o vía `template.tsx`), respetando `prefers-reduced-motion` (Acceptance Scenario 2, FR-005)
+- [x] T014 [US2] Verificar en 360px, 768px y 1920px que el sidebar/drawer no introduce scroll horizontal ni elementos cortados (FR-010, SC-004 heredado de 001)
 
 **Checkpoint**: Navegación por sidebar/drawer funcionando en las 3 secciones, en desktop y mobile
 
@@ -89,10 +88,10 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 3
 
-- [X] T015 [US3] Agregar animación de confirmación (clases de `tw-animate-css`) al guardar exitosamente en cada `components/log-form/*-form.tsx`, en conjunto con el toast de `sonner` (FR-005, Acceptance Scenario 1) — satisfecho por la animación de cierre del modal (`components/log-form/log-entry-card.tsx` → `DialogContent`, ya animada) disparada por `onSuccess`, combinada con el toast de `sonner`
-- [X] T016 [P] [US3] Agregar estado de carga animado (skeleton/spinner) mientras se obtienen datos en `app/calendario/page.tsx` y `app/estadisticas/page.tsx` — implementado como `app/calendario/loading.tsx` y `app/estadisticas/loading.tsx` (patrón nativo de Next.js con Suspense, sin JS de cliente extra)
+- [x] T015 [US3] Agregar animación de confirmación (clases de `tw-animate-css`) al guardar exitosamente en cada `components/log-form/*-form.tsx`, en conjunto con el toast de `sonner` (FR-005, Acceptance Scenario 1) — satisfecho por la animación de cierre del modal (`components/log-form/log-entry-card.tsx` → `DialogContent`, ya animada) disparada por `onSuccess`, combinada con el toast de `sonner`
+- [x] T016 [P] [US3] Agregar estado de carga animado (skeleton/spinner) mientras se obtienen datos en `app/calendario/page.tsx` y `app/estadisticas/page.tsx` — implementado como `app/calendario/loading.tsx` y `app/estadisticas/loading.tsx` (patrón nativo de Next.js con Suspense, sin JS de cliente extra)
 - [~] T017 [US3] Agregar animación de transición al cambiar filtro/rango de fechas en los gráficos de `components/stats/*.tsx` (FR-005, Acceptance Scenario 2) — **omitido**: Estadísticas no tiene gráficos ni controles de filtro/rango de fechas en el código actual (solo alertas de racha/ritmo); no se fabricó esa UI porque no está pedida en ningún FR del spec. Si se agrega en una etapa futura, esta tarea aplica ahí.
-- [X] T018 [US3] Envolver las animaciones agregadas en T015-T017 con la media query `prefers-reduced-motion: reduce` en `app/globals.css` para reducirlas/eliminarlas cuando el usuario la tenga activa (FR-005, SC-005) — regla global en `app/globals.css` que cubre cualquier animación/transición de la app, no solo las de T015-T016
+- [x] T018 [US3] Envolver las animaciones agregadas en T015-T017 con la media query `prefers-reduced-motion: reduce` en `app/globals.css` para reducirlas/eliminarlas cuando el usuario la tenga activa (FR-005, SC-005) — regla global en `app/globals.css` que cubre cualquier animación/transición de la app, no solo las de T015-T016
 
 **Checkpoint**: Animaciones de confirmación/transición funcionando y respetando accesibilidad
 
@@ -108,11 +107,11 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 4
 
-- [X] T019 [US4] Envolver cada formulario (`components/log-form/run-form.tsx`, `walk-form.tsx`, `calorie-form.tsx`, `weight-form.tsx`, `sleep-form.tsx`) dentro de un `<Dialog>` (`components/ui/dialog.tsx`), sin selector de categoría dentro del modal (research.md Decisión 2)
-- [X] T020 [US4] Reconstruir `app/registro/page.tsx` como una card por categoría (tirada, caminata, calorías, peso, sueño) que muestra el último stat debajo del punto de entrada y abre el modal correspondiente (T019) al tocarla (FR-011, Acceptance Scenario 3)
-- [X] T021 [P] [US4] Rediseñar la jerarquía visual de `app/calendario/page.tsx` + `components/calendar-grid/calendar-grid.tsx` para que las sesiones/eventos importantes prioricen sobre la grilla base (FR-006, Acceptance Scenario 1)
-- [X] T022 [P] [US4] Rediseñar la jerarquía visual de `app/estadisticas/page.tsx` para que el dato/tendencia más relevante se perciba antes que el detalle secundario (FR-006, Acceptance Scenario 2)
-- [X] T023 [P] [US4] Agregar estados vacíos diseñados (sin datos aún) en `app/calendario/page.tsx` y `app/estadisticas/page.tsx` (FR-009, edge case)
+- [x] T019 [US4] Envolver cada formulario (`components/log-form/run-form.tsx`, `walk-form.tsx`, `calorie-form.tsx`, `weight-form.tsx`, `sleep-form.tsx`) dentro de un `<Dialog>` (`components/ui/dialog.tsx`), sin selector de categoría dentro del modal (research.md Decisión 2)
+- [x] T020 [US4] Reconstruir `app/registro/page.tsx` como una card por categoría (tirada, caminata, calorías, peso, sueño) que muestra el último stat debajo del punto de entrada y abre el modal correspondiente (T019) al tocarla (FR-011, Acceptance Scenario 3)
+- [x] T021 [P] [US4] Rediseñar la jerarquía visual de `app/calendario/page.tsx` + `components/calendar-grid/calendar-grid.tsx` para que las sesiones/eventos importantes prioricen sobre la grilla base (FR-006, Acceptance Scenario 1)
+- [x] T022 [P] [US4] Rediseñar la jerarquía visual de `app/estadisticas/page.tsx` para que el dato/tendencia más relevante se perciba antes que el detalle secundario (FR-006, Acceptance Scenario 2)
+- [x] T023 [P] [US4] Agregar estados vacíos diseñados (sin datos aún) en `app/calendario/page.tsx` y `app/estadisticas/page.tsx` (FR-009, edge case)
 
 **Checkpoint**: Registro con modal por categoría, Calendario y Estadísticas con jerarquía visual clara
 
@@ -128,10 +127,10 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 5
 
-- [X] T024 [US5] Portar `mealBank` (grupos desayuno/media/almuerzo/merienda/cena), `buildRecencySequence`/`mulberry32`, `pickAlmuerzo`/`pickCena` y `applyProteinReinforcement` de `plan_vida_2026.html` (líneas ~2534+) a `lib/meal-plan.ts` (FR-016, FR-018, research.md Decisión 6/8)
-- [X] T025 [US5] Crear `app/nutricion/page.tsx` que renderice las comidas del día actual (desayuno, colación, almuerzo, merienda, cena) con nombre, detalle e ingredientes, consumiendo `lib/meal-plan.ts` (FR-015, Acceptance Scenario 1) — por defecto el día actual del sistema (edge case)
-- [X] T026 [P] [US5] Crear `components/nutrition/meal-card.tsx` (tarjeta de una comida) y `components/nutrition/fixed-rules.tsx` (texto de reglas fijas: plato chico/playo, agua, creatina) (FR-017)
-- [X] T027 [US5] Agregar el estado "sábado/domingo sin estructura fija" en `app/nutricion/page.tsx` (FR-017, Acceptance Scenario 3)
+- [x] T024 [US5] Portar `mealBank` (grupos desayuno/media/almuerzo/merienda/cena), `buildRecencySequence`/`mulberry32`, `pickAlmuerzo`/`pickCena` y `applyProteinReinforcement` de `plan_vida_2026.html` (líneas ~2534+) a `lib/meal-plan.ts` (FR-016, FR-018, research.md Decisión 6/8)
+- [x] T025 [US5] Crear `app/nutricion/page.tsx` que renderice las comidas del día actual (desayuno, colación, almuerzo, merienda, cena) con nombre, detalle e ingredientes, consumiendo `lib/meal-plan.ts` (FR-015, Acceptance Scenario 1) — por defecto el día actual del sistema (edge case)
+- [x] T026 [P] [US5] Crear `components/nutrition/meal-card.tsx` (tarjeta de una comida) y `components/nutrition/fixed-rules.tsx` (texto de reglas fijas: plato chico/playo, agua, creatina) (FR-017)
+- [x] T027 [US5] Agregar el estado "sábado/domingo sin estructura fija" en `app/nutricion/page.tsx` (FR-017, Acceptance Scenario 3)
 
 **Checkpoint**: `/nutricion` funcionando de forma independiente con el plan de comidas portado
 
@@ -147,11 +146,11 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 6
 
-- [X] T028 [US6] Exportar `getWeeks()` desde `lib/training-plan.ts` devolviendo `{ num, start, phase, isEventWeek, isPrepWeek }[]` a partir del array `weeks` interno ya calculado y las constantes `EV_10K`/`EV_LUJAN`/`EV_21K` (FR-021, data-model.md "Semana del plan")
-- [X] T029 [US6] Crear `components/week-selector/week-selector.tsx`: selector de mes (agosto-diciembre 2026) → pestañas de semana del mes elegido, marcando visualmente `isEventWeek`/`isPrepWeek`, acotado a `PLAN_START`-`PLAN_END` (FR-019, FR-020, FR-021)
-- [X] T030 [US6] Integrar `WeekSelector` en `app/calendario/page.tsx` + `components/calendar-grid/calendar-grid.tsx`, reemplazando la navegación de solo "anterior/siguiente" (FR-019, Acceptance Scenario 1-2)
-- [X] T031 [US6] Integrar `WeekSelector` en `app/nutricion/page.tsx` para navegar semana/día (FR-019, Acceptance Scenario 4) — depende de T025
-- [X] T032 [US6] Configurar el valor por defecto (mes/semana actual del sistema) y deshabilitar la selección fuera de `PLAN_START`-`PLAN_END` en `WeekSelector` (edge cases)
+- [x] T028 [US6] Exportar `getWeeks()` desde `lib/training-plan.ts` devolviendo `{ num, start, phase, isEventWeek, isPrepWeek }[]` a partir del array `weeks` interno ya calculado y las constantes `EV_10K`/`EV_LUJAN`/`EV_21K` (FR-021, data-model.md "Semana del plan")
+- [x] T029 [US6] Crear `components/week-selector/week-selector.tsx`: selector de mes (agosto-diciembre 2026) → pestañas de semana del mes elegido, marcando visualmente `isEventWeek`/`isPrepWeek`, acotado a `PLAN_START`-`PLAN_END` (FR-019, FR-020, FR-021)
+- [x] T030 [US6] Integrar `WeekSelector` en `app/calendario/page.tsx` + `components/calendar-grid/calendar-grid.tsx`, reemplazando la navegación de solo "anterior/siguiente" (FR-019, Acceptance Scenario 1-2)
+- [x] T031 [US6] Integrar `WeekSelector` en `app/nutricion/page.tsx` para navegar semana/día (FR-019, Acceptance Scenario 4) — depende de T025
+- [x] T032 [US6] Configurar el valor por defecto (mes/semana actual del sistema) y deshabilitar la selección fuera de `PLAN_START`-`PLAN_END` en `WeekSelector` (edge cases)
 
 **Checkpoint**: Selector de semanas por mes funcionando igual en Calendario y Nutrición, con marca de eventos
 
@@ -167,11 +166,11 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 7
 
-- [X] T033 [P] [US7] Crear `app/not-found.tsx` con el lenguaje visual de la app (FR-012, Acceptance Scenario 1)
-- [X] T034 [P] [US7] Crear `app/sitemap.ts` (Next.js Metadata API) listando `/`, `/registro`, `/calendario`, `/estadisticas`, `/nutricion` (FR-013, Acceptance Scenario 2)
-- [X] T035 [P] [US7] Agregar `export const metadata` (o `generateMetadata`) con título y `description` únicos en `app/page.tsx`, `app/registro/page.tsx`, `app/calendario/page.tsx`, `app/estadisticas/page.tsx`, `app/nutricion/page.tsx` (FR-013, FR-014)
+- [x] T033 [P] [US7] Crear `app/not-found.tsx` con el lenguaje visual de la app (FR-012, Acceptance Scenario 1)
+- [x] T034 [P] [US7] Crear `app/sitemap.ts` (Next.js Metadata API) listando `/`, `/registro`, `/calendario`, `/estadisticas`, `/nutricion` (FR-013, Acceptance Scenario 2)
+- [x] T035 [P] [US7] Agregar `export const metadata` (o `generateMetadata`) con título y `description` únicos en `app/page.tsx`, `app/registro/page.tsx`, `app/calendario/page.tsx`, `app/estadisticas/page.tsx`, `app/nutricion/page.tsx` (FR-013, FR-014)
 - [~] T036 [P] [US7] Confirmar/actualizar el favicon (`app/favicon.ico`) acorde a la identidad visual nueva de US1 (FR-014) — **parcial**: `app/favicon.ico` ya existe (el de `create-next-app` por defecto); no se generó un ícono nuevo porque esta sesión no tiene herramientas de generación de imágenes disponibles. Queda pendiente para cuando el usuario tenga un ícono propio.
-- [X] T037 [US7] Agregar un footer con el año de copyright calculado dinámicamente (`new Date().getFullYear()`) en `app/layout.tsx` (FR-014, Acceptance Scenario 3)
+- [x] T037 [US7] Agregar un footer con el año de copyright calculado dinámicamente (`new Date().getFullYear()`) en `app/layout.tsx` (FR-014, Acceptance Scenario 3)
 
 **Checkpoint**: Metadata técnica completa en las 5 páginas
 
@@ -182,8 +181,8 @@ description: "Task list template for feature implementation"
 **Purpose**: Verificación final transversal a todas las user stories
 
 - [~] T038 Correr manualmente los 7 escenarios de `specs/002-frontend-redesign/quickstart.md` de punta a punta — **parcial**: verificado que las 5 rutas + `/sitemap.xml` responden 200 y `/no-existe` responde 404 (curl), `npm run build` genera las 5 páginas sin errores, `tsc --noEmit` y `eslint` limpios. **No verificado**: la extensión Claude in Chrome no está conectada en esta sesión, así que no se pudo confirmar visualmente el modo oscuro, las animaciones, el modal por categoría, ni el layout responsive en 360/768/1920px. Recomendado: correr `npm run dev` y revisar a ojo antes de dar por cerrada la etapa.
-- [X] T039 [P] Confirmar que se consultó context7 para cualquier API de Next.js 16 (Metadata API de T028/T034/T035) usada por primera vez en esta etapa (Principio II de la constitución) — consultado contra `/vercel/next.js/v16.2.9`; `sitemap.ts` y `export const metadata` coinciden con la doc oficial
-- [X] T040 Auditoría final de `app/globals.css` y componentes en busca de tokens sin usar o colores hardcodeados remanentes (SC-002) — sin resultados en el grep de colores hardcodeados; build de producción limpio
+- [x] T039 [P] Confirmar que se consultó context7 para cualquier API de Next.js 16 (Metadata API de T028/T034/T035) usada por primera vez en esta etapa (Principio II de la constitución) — consultado contra `/vercel/next.js/v16.2.9`; `sitemap.ts` y `export const metadata` coinciden con la doc oficial
+- [x] T040 Auditoría final de `app/globals.css` y componentes en busca de tokens sin usar o colores hardcodeados remanentes (SC-002) — sin resultados en el grep de colores hardcodeados; build de producción limpio
 
 ---
 

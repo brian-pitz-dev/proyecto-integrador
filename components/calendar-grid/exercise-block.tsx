@@ -17,7 +17,10 @@ export function ExerciseBlock({ gymKey, coreKey }: { gymKey?: string; coreKey?: 
         className="flex w-full items-center justify-between px-2.5 py-1.5 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
       >
         <span>{routine.label}</span>
-        <ChevronDown className={`size-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+        <ChevronDown
+          className={`size-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        />
       </button>
       {open && (
         <div className="grid gap-1 border-t border-border px-2.5 py-1.5">

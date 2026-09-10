@@ -14,7 +14,7 @@
 
 - Q: ¿La app reconstruida va a quedar accesible en una URL pública de internet, o vas a mantenerla en un entorno privado/local (sin URL pública)? → A: Se mantiene privada/de uso local por ahora — no se agrega autenticación en esta etapa.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Registrar actividad y salud diaria sin perder datos históricos (Priority: P1)
 
@@ -106,7 +106,7 @@ actual sigue disponible, con una presentación visual coherente y legible en esc
 - ¿Qué pasa si dos pestañas/dispositivos editan al mismo tiempo? No se requiere resolución de
   conflictos especial para esta etapa: gana el último guardado, igual que el comportamiento actual.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -141,7 +141,7 @@ actual sigue disponible, con una presentación visual coherente y legible en esc
   completado), identificado por categoría, fecha, un valor numérico y una nota opcional. Es la
   única entidad de datos de esta etapa; su forma y su tabla en Supabase no cambian.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

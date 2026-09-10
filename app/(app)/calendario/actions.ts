@@ -12,10 +12,7 @@ function revalidateAffectedRoutes() {
 }
 
 /** Equivalente a toggleDayDone(fecha, isDone) de plan_vida_2026.html. */
-export async function toggleDayDone(
-  fecha: string,
-  isDone: boolean,
-): Promise<ActionResult> {
+export async function toggleDayDone(fecha: string, isDone: boolean): Promise<ActionResult> {
   const user = await getAuthedUser();
   if (!user) {
     return { ok: false, message: "No autenticado." };

@@ -42,10 +42,11 @@ export function WeekSelector({ weeks, selectedWeek, onSelectWeek }: WeekSelector
               "rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
               key === selectedMonth
                 ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent/20"
+                : "bg-muted text-muted-foreground hover:bg-accent/20",
             )}
           >
-            {MONTH_LABELS[date.getMonth() - 7] ?? date.toLocaleDateString("es-AR", { month: "long" })}
+            {MONTH_LABELS[date.getMonth() - 7] ??
+              date.toLocaleDateString("es-AR", { month: "long" })}
           </button>
         ))}
       </div>
@@ -63,7 +64,7 @@ export function WeekSelector({ weeks, selectedWeek, onSelectWeek }: WeekSelector
                 ? "border-primary bg-primary/15 text-primary"
                 : "border-border text-muted-foreground hover:bg-accent/10",
               w.isEventWeek && "ring-2 ring-destructive/50",
-              w.isPrepWeek && !w.isEventWeek && "ring-2 ring-accent/60"
+              w.isPrepWeek && !w.isEventWeek && "ring-2 ring-accent/60",
             )}
           >
             Sem {w.num}

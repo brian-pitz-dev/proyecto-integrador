@@ -6,10 +6,7 @@ const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverif
  * Set TURNSTILE_HOSTNAMES on the production deploy to the real domain(s) —
  * defaults to "localhost" for local dev only.
  */
-export async function verifyTurnstileToken(
-  token: string,
-  remoteip: string,
-): Promise<boolean> {
+export async function verifyTurnstileToken(token: string, remoteip: string): Promise<boolean> {
   const expectedAction = "login";
   const expectedHostnames = new Set(
     (process.env.TURNSTILE_HOSTNAMES ?? "localhost,127.0.0.1")

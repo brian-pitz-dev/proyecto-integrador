@@ -8,7 +8,7 @@
 
 **Input**: User description: "002-frontend-redesign: Rediseño completo del frontend de PlandeVida2026 (post migración a Next.js, etapa 001-nextjs-migration ya cerrada). Basado en feedback del usuario del 2026-08-30, el rediseño debe cubrir cinco ejes: (1) Paleta de colores, (2) UX/UI general, (3) Desplazamiento (scroll/navegación entre secciones), (4) Animaciones, (5) Contenido y formato en pantalla en cada página (registro, calendario, estadísticas). El paso de ui-ux-pro-max en la etapa anterior fue insuficiente (solo iconografía, tipografía y color de acento); esta etapa corre ui-ux-pro-max --design-system de forma completa."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Nueva paleta e identidad visual coherente (Priority: P1)
 
@@ -132,7 +132,7 @@ Como usuario (y como responsable técnico de la app), quiero que la app tenga lo
 - ¿Qué pasa si el usuario entra al selector de mes/semana sin elegir nada? Debe mostrarse por defecto el mes y la semana actuales según la fecha del sistema.
 - ¿Qué pasa si el usuario intenta navegar a una semana anterior al 17 de agosto de 2026 o posterior al 31 de diciembre de 2026? No debe ser posible seleccionar meses/semanas fuera de ese rango, ya que el plan no tiene contenido definido fuera de él.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -165,7 +165,7 @@ Como usuario (y como responsable técnico de la app), quiero que la app tenga lo
 - **Plan de comidas (meal bank)**: conjunto de opciones de comida agrupadas por tipo (desayuno, colación/media mañana, almuerzo, merienda, cena), cada una con nombre, detalle e ingredientes con cantidad; se selecciona por día mediante una rotación determinística, análoga a `Session` en el plan de gimnasio (`lib/training-plan.ts`). No es dato de usuario ni se guarda en Supabase.
 - **Semana del plan**: número de semana, fecha de inicio/fin, fase de entrenamiento y si coincide con un evento o su semana de preparación previa; ya existe como estructura interna en `lib/training-plan.ts` (no exportada hoy) y se reutiliza como base tanto para el selector de Calendario como el de Nutrición. No es dato de Supabase.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

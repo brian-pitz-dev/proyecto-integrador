@@ -1,0 +1,8 @@
+.next
+node_modules
+Backups
+graphify-out
+Deploy_V1
+plan_vida_2026.html
+*.tsbuildinfo
+package-lock.json

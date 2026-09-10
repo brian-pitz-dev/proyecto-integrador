@@ -79,7 +79,7 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
               "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
               i === day
                 ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent/20"
+                : "bg-muted text-muted-foreground hover:bg-accent/20",
             )}
           >
             {label}

@@ -30,14 +30,14 @@ Rediseño completo del frontend de PlandeVida2026 (Next.js App Router ya migrado
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principio | Chequeo | Estado |
-|---|---|---|
-| I. Next.js + TypeScript Stack | Todo código nuevo (sidebar, modales, tokens) va en TS estricto, respetando convenciones de App Router / server-client components existentes | PASS |
-| II. Documentación Actualizada vía Context7 | Antes de implementar patrones de Next.js 16 (metadata API para SEO/US5, App Router) o Supabase que no estén ya resueltos en el código existente, se consulta context7 | PASS (a verificar en implementación) |
-| III. Diseño Visual bajo ui-ux-pro-max | Todo el rediseño (paleta, tipografía, tokens, sidebar, motion) se ejecuta a través de `ui-ux-pro-max --design-system`, sin sistema de diseño paralelo — ver research.md Decisión 3-5 | PASS |
-| IV. Schema de Supabase Inmutable | Ninguna decisión de este plan toca tablas/columnas/RLS; el modal de carga reusa la misma forma de dato (`Registro`) que los formularios actuales; el plan de comidas nuevo (`/nutricion`) se modela como constante en código (`lib/meal-plan.ts`), igual que `lib/training-plan.ts`, sin persistencia en Supabase — no dispara el requisito de aprobación explícita de cambio de esquema | PASS |
+| Principio                                  | Chequeo                                                                                                                                                                                                                                                                                                                                                                                  | Estado                               |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| I. Next.js + TypeScript Stack              | Todo código nuevo (sidebar, modales, tokens) va en TS estricto, respetando convenciones de App Router / server-client components existentes                                                                                                                                                                                                                                              | PASS                                 |
+| II. Documentación Actualizada vía Context7 | Antes de implementar patrones de Next.js 16 (metadata API para SEO/US5, App Router) o Supabase que no estén ya resueltos en el código existente, se consulta context7                                                                                                                                                                                                                    | PASS (a verificar en implementación) |
+| III. Diseño Visual bajo ui-ux-pro-max      | Todo el rediseño (paleta, tipografía, tokens, sidebar, motion) se ejecuta a través de `ui-ux-pro-max --design-system`, sin sistema de diseño paralelo — ver research.md Decisión 3-5                                                                                                                                                                                                     | PASS                                 |
+| IV. Schema de Supabase Inmutable           | Ninguna decisión de este plan toca tablas/columnas/RLS; el modal de carga reusa la misma forma de dato (`Registro`) que los formularios actuales; el plan de comidas nuevo (`/nutricion`) se modela como constante en código (`lib/meal-plan.ts`), igual que `lib/training-plan.ts`, sin persistencia en Supabase — no dispara el requisito de aprobación explícita de cambio de esquema | PASS                                 |
 
 **Re-chequeo post-diseño (Fase 1)**: data-model.md confirma que no se agregan entidades de negocio persistidas ni cambios de esquema — el plan de comidas es contenido estático en código (mismo patrón que el plan de gimnasio), y el resto son design tokens y estado de UI cliente. Sin violaciones. Gate sigue en PASS.
 
@@ -90,4 +90,4 @@ lib/
 
 ## Complexity Tracking
 
-*Sin violaciones de la Constitution Check — sección no aplica.*
+_Sin violaciones de la Constitution Check — sección no aplica._

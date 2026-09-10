@@ -39,13 +39,21 @@ export function todayNormalized(): Date {
 }
 
 export const MONTHS_ES = [
-  "ene", "feb", "mar", "abr", "may", "jun",
-  "jul", "ago", "sep", "oct", "nov", "dic",
+  "ene",
+  "feb",
+  "mar",
+  "abr",
+  "may",
+  "jun",
+  "jul",
+  "ago",
+  "sep",
+  "oct",
+  "nov",
+  "dic",
 ];
 
-export const DAYS_ES = [
-  "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado",
-];
+export const DAYS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
 export function formatShort(d: Date): string {
   return `${d.getDate()} ${MONTHS_ES[d.getMonth()]}`;

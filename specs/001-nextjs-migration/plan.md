@@ -46,20 +46,20 @@ categorías de registro sobre una sola tabla
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principio | Cumplimiento |
-|---|---|
-| I. Next.js + TypeScript Stack | ✅ App Router + TypeScript estricto elegidos explícitamente (research.md §1) |
-| II. Documentación vía Context7 | ✅ Decisiones de Next.js/Supabase validadas contra `/vercel/next.js` y `/supabase/ssr` en research.md, no contra memoria |
-| III. Diseño visual bajo ui-ux-pro-max | ✅ Stack de UI (shadcn/ui + Tailwind) tomado del sub-skill `ui-styling` de `ui-ux-pro-max` (research.md §5) |
-| IV. Schema de Supabase inmutable | ✅ `data-model.md` documenta el schema existente sin proponer ningún cambio; ninguna tarea de esta etapa incluye `ALTER`/`DROP`/migraciones |
+| Principio                             | Cumplimiento                                                                                                                                |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| I. Next.js + TypeScript Stack         | ✅ App Router + TypeScript estricto elegidos explícitamente (research.md §1)                                                                |
+| II. Documentación vía Context7        | ✅ Decisiones de Next.js/Supabase validadas contra `/vercel/next.js` y `/supabase/ssr` en research.md, no contra memoria                    |
+| III. Diseño visual bajo ui-ux-pro-max | ✅ Stack de UI (shadcn/ui + Tailwind) tomado del sub-skill `ui-styling` de `ui-ux-pro-max` (research.md §5)                                 |
+| IV. Schema de Supabase inmutable      | ✅ `data-model.md` documenta el schema existente sin proponer ningún cambio; ninguna tarea de esta etapa incluye `ALTER`/`DROP`/migraciones |
 
 **Resultado**: PASS. Sin violaciones que requieran justificación en Complexity
 Tracking.
 
-*(Re-chequeado post Fase 1: sin cambios — data-model.md y contracts/ no introducen
-ninguna estructura nueva de Supabase ni se apartan del stack fijado.)*
+_(Re-chequeado post Fase 1: sin cambios — data-model.md y contracts/ no introducen
+ninguna estructura nueva de Supabase ni se apartan del stack fijado.)_
 
 ## Project Structure
 
@@ -111,4 +111,4 @@ directamente desde `lib/supabase/`.
 
 ## Complexity Tracking
 
-*Sin violaciones de Constitution Check — sección no aplica.*
+_Sin violaciones de Constitution Check — sección no aplica._

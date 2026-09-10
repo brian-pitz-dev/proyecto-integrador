@@ -20,7 +20,7 @@
 - `@supabase/ssr` and `@supabase/supabase-js` are already installed dependencies; no `middleware.ts` exists yet.
 - App routes: `/registro`, `/calendario`, `/estadisticas`, `/nutricion`.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Personal data is no longer publicly writable (Priority: P1)
 
@@ -126,7 +126,7 @@ As the app's owner, the deployed app enforces HTTPS everywhere, the login page r
 - What happens if someone reaches a Netlify deploy-preview URL directly (not through search)? → It must still require login (User Story 2) even though it's also marked `noindex` (User Story 4) — the two protections are independent layers.
 - What happens if optional hardening items (2FA, JSON-LD, `llms.txt`) are skipped for this pass? → They are explicitly out of scope for MVP completion and tracked as optional follow-ups, not blockers.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -150,7 +150,7 @@ As the app's owner, the deployed app enforces HTTPS everywhere, the login page r
 - **FR-018**: The two legacy tracked files containing the old client-side app and hardcoded anon key (`plan_vida_2026.html`, `Deploy_V1/plan_vida_2026 copy.html`) MUST no longer be part of the deployed/tracked working tree once this feature is complete, unless the owner explicitly decides to keep them.
 - **FR-019**: Previously verified UI behaviors (hover states, loading animations, mobile menu) MUST continue to function correctly after this feature's changes.
 
-*Deferred to a follow-up (optional, not required for this feature to be considered done)*: two-factor/TOTP login, `llms.txt`, JSON-LD structured data.
+_Deferred to a follow-up (optional, not required for this feature to be considered done)_: two-factor/TOTP login, `llms.txt`, JSON-LD structured data.
 
 ### Key Entities
 
@@ -158,7 +158,7 @@ As the app's owner, the deployed app enforces HTTPS everywhere, the login page r
 - **Registro entry**: An existing personal data record (`categoria`, `fecha`, `valor`, `nota`, timestamps) that, after this feature, is also scoped to exactly one owner identity.
 - **Session**: The proof that a request comes from the authenticated owner; created at login, checked on every request to a protected page or data operation, and expires after a period of inactivity.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

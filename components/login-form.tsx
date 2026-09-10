@@ -84,9 +84,7 @@ export function LoginForm() {
 
   return (
     <Card className="mx-auto w-full max-w-sm">
-      {TURNSTILE_SITE_KEY && (
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" />
-      )}
+      {TURNSTILE_SITE_KEY && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" />}
       <CardHeader>
         <CardTitle>Iniciar sesión</CardTitle>
       </CardHeader>

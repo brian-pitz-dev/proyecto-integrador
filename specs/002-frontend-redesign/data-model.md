@@ -4,18 +4,18 @@ Esta feature es mayormente visual/UX y no toca el esquema de Supabase (Principio
 
 ## Design Tokens (CSS variables, `app/globals.css`)
 
-| Token | Descripción | Cambia en esta etapa |
-|---|---|---|
-| `--background`, `--foreground` | Fondo/texto base | Sí (paleta nueva, modo oscuro por defecto) |
-| `--primary`, `--primary-foreground` | Color de acento principal | Sí (reemplaza el verde-azulado, hue ~165) |
-| `--accent`, `--accent-foreground` | Acento secundario | Sí |
-| `--secondary`, `--muted`, `--destructive` | Estados neutro/atenuado/error | Sí, dentro de la paleta complementaria |
-| `--border`, `--input`, `--ring` | Bordes y foco | Sí |
-| `--chart-1`..`--chart-5` | Serie de colores para gráficos de Estadísticas | Sí |
-| `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-accent`, `--sidebar-border`, `--sidebar-ring` | Tokens del menú lateral nuevo | Sí (hoy definidos pero sin consumidor) |
-| `--font-sans` | Fuente principal (`Plus_Jakarta_Sans`, ya cargada) | No |
-| `--font-mono` | Fuente monoespaciada — hoy apunta a una variable no cargada | Sí (pasa a `JetBrains_Mono` vía `next/font/google`) |
-| `--radius` y derivados | Radios de borde | No (se mantiene el estilo `base-nova`) |
+| Token                                                                                                              | Descripción                                                 | Cambia en esta etapa                                |
+| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | --------------------------------------------------- |
+| `--background`, `--foreground`                                                                                     | Fondo/texto base                                            | Sí (paleta nueva, modo oscuro por defecto)          |
+| `--primary`, `--primary-foreground`                                                                                | Color de acento principal                                   | Sí (reemplaza el verde-azulado, hue ~165)           |
+| `--accent`, `--accent-foreground`                                                                                  | Acento secundario                                           | Sí                                                  |
+| `--secondary`, `--muted`, `--destructive`                                                                          | Estados neutro/atenuado/error                               | Sí, dentro de la paleta complementaria              |
+| `--border`, `--input`, `--ring`                                                                                    | Bordes y foco                                               | Sí                                                  |
+| `--chart-1`..`--chart-5`                                                                                           | Serie de colores para gráficos de Estadísticas              | Sí                                                  |
+| `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-accent`, `--sidebar-border`, `--sidebar-ring` | Tokens del menú lateral nuevo                               | Sí (hoy definidos pero sin consumidor)              |
+| `--font-sans`                                                                                                      | Fuente principal (`Plus_Jakarta_Sans`, ya cargada)          | No                                                  |
+| `--font-mono`                                                                                                      | Fuente monoespaciada — hoy apunta a una variable no cargada | Sí (pasa a `JetBrains_Mono` vía `next/font/google`) |
+| `--radius` y derivados                                                                                             | Radios de borde                                             | No (se mantiene el estilo `base-nova`)              |
 
 Reglas de validación: todo color nuevo se define como token en `:root`/`.dark`, ningún componente usa un color hardcodeado fuera de estos tokens (ver FR-001/FR-002 del spec).
 
@@ -32,12 +32,12 @@ No hay transiciones de estado de negocio nuevas ni entidades persistidas nuevas 
 
 Portado 1:1 desde `plan_vida_2026.html` (mismo patrón que `lib/training-plan.ts`). No es dato de Supabase — Principio IV no se activa, no requiere aprobación de cambio de esquema.
 
-| Campo | Tipo | Descripción |
-|---|---|---|
-| `tipo` | `"desayuno" \| "media" \| "almuerzo" \| "merienda" \| "cena"` | Grupo de comida del día |
-| `name` | `string` | Nombre corto de la opción (ej. "Pollo + arroz + espinaca") |
-| `detail` | `string` | Detalle de porciones/preparación |
-| `ingredientes` | `{ id: string; cantidad: number \| null }[]` | Ingredientes con cantidad en gramos (o `null` si no aplica, ej. batidos por scoop) |
+| Campo          | Tipo                                                          | Descripción                                                                        |
+| -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `tipo`         | `"desayuno" \| "media" \| "almuerzo" \| "merienda" \| "cena"` | Grupo de comida del día                                                            |
+| `name`         | `string`                                                      | Nombre corto de la opción (ej. "Pollo + arroz + espinaca")                         |
+| `detail`       | `string`                                                      | Detalle de porciones/preparación                                                   |
+| `ingredientes` | `{ id: string; cantidad: number \| null }[]`                  | Ingredientes con cantidad en gramos (o `null` si no aplica, ej. batidos por scoop) |
 
 **Rotación**: función determinística (portada de `buildRecencySequence` / `pickAlmuerzo` / `pickCena`) que, dado el número de semana y el día, selecciona una opción del banco sin repetir dentro del ciclo de rotación, y evita que cena y merienda del mismo día coincidan.
 
@@ -49,12 +49,12 @@ Portado 1:1 desde `plan_vida_2026.html` (mismo patrón que `lib/training-plan.ts
 
 Estructura ya calculada internamente por `training-plan.ts` (array `weeks`), hoy no exportada. Se expone vía una función tipo `getWeeks()` para que el `WeekSelector` compartido (Calendario y Nutrición) la consuma.
 
-| Campo | Tipo | Descripción |
-|---|---|---|
-| `num` | `number` | Número de semana dentro del plan (1..N) |
-| `start` | `Date` | Lunes de inicio de esa semana |
-| `phase` | referencia a `PhaseDef` | Fase de entrenamiento a la que pertenece (ya existe) |
+| Campo         | Tipo                        | Descripción                                                              |
+| ------------- | --------------------------- | ------------------------------------------------------------------------ |
+| `num`         | `number`                    | Número de semana dentro del plan (1..N)                                  |
+| `start`       | `Date`                      | Lunes de inicio de esa semana                                            |
+| `phase`       | referencia a `PhaseDef`     | Fase de entrenamiento a la que pertenece (ya existe)                     |
 | `isEventWeek` | `boolean` (nuevo, derivado) | `true` si la semana contiene la fecha de `EV_10K`, `EV_LUJAN` o `EV_21K` |
-| `isPrepWeek` | `boolean` (nuevo, derivado) | `true` si es la semana inmediatamente anterior a una semana de evento |
+| `isPrepWeek`  | `boolean` (nuevo, derivado) | `true` si es la semana inmediatamente anterior a una semana de evento    |
 
 Rango válido: `PLAN_START` (2026-08-17) a `PLAN_END` (2026-12-31), ya definidos en `training-plan.ts`. No es dato de Supabase; se deriva 100% de constantes ya existentes en el código.

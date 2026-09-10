@@ -30,14 +30,14 @@ Cierra el gap de seguridad confirmado en la investigación P0 (RLS con policy "p
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principio | Chequeo | Estado |
-|---|---|---|
-| I. Next.js + TypeScript Stack | Todo código nuevo (`proxy.ts`, `app/login/`, esquemas `zod`, helper `getAuthedUser()`) va en TS estricto; se sigue la convención vigente de Next.js 16 (`proxy.ts`, no el `middleware.ts` deprecado) en vez de reinventar o usar la convención vieja | PASS |
-| II. Documentación Actualizada vía Context7 | Consultado context7 (`supabase/supabase`) para el patrón `@supabase/ssr` + proxy + cookies `getAll`/`setAll`, y para las policies RLS `auth.uid() = user_id`; consultado `node_modules/next/dist/docs/` para confirmar `proxy.ts` reemplaza a `middleware.ts` en esta versión y para la Metadata API (`robots`/`alternates.canonical`) — ver research.md Decisiones 1-3, 9 | PASS |
-| III. Diseño Visual bajo ui-ux-pro-max | La única UI nueva es la pantalla `/login` (formulario email+password+Turnstile) y el mensaje de confirmación destructiva; se implementan con los componentes shadcn/`@base-ui/react` ya instalados por 002, sin introducir un sistema de diseño paralelo | PASS (verificar con `ui-ux-pro-max` en implementación de `/login`) |
-| IV. Schema de Supabase Inmutable sin Aprobación Explícita | El único cambio de schema (columna `user_id` + backfill + policies) está explícitamente pedido por el usuario en el mensaje que originó esta feature (P0: "agregar columna, backfillear... activar RLS"); el SQL exacto está documentado y aislado en `contracts/rls-migration.sql` para revisión antes de ejecutarse, no se ejecuta ningún otro `ALTER`/`DROP` fuera de ese archivo | PASS |
+| Principio                                                 | Chequeo                                                                                                                                                                                                                                                                                                                                                                              | Estado                                                             |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| I. Next.js + TypeScript Stack                             | Todo código nuevo (`proxy.ts`, `app/login/`, esquemas `zod`, helper `getAuthedUser()`) va en TS estricto; se sigue la convención vigente de Next.js 16 (`proxy.ts`, no el `middleware.ts` deprecado) en vez de reinventar o usar la convención vieja                                                                                                                                 | PASS                                                               |
+| II. Documentación Actualizada vía Context7                | Consultado context7 (`supabase/supabase`) para el patrón `@supabase/ssr` + proxy + cookies `getAll`/`setAll`, y para las policies RLS `auth.uid() = user_id`; consultado `node_modules/next/dist/docs/` para confirmar `proxy.ts` reemplaza a `middleware.ts` en esta versión y para la Metadata API (`robots`/`alternates.canonical`) — ver research.md Decisiones 1-3, 9           | PASS                                                               |
+| III. Diseño Visual bajo ui-ux-pro-max                     | La única UI nueva es la pantalla `/login` (formulario email+password+Turnstile) y el mensaje de confirmación destructiva; se implementan con los componentes shadcn/`@base-ui/react` ya instalados por 002, sin introducir un sistema de diseño paralelo                                                                                                                             | PASS (verificar con `ui-ux-pro-max` en implementación de `/login`) |
+| IV. Schema de Supabase Inmutable sin Aprobación Explícita | El único cambio de schema (columna `user_id` + backfill + policies) está explícitamente pedido por el usuario en el mensaje que originó esta feature (P0: "agregar columna, backfillear... activar RLS"); el SQL exacto está documentado y aislado en `contracts/rls-migration.sql` para revisión antes de ejecutarse, no se ejecuta ningún otro `ALTER`/`DROP` fuera de ese archivo | PASS                                                               |
 
 **Re-chequeo post-diseño (Fase 1)**: `data-model.md` y `contracts/rls-migration.sql` confirman que el único cambio de schema es exactamente el aprobado (columna `user_id` + 4 policies reemplazando la policy abierta); no se agregó ninguna tabla, columna o política adicional no pedida. Sin violaciones. Gate sigue en PASS.
 
@@ -95,4 +95,4 @@ plan_vida_2026.html                 # REMOVIDO del working tree (git rm --cached
 
 ## Complexity Tracking
 
-*Sin violaciones de la Constitution Check — sección no aplica.*
+_Sin violaciones de la Constitution Check — sección no aplica._

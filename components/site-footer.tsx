@@ -27,7 +27,9 @@ export function SiteFooter() {
             className={cn(
               "flex-1 py-3 text-center text-sm font-medium capitalize transition-colors",
               i > 0 && "border-l border-border",
-              tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+              tab === t
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted",
             )}
           >
             {t}

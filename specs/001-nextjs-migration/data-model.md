@@ -9,24 +9,24 @@ revés.
 
 Única tabla usada por la aplicación. Cada fila es un evento cargado por el usuario.
 
-| Columna     | Tipo (inferido) | Descripción                                                        |
-|-------------|------------------|----------------------------------------------------------------------|
-| `id`        | identificador único (usado en `.delete().eq("id", id)`) | Clave primaria del registro. |
-| `categoria` | texto            | Discrimina el tipo de evento. Valores usados hoy: `tirada`, `caminata`, `calorias`, `peso`, `sueno`, `completado`. |
-| `fecha`     | fecha (ISO `YYYY-MM-DD`) | Fecha a la que corresponde el registro. |
-| `valor`     | numérico         | Magnitud del registro (km, calorías, kg, horas, o `1` para `completado`). |
-| `nota`      | texto, opcional  | Texto libre asociado. Usado hoy solo por `tirada` para guardar tiempo y ritmo (`"1:15:30 · 5:30/km"`). |
+| Columna     | Tipo (inferido)                                         | Descripción                                                                                                        |
+| ----------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `id`        | identificador único (usado en `.delete().eq("id", id)`) | Clave primaria del registro.                                                                                       |
+| `categoria` | texto                                                   | Discrimina el tipo de evento. Valores usados hoy: `tirada`, `caminata`, `calorias`, `peso`, `sueno`, `completado`. |
+| `fecha`     | fecha (ISO `YYYY-MM-DD`)                                | Fecha a la que corresponde el registro.                                                                            |
+| `valor`     | numérico                                                | Magnitud del registro (km, calorías, kg, horas, o `1` para `completado`).                                          |
+| `nota`      | texto, opcional                                         | Texto libre asociado. Usado hoy solo por `tirada` para guardar tiempo y ritmo (`"1:15:30 · 5:30/km"`).             |
 
 ### Valores de `categoria` y su significado
 
-| `categoria`   | Origen (User Story) | `valor` representa       | `nota` |
-|---------------|----------------------|---------------------------|--------|
-| `tirada`      | US1 (running)         | distancia en km            | `"{tiempo} · {ritmo}/km"` |
-| `caminata`    | US1 (caminata)        | distancia en km            | — |
-| `calorias`    | US1 (dieta)           | calorías del día           | — |
-| `peso`        | US1 (dieta)           | peso corporal              | — |
-| `sueno`       | US1 (dieta)           | horas de sueño (decimal)   | — |
-| `completado`  | US2 (calendario)      | siempre `1`                | — |
+| `categoria`  | Origen (User Story) | `valor` representa       | `nota`                    |
+| ------------ | ------------------- | ------------------------ | ------------------------- |
+| `tirada`     | US1 (running)       | distancia en km          | `"{tiempo} · {ritmo}/km"` |
+| `caminata`   | US1 (caminata)      | distancia en km          | —                         |
+| `calorias`   | US1 (dieta)         | calorías del día         | —                         |
+| `peso`       | US1 (dieta)         | peso corporal            | —                         |
+| `sueno`      | US1 (dieta)         | horas de sueño (decimal) | —                         |
+| `completado` | US2 (calendario)    | siempre `1`              | —                         |
 
 ### Reglas de validación (heredadas del comportamiento actual, no del schema)
 

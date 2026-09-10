@@ -5,9 +5,7 @@ import { LogoutButton } from "@/components/nav/logout-button";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
-export default function AppLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="flex min-h-full">
       <Sidebar />
@@ -25,9 +23,7 @@ export default function AppLayout({
 
         <SiteHeader />
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 lg:px-8">
-          {children}
-        </main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 lg:px-8">{children}</main>
 
         <SiteFooter />
       </div>
