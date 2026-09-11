@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { CircleCheck, Scale, Moon, Flame, PersonStanding, Footprints } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GymStreakAlert } from "@/components/stats/gym-streak-alert";
-import { RunPaceAlert } from "@/components/stats/run-pace-alert";
-import { MissingDataAlert } from "@/components/stats/missing-data-alert";
+import { AlertBadge } from "@/components/stats/alert-badge";
 import { RegistroCategoryCard } from "@/components/log-form/registro-category-card";
 import { RunForm } from "@/components/log-form/run-form";
 import { NumericLogForm } from "@/components/log-form/numeric-log-form";
@@ -158,9 +156,21 @@ export default async function EstadisticasPage() {
             <CardTitle className="text-destructive">Necesita atención</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2">
-            {missingYesterdayItems.length > 0 && <MissingDataAlert items={missingYesterdayItems} />}
-            {gymAtRisk && <GymStreakAlert atRisk />}
-            {runAtRisk && <RunPaceAlert atRisk />}
+            <AlertBadge
+              atRisk={missingYesterdayItems.length > 0}
+              label={`Todavía no cargaste hoy: ${missingYesterdayItems.join(", ")}`}
+              okLabel="Registro del día al día"
+            />
+            <AlertBadge
+              atRisk={gymAtRisk}
+              label="Perdiste 3 o más sesiones de gym programadas seguidas"
+              okLabel="Racha de gym al día"
+            />
+            <AlertBadge
+              atRisk={runAtRisk}
+              label="Tu ritmo de las últimas 2 tiradas de sábado no mejoró"
+              okLabel="Ritmo de running al día"
+            />
           </CardContent>
         </Card>
       ) : (
