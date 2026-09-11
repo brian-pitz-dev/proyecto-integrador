@@ -31,7 +31,7 @@ export function WeekSelector({ weeks, selectedWeek, onSelectWeek }: WeekSelector
   const weeksOfMonth = weeks.filter((w) => monthKey(w.start) === selectedMonth);
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-4">
       <div className="flex flex-wrap gap-1">
         {monthsInPlan.map(({ key, date }) => (
           <button
