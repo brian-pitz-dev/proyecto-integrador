@@ -7,3 +7,9 @@ export interface Registro {
   valor: number;
   nota: string | null;
 }
+
+/** Shape común de retorno de los server actions que modifican datos. */
+export interface ActionResult {
+  ok: boolean;
+  message?: string;
+}

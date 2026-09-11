@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { toggleDayDoneSchema } from "@/lib/validation/registro";
-import type { ActionResult } from "@/app/registro/actions";
+import type { ActionResult } from "@/lib/types";
 
 function revalidateAffectedRoutes() {
   revalidatePath("/calendario");

@@ -5,11 +5,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isRateLimited, recordFailedAttempt, clearAttempts } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
-
-export interface ActionResult {
-  ok: boolean;
-  message?: string;
-}
+import type { ActionResult } from "@/lib/types";
 
 const loginSchema = z.object({
   email: z.string().trim().email(),

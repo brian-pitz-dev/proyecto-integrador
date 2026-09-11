@@ -5,12 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { saveLogSchema } from "@/lib/validation/registro";
 import { isSaveLogRateLimited, recordSaveLogAttempt } from "@/lib/rate-limit";
-import type { Categoria } from "@/lib/types";
-
-export interface ActionResult {
-  ok: boolean;
-  message?: string;
-}
+import type { Categoria, ActionResult } from "@/lib/types";
 
 function revalidateAffectedRoutes() {
   revalidatePath("/calendario");

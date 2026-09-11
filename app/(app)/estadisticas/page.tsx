@@ -6,9 +6,8 @@ import { RunPaceAlert } from "@/components/stats/run-pace-alert";
 import { MissingDataAlert } from "@/components/stats/missing-data-alert";
 import { RegistroCategoryCard } from "@/components/log-form/registro-category-card";
 import { RunForm } from "@/components/log-form/run-form";
-import { WalkForm } from "@/components/log-form/walk-form";
+import { NumericLogForm } from "@/components/log-form/numeric-log-form";
 import { CalorieForm } from "@/components/log-form/calorie-form";
-import { WeightForm } from "@/components/log-form/weight-form";
 import { SleepForm } from "@/components/log-form/sleep-form";
 import { createClient } from "@/lib/supabase/server";
 import { checkGymStreak, checkRunAlert } from "@/lib/streaks";
@@ -240,7 +239,12 @@ export default async function EstadisticasPage() {
             buttonLabel="Registrar peso"
             entries={entriesOf(peso, (r) => `${r.valor} kg`)}
           >
-            <WeightForm />
+            <NumericLogForm
+              categoria="peso"
+              fieldLabel="Peso (kg)"
+              step="0.1"
+              successMessage="Peso guardado"
+            />
           </RegistroCategoryCard>
 
           <RegistroCategoryCard
@@ -267,7 +271,12 @@ export default async function EstadisticasPage() {
             buttonLabel="Registrar caminata"
             entries={entriesOf(caminata, (r) => `${r.valor} km`)}
           >
-            <WalkForm />
+            <NumericLogForm
+              categoria="caminata"
+              fieldLabel="Distancia (km)"
+              step="0.01"
+              successMessage="Caminata guardada"
+            />
           </RegistroCategoryCard>
 
           <RegistroCategoryCard
