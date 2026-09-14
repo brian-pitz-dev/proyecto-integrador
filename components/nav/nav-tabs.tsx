@@ -10,7 +10,7 @@ export function NavTabs() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex min-w-0 items-center gap-2 overflow-x-auto">
+    <nav className="hidden min-w-0 items-center gap-2 overflow-x-auto lg:flex">
       {NAV_ITEMS.map(({ href, label, Icon }, i) => {
         const active = pathname.startsWith(href);
         return (

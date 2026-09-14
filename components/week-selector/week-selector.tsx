@@ -32,24 +32,18 @@ export function WeekSelector({ weeks, selectedWeek, onSelectWeek }: WeekSelector
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-wrap gap-1">
+      <select
+        value={selectedMonth}
+        onChange={(e) => setSelectedMonth(e.target.value)}
+        className="rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground"
+      >
         {monthsInPlan.map(({ key, date }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setSelectedMonth(key)}
-            className={cn(
-              "rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
-              key === selectedMonth
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent/20",
-            )}
-          >
+          <option key={key} value={key}>
             {MONTH_LABELS[date.getMonth() - 7] ??
               date.toLocaleDateString("es-AR", { month: "long" })}
-          </button>
+          </option>
         ))}
-      </div>
+      </select>
 
       <div className="flex flex-wrap gap-1.5">
         {weeksOfMonth.map((w) => (

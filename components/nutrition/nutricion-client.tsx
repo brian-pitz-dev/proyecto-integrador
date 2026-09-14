@@ -37,6 +37,8 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
   const [calorieTarget, setCalorieTarget] = useState<CalorieTarget | null>(null);
 
   const dayPlan = getMealsForDay(week, day);
+  const weekObj = weeks.find((w) => w.num === week) ?? weeks[0];
+  const weekStart = fromISO(weekObj.start);
 
   function handleSelectWeek(weekNum: number) {
     setWeek(weekNum);
@@ -82,7 +84,7 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
                 : "bg-muted text-muted-foreground hover:bg-accent/20",
             )}
           >
-            {label}
+            {label.slice(0, 3)} {addDays(weekStart, i).getDate()}
           </button>
         ))}
       </div>
