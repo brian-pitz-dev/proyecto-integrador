@@ -5,6 +5,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { getNextEvent } from "@/lib/training-plan";
 import { todayNormalized, formatShort } from "@/lib/date";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "Plan de Vida 2026",
   description: "Registro de ejercicio, dieta y calendario de entrenamiento.",

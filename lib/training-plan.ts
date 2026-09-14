@@ -1,7 +1,6 @@
 /**
  * Plan de entrenamiento semanal — portado 1:1 de plan_vida_2026.html.
  * No es dato de Supabase (Principio IV): vive como constante en el código,
- * igual que en la app original.
  */
 
 import { toISO } from "@/lib/date";
