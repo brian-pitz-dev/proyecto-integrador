@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { Select as SelectPrimitive } from "@base-ui/react/select";
+import { ChevronDown } from "lucide-react";
 import { addDays, fromISO, toISO } from "@/lib/date";
 import type { PlanWeek } from "@/lib/training-plan";
 import { getMealsForDay } from "@/lib/meal-plan";
@@ -39,6 +40,10 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
   const dayPlan = getMealsForDay(week, day);
   const weekObj = weeks.find((w) => w.num === week) ?? weeks[0];
   const weekStart = fromISO(weekObj.start);
+  const dayOptions = DAY_LABELS.map((label, i) => ({
+    idx: i,
+    label: `${label} ${addDays(weekStart, i).getDate()}`,
+  }));
 
   function handleSelectWeek(weekNum: number) {
     setWeek(weekNum);
@@ -71,23 +76,34 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
 
       <WeekSelector weeks={weeks} selectedWeek={week} onSelectWeek={handleSelectWeek} />
 
-      <div className="flex flex-wrap gap-1">
-        {DAY_LABELS.map((label, i) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => setDay(i)}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-              i === day
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent/20",
-            )}
-          >
-            {label.slice(0, 3)} {addDays(weekStart, i).getDate()}
-          </button>
-        ))}
-      </div>
+      <SelectPrimitive.Root value={day} onValueChange={(value) => setDay(value as number)}>
+        <SelectPrimitive.Trigger className="flex w-fit items-center justify-between gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground">
+          <SelectPrimitive.Value>
+            {(value: number | null) => dayOptions.find((d) => d.idx === value)?.label ?? ""}
+          </SelectPrimitive.Value>
+          <SelectPrimitive.Icon>
+            <ChevronDown className="size-4 opacity-60" aria-hidden="true" />
+          </SelectPrimitive.Icon>
+        </SelectPrimitive.Trigger>
+
+        <SelectPrimitive.Portal>
+          <SelectPrimitive.Positioner sideOffset={4}>
+            <SelectPrimitive.Popup className="z-50 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md">
+              <SelectPrimitive.List>
+                {dayOptions.map(({ idx, label }) => (
+                  <SelectPrimitive.Item
+                    key={idx}
+                    value={idx}
+                    className="cursor-default rounded-sm px-2.5 py-1.5 text-sm font-medium text-muted-foreground outline-none data-highlighted:bg-accent/20 data-selected:bg-primary data-selected:text-primary-foreground"
+                  >
+                    <SelectPrimitive.ItemText>{label}</SelectPrimitive.ItemText>
+                  </SelectPrimitive.Item>
+                ))}
+              </SelectPrimitive.List>
+            </SelectPrimitive.Popup>
+          </SelectPrimitive.Positioner>
+        </SelectPrimitive.Portal>
+      </SelectPrimitive.Root>
 
       {dayPlan.isWeekday ? (
         <div className="grid gap-4">

@@ -29,12 +29,14 @@ export function NumericLogForm({
 }: NumericLogFormProps) {
   const closeDialog = useCloseLogEntryDialog();
   const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const fieldId = `${categoria}-valor`;
   const dateId = `${categoria}-fecha`;
   const defaultDate = toISO(defaultToYesterday ? addDays(new Date(), -1) : new Date());
 
   async function handleSubmit(formData: FormData) {
+    if (pendingRef.current) return;
     const valor = Number(formData.get("valor"));
     const fecha = String(formData.get("fecha") || defaultDate);
 
@@ -43,8 +45,10 @@ export function NumericLogForm({
       return;
     }
 
+    pendingRef.current = true;
     setPending(true);
     const result = await saveLog({ categoria, fecha, valor });
+    pendingRef.current = false;
     setPending(false);
 
     if (result.ok) {

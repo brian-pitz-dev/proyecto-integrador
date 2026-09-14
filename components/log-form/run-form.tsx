@@ -13,9 +13,11 @@ import { toISO } from "@/lib/date";
 export function RunForm() {
   const closeDialog = useCloseLogEntryDialog();
   const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   async function handleSubmit(formData: FormData) {
+    if (pendingRef.current) return;
     const km = Number(formData.get("km"));
     const timeStr = String(formData.get("tiempo") ?? "").trim();
     const fecha = String(formData.get("fecha") || toISO(new Date()));
@@ -32,6 +34,7 @@ export function RunForm() {
     }
 
     const paceStr = formatPace(totalSec / km);
+    pendingRef.current = true;
     setPending(true);
     const result = await saveLog({
       categoria: "tirada",
@@ -39,6 +42,7 @@ export function RunForm() {
       valor: km,
       nota: `${timeStr} · ${paceStr}`,
     });
+    pendingRef.current = false;
     setPending(false);
 
     if (result.ok) {

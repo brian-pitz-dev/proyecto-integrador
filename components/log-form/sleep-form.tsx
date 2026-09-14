@@ -12,10 +12,12 @@ import { toISO, addDays } from "@/lib/date";
 export function SleepForm() {
   const closeDialog = useCloseLogEntryDialog();
   const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const defaultDate = toISO(addDays(new Date(), -1));
 
   async function handleSubmit(formData: FormData) {
+    if (pendingRef.current) return;
     const hs = Number(formData.get("hs") || 0);
     const min = Number(formData.get("min") || 0);
     const fecha = String(formData.get("fecha") || defaultDate);
@@ -26,8 +28,10 @@ export function SleepForm() {
     }
 
     const total = Number((hs + min / 60).toFixed(2));
+    pendingRef.current = true;
     setPending(true);
     const result = await saveLog({ categoria: "sueno", fecha, valor: total });
+    pendingRef.current = false;
     setPending(false);
 
     if (result.ok) {
