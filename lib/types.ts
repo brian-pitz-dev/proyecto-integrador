@@ -1,4 +1,11 @@
-export type Categoria = "tirada" | "caminata" | "calorias" | "peso" | "sueno" | "completado";
+export type Categoria =
+  | "tirada"
+  | "caminata"
+  | "calorias"
+  | "peso"
+  | "sueno"
+  | "completado"
+  | "evento";
 
 export interface Registro {
   id: number;

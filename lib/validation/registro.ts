@@ -1,6 +1,14 @@
 import { z } from "zod";
 
-const categoriaSchema = z.enum(["tirada", "caminata", "calorias", "peso", "sueno", "completado"]);
+const categoriaSchema = z.enum([
+  "tirada",
+  "caminata",
+  "calorias",
+  "peso",
+  "sueno",
+  "completado",
+  "evento",
+]);
 
 const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida");
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CircleCheck, Scale, Moon, Flame, PersonStanding, Footprints } from "lucide-react";
+import { CircleCheck, Scale, Moon, Flame, PersonStanding, Footprints, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertBadge } from "@/components/stats/alert-badge";
 import { RegistroCategoryCard } from "@/components/log-form/registro-category-card";
@@ -7,6 +7,7 @@ import { RunForm } from "@/components/log-form/run-form";
 import { NumericLogForm } from "@/components/log-form/numeric-log-form";
 import { CalorieForm } from "@/components/log-form/calorie-form";
 import { SleepForm } from "@/components/log-form/sleep-form";
+import { EventForm } from "@/components/log-form/event-form";
 import { createClient } from "@/lib/supabase/server";
 import { checkGymStreak, checkRunAlert } from "@/lib/streaks";
 import { getCalorieTarget, computeBmrCalibrado } from "@/lib/calorie-target";
@@ -36,6 +37,7 @@ async function fetchData() {
     { data: caloriasRows },
     { data: caminataRows },
     { data: tiradaRows },
+    { data: eventoRows },
   ] = await Promise.all([
     supabase.from("registro").select("fecha").eq("categoria", "completado"),
     supabase
@@ -68,6 +70,12 @@ async function fetchData() {
       .eq("categoria", "tirada")
       .order("fecha", { ascending: false })
       .limit(200),
+    supabase
+      .from("registro")
+      .select("*")
+      .eq("categoria", "evento")
+      .order("fecha", { ascending: false })
+      .limit(50),
   ]);
 
   return {
@@ -77,6 +85,7 @@ async function fetchData() {
     calorias: (caloriasRows as Registro[] | null) ?? [],
     caminata: (caminataRows as Registro[] | null) ?? [],
     tirada: (tiradaRows as Registro[] | null) ?? [],
+    evento: (eventoRows as Registro[] | null) ?? [],
   };
 }
 
@@ -85,7 +94,7 @@ function entriesOf(registros: Registro[], format: (r: Registro) => string) {
 }
 
 export default async function EstadisticasPage() {
-  const { completedDates, peso, sueno, calorias, caminata, tirada } = await fetchData();
+  const { completedDates, peso, sueno, calorias, caminata, tirada, evento } = await fetchData();
   const today = todayNormalized();
 
   const gymAtRisk = checkGymStreak(completedDates);
@@ -112,7 +121,8 @@ export default async function EstadisticasPage() {
     : null;
   const totalRunKm = tirada.reduce((a, r) => a + Number(r.valor || 0), 0);
 
-  const last3Paces = tirada
+  const last3Paces = [...tirada, ...evento]
+    .sort((a, b) => (a.fecha > b.fecha ? -1 : 1))
     .slice(0, 3)
     .map((r) => paceStrToSeconds(r.nota))
     .filter((p): p is number => p !== null);
@@ -237,6 +247,16 @@ export default async function EstadisticasPage() {
           )}
         </CardContent>
       </Card>
+
+      <RegistroCategoryCard
+        className="border-primary/30"
+        icon={<Trophy className="size-4 text-primary" aria-hidden="true" />}
+        title="Eventos del plan"
+        buttonLabel="Registrar resultado de evento"
+        entries={entriesOf(evento, (r) => `${r.nota} — ${r.valor} km`)}
+      >
+        <EventForm />
+      </RegistroCategoryCard>
 
       <section className="grid gap-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

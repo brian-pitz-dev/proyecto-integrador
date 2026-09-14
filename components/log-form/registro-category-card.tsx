@@ -31,6 +31,7 @@ interface RegistroCategoryCardProps {
   entries: RegistroEntry[];
   buttonLabel: string;
   children: ReactNode;
+  className?: string;
 }
 
 /** Card por categoría (Stats): últimos 5 registros + botón para abrir el modal de carga. */
@@ -40,11 +41,12 @@ export function RegistroCategoryCard({
   entries,
   buttonLabel,
   children,
+  className,
 }: RegistroCategoryCardProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader className="border-b">
         <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           {icon}
@@ -57,10 +59,12 @@ export function RegistroCategoryCard({
         ) : (
           <ul className="-my-1 divide-y divide-border">
             {entries.map((entry) => (
-              <li key={entry.id} className="flex items-center gap-3 py-2 text-sm">
-                <span className="min-w-0 flex-1 truncate">{entry.label}</span>
-                <span className="shrink-0 text-muted-foreground">{entry.date}</span>
-                <DeleteLogButton id={entry.id} />
+              <li key={entry.id} className="grid gap-1 py-2 text-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1 break-words">{entry.label}</span>
+                  <DeleteLogButton id={entry.id} />
+                </div>
+                <span className="text-xs text-muted-foreground">{entry.date}</span>
               </li>
             ))}
           </ul>
