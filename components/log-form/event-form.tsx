@@ -69,6 +69,7 @@ export function EventForm() {
         >
           <SelectPrimitive.Trigger
             id="event-name"
+            type="button"
             className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground"
           >
             <SelectPrimitive.Value />
