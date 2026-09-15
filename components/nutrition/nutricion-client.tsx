@@ -87,8 +87,8 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
         </SelectPrimitive.Trigger>
 
         <SelectPrimitive.Portal>
-          <SelectPrimitive.Positioner sideOffset={4}>
-            <SelectPrimitive.Popup className="z-50 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md">
+          <SelectPrimitive.Positioner sideOffset={4} className="z-50">
+            <SelectPrimitive.Popup className="rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md">
               <SelectPrimitive.List>
                 {dayOptions.map(({ idx, label }) => (
                   <SelectPrimitive.Item
