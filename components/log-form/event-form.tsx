@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveLog } from "@/app/registro/actions";
 import { useCloseLogEntryDialog } from "@/components/log-form/registro-category-card";
-import { formatPace, parseTimeToSeconds } from "@/lib/pace";
+import { formatPace } from "@/lib/pace";
 import { toISO } from "@/lib/date";
 import { getEvents } from "@/lib/training-plan";
 
@@ -26,20 +26,17 @@ export function EventForm() {
   async function handleSubmit(formData: FormData) {
     if (pendingRef.current) return;
     const km = Number(formData.get("km"));
-    const timeStr = String(formData.get("tiempo") ?? "").trim();
+    const hs = Number(formData.get("hs") || 0);
+    const min = Number(formData.get("min") || 0);
     const fecha = String(formData.get("fecha") || toISO(new Date()));
 
-    if (!eventName || !km || !timeStr) {
+    if (!eventName || !km || (!hs && !min)) {
       toast.error("Completá evento, distancia y tiempo.");
       return;
     }
 
-    const totalSec = parseTimeToSeconds(timeStr);
-    if (Number.isNaN(totalSec)) {
-      toast.error("Formato de tiempo inválido. Usá mm:ss o hh:mm:ss");
-      return;
-    }
-
+    const totalSec = hs * 3600 + min * 60;
+    const timeLabel = hs > 0 ? `${hs}h ${min}min` : `${min}min`;
     const paceStr = formatPace(totalSec / km);
     pendingRef.current = true;
     setPending(true);
@@ -47,7 +44,7 @@ export function EventForm() {
       categoria: "evento",
       fecha,
       valor: km,
-      nota: `${eventName} · ${timeStr} · ${paceStr}`,
+      nota: `${eventName} · ${timeLabel} · ${paceStr}`,
     });
     pendingRef.current = false;
     setPending(false);
@@ -104,9 +101,15 @@ export function EventForm() {
         <Label htmlFor="event-km">Recorrido total (km)</Label>
         <Input id="event-km" name="km" type="number" step="0.01" min="0" required />
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="event-tiempo">Tiempo (mm:ss o hh:mm:ss)</Label>
-        <Input id="event-tiempo" name="tiempo" placeholder="Ej: 1:15:30" required />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="event-hs">Horas</Label>
+          <Input id="event-hs" name="hs" type="number" min="0" step="1" />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="event-min">Minutos</Label>
+          <Input id="event-min" name="min" type="number" min="0" max="59" step="1" />
+        </div>
       </div>
       <div className="grid gap-2">
         <Label htmlFor="event-fecha">Fecha</Label>

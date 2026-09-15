@@ -1,11 +1,4 @@
-/** Portado de plan_vida_2026.html: parseTimeToSeconds / formatPace. */
-
-export function parseTimeToSeconds(t: string): number {
-  const parts = t.split(":").map(Number);
-  if (parts.length === 2) return parts[0] * 60 + parts[1];
-  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  return NaN;
-}
+/** Portado de plan_vida_2026.html: formatPace. */
 
 export function formatPace(secPerKm: number): string {
   const min = Math.floor(secPerKm / 60);
