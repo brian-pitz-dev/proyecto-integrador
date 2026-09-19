@@ -22,11 +22,14 @@ export default function MancuernasPage() {
         {Object.values(dumbbellRoutines).map((routine) => (
           <div key={routine.label} className="rounded-lg border border-border p-4">
             <h2 className="mb-2 text-sm font-semibold text-foreground">{routine.label}</h2>
-            <div className="grid gap-1">
+            <div className="grid gap-3">
               {routine.exercises.map((ex) => (
-                <div key={ex.name} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="text-foreground">{ex.name}</span>
-                  <span className="text-muted-foreground">{ex.sets}</span>
+                <div key={ex.name} className="grid gap-0.5">
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="font-medium text-foreground">{ex.name}</span>
+                    <span className="text-muted-foreground">{ex.sets}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{ex.description}</p>
                 </div>
               ))}
             </div>
