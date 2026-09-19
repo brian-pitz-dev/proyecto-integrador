@@ -30,9 +30,9 @@ export function computeBmrCalibrado(peso: number): number {
 const deficitPorFase: Record<string, number> = {
   p1: 400,
   p2: 350,
-  p3: 250,
-  p4: 400,
-  p5: 200,
+  p3: 130, // reactivación post-Luján: priorizar recuperación sobre bajar de peso
+  p4: 150, // construcción 21K: casi mantenimiento, energía para sostener la carga
+  p5: 100, // tapering: casi mantenimiento + carga de carbohidratos
   p6: 550,
 };
 

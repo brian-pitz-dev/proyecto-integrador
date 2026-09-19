@@ -4,7 +4,7 @@
  * igual que lib/training-plan.ts.
  */
 
-import { getWeeks, getCarbLoadWeek } from "@/lib/training-plan";
+import { getWeeks, getCarbLoadWeeks } from "@/lib/training-plan";
 
 export type MealType = "desayuno" | "media" | "almuerzo" | "merienda" | "cena";
 
@@ -306,7 +306,7 @@ const cenaSequence = buildRecencySequence(mealBank.cena.length, ROTATION_SLOTS, 
 
 function pickAlmuerzo(weekNum: number, dayIdx: number): Meal {
   const bank = mealBank.almuerzo;
-  if (weekNum === getCarbLoadWeek()) {
+  if (getCarbLoadWeeks().includes(weekNum)) {
     const carbArr = bank.filter((m) => m.carbLoad);
     if (carbArr.length) return carbArr[dayIdx % carbArr.length];
   }

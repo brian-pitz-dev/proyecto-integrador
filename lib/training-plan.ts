@@ -117,27 +117,37 @@ function phase2Week(n: number): WeekConfig {
 
 function phase3Week(): WeekConfig {
   return {
-    mon: [restDay("Descanso — recuperación")],
-    tue: [cardioSession("4.5-5 km/h · 20-25 min · caminata muy suave")],
-    wed: [restDay("Descanso — sin piernas")],
-    thu: [cardioSession("4.5-5 km/h · 20-25 min · caminata muy suave")],
+    mon: [core(true)],
+    tue: [cardioSession("5-5.5 km/h · 25 min · caminata suave")],
+    wed: gymSession("inferiorLight", true),
+    thu: [cardioSession("6.5-7 km/h · 20 min · trote suave, primeras señales de reactivación")],
     fri: gymSession("empujeLight", true),
-    sat: [longSession("Caminata corta", "5-6 km muy suave", "walk")],
+    sat: [longSession("Trote de reactivación", "8 km, ritmo muy cómodo, sin apuro", "long")],
     sun: [restDay()],
   };
 }
 
 function phase4Week(n: number): WeekConfig {
   const runs = [
-    "12 km a ritmo cómodo",
-    "15 km, tramos a 7:30 min/km",
-    "18 km, sostené 7:30 min/km la mayor parte posible",
+    "14 km a ritmo cómodo, sin mirar el reloj",
+    "17 km, alternando 7:30 min/km con tramos más suaves si hace falta",
+    "19 km, simulá la carrera: hidratación cada 5km, caminá si lo necesitás — el objetivo es sumar el kilometraje, no el ritmo",
+  ];
+  const tuesIntervals = [
+    "10' a 7.5 km/h → 15' a 8.0 km/h → 10' a 8.5 km/h",
+    "10' a 7.5 km/h → 20' a 8.0 km/h → 10' a 8.5 km/h",
+    "10' a 7.5 km/h → 20' a 8.0 km/h → 15' a 8.5 km/h",
+  ];
+  const thuContinuo = [
+    "40 min a 8.0 km/h · continuo",
+    "45 min a 8.0 km/h · continuo, últimos 10' a 8.5 km/h",
+    "50 min a 8.0 km/h · continuo, últimos 15' a 8.5 km/h",
   ];
   return {
     mon: gymSession("empuje", true),
-    tue: [cardioSession("10' a 7.5 km/h → 15' a 8.0 km/h → 10' a 8.5 km/h")],
+    tue: [cardioSession(tuesIntervals[n - 1])],
     wed: gymSession("inferior", true),
-    thu: [cardioSession("35-40 min a 8.0 km/h · continuo")],
+    thu: [cardioSession(thuContinuo[n - 1])],
     fri: gymSession("tiron", true),
     sat: [longSession("Tirada larga", runs[n - 1])],
     sun: [restDay()],
@@ -281,7 +291,8 @@ function eventOverrideFor(date: Date): { sessions: Session[] } | null {
         {
           tag: "event",
           label: "MEDIA MARATÓN 21K — Mar del Plata",
-          detail: "Objetivo: 7:30 min/km (~2:38).",
+          detail:
+            "Objetivo: completarla. 7:30 min/km es un colchón cómodo — caminá los tramos que haga falta, no hay premio por el tiempo.",
         },
       ],
     };
@@ -326,11 +337,12 @@ export function getWeeks(): PlanWeek[] {
   }));
 }
 
-/** Última semana de la fase p2 (semana de carga de carbohidratos previa a Luján). */
-export function getCarbLoadWeek(): number | null {
-  const p2Weeks = weeks.filter((w) => w.phase.key === "p2");
-  if (!p2Weeks.length) return null;
-  return p2Weeks[p2Weeks.length - 1].num;
+/** Últimas semanas de p2 y p5 (carga de carbohidratos previa a Luján y al 21K). */
+export function getCarbLoadWeeks(): number[] {
+  return ["p2", "p5"]
+    .map((key) => weeks.filter((w) => w.phase.key === key))
+    .filter((ws) => ws.length > 0)
+    .map((ws) => ws[ws.length - 1].num);
 }
 
 export interface PlanEvent {
