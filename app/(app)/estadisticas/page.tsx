@@ -121,7 +121,8 @@ export default async function EstadisticasPage() {
     : null;
   const totalRunKm = tirada.reduce((a, r) => a + Number(r.valor || 0), 0);
 
-  const last3Paces = [...tirada, ...evento]
+  // Luján es caminata: no cuenta para el ritmo de running
+  const last3Paces = [...tirada, ...evento.filter((r) => !r.nota?.startsWith("Luján"))]
     .sort((a, b) => (a.fecha > b.fecha ? -1 : 1))
     .slice(0, 3)
     .map((r) => paceStrToSeconds(r.nota))
