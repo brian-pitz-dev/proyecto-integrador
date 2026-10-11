@@ -42,6 +42,14 @@ export const gymRoutines: Record<string, Routine> = {
       { name: "Leg Curl", sets: "4×12-15" },
     ],
   },
+  inferiorRun: {
+    label: "Piernas para correr",
+    exercises: [
+      { name: "Squat con cable", sets: "3×6-8, pesado, 2 en reserva" },
+      { name: "Leg Curl", sets: "3×8-10" },
+      { name: "Leg Extension", sets: "2×10-12" },
+    ],
+  },
   empujeLight: {
     label: "Empuje liviano",
     exercises: [

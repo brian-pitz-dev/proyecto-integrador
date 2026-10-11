@@ -27,6 +27,10 @@ const EV_21K = new Date(2026, 10, 8);
 
 export const TARGET_PACE_SEC = 7 * 60 + 30; // 7:30 min/km
 
+// Ritmos del 21K para el objetivo de 2h20m: ajustar después del test 5K del 15/10
+const RC = "6:38/km";
+const SERIES = "6:00/km";
+
 function addDays(d: Date, n: number): Date {
   const r = new Date(d);
   r.setDate(r.getDate() + n);
@@ -49,8 +53,8 @@ function core(short: boolean): Session {
   };
 }
 
-function cardioSession(desc: string): Session {
-  return { tag: "run", label: "Cinta / Cardio", detail: desc };
+function cardioSession(desc: string, label = "Cinta / Cardio"): Session {
+  return { tag: "run", label, detail: desc };
 }
 
 function gymSession(key: string, withCore?: boolean): Session[] {
@@ -128,40 +132,61 @@ function phase3Week(): WeekConfig {
 }
 
 function phase4Week(n: number): WeekConfig {
-  const runs = [
-    "14 km a ritmo cómodo, sin mirar el reloj",
-    "17 km, alternando 7:30 min/km con tramos más suaves si hace falta",
-    "19 km, simulá la carrera: hidratación cada 5km, caminá si lo necesitás — el objetivo es sumar el kilometraje, no el ritmo",
+  const piernas = [
+    { gymKey: "inferiorRun", detail: "10' de cinta + piernas · esta semana 2×8, moderado" },
+    { gymKey: "inferiorRun", detail: "10' de cinta + piernas pesadas" },
+    { gymKey: "inferiorLight", detail: "10' de cinta + última sesión de piernas" },
   ];
-  const tuesIntervals = [
-    "10' a 7.5 km/h → 15' a 8.0 km/h → 10' a 8.5 km/h",
-    "10' a 7.5 km/h → 20' a 8.0 km/h → 10' a 8.5 km/h",
-    "10' a 7.5 km/h → 20' a 8.0 km/h → 15' a 8.5 km/h",
+  const series = [
+    `35' suave (7:30-7:45) + 4 aceleraciones de 20"`,
+    `10' suave + 5×1 km a ${SERIES} (2' trote) + 10' suave`,
+    `10' suave + 4×1 km a ${SERIES} (2' trote) + 10' suave`,
   ];
-  const thuContinuo = [
-    "40 min a 8.0 km/h · continuo",
-    "45 min a 8.0 km/h · continuo, últimos 10' a 8.5 km/h",
-    "50 min a 8.0 km/h · continuo, últimos 15' a 8.5 km/h",
+  const casa = [
+    "Romanian deadlift 2×8 + gemelos a una pierna 2×12",
+    "Romanian deadlift 3×8 + gemelos a una pierna 3×12",
+    "Gemelos a una pierna 2×12",
   ];
+  const thu = [
+    "Mañana, en el gym: cinta al 1% · 10' de entrada en calor · 5 km parejo al máximo · 10' de vuelta a la calma. Anotá el tiempo.",
+    `10' suave + 2×4 km a ${RC} (3' trote) + 5' suave`,
+    `10' suave + 5 km a ${RC} + 5' suave`,
+  ];
+  const sat = [
+    `13 km: 11 suave + 2 a ${RC}`,
+    `16 km a las 7-8 h: 8 suave + 6 a ${RC} + 2 suave · desayuno 3 h antes, geles a los 45' y 90', ropa y zapatillas de carrera`,
+    `12 km: 6 suave + 6 a ${RC}`,
+  ];
+  const cinta = (min: number) => `Caminata inclinada ${min}' · 5.5 km/h · 8-10%`;
   return {
-    mon: gymSession("empuje", true),
-    tue: [cardioSession(tuesIntervals[n - 1])],
-    wed: gymSession("inferior", true),
-    thu: [cardioSession(thuContinuo[n - 1])],
-    fri: gymSession("tiron", true),
-    sat: [longSession("Tirada larga", runs[n - 1])],
+    mon: [cardioSession(cinta(n === 2 ? 55 : 50)), core(false)],
+    tue: [
+      { tag: "gym", label: "Gym", ...piernas[n - 1] },
+      cardioSession(series[n - 1], "Correr afuera"),
+      { tag: "core", label: "Casa — mancuernas", detail: casa[n - 1] },
+    ],
+    wed: [cardioSession(cinta([50, 55, 45][n - 1])), core(n === 3)],
+    thu: [cardioSession(thu[n - 1], n === 1 ? "TEST 5K" : "Ritmo de carrera — afuera")],
+    fri: [restDay(n === 2 ? "Descanso — cena con carbohidratos (ensayo)" : undefined)],
+    sat: [longSession(n === 2 ? "ENSAYO GENERAL" : "Tirada larga", sat[n - 1])],
     sun: [restDay()],
   };
 }
 
 function phase5Week(): WeekConfig {
   return {
-    mon: gymSession("empujeLight", true),
-    tue: [cardioSession("7.0 km/h · 20 min · suave")],
-    wed: [restDay("Descanso — piernas frescas")],
-    thu: [cardioSession("6.5-7 km/h · 15 min · activación muy suave")],
-    fri: [restDay("Descanso — 2 días antes de la carrera")],
-    sat: [restDay("Descanso / preparar ropa y zapatillas")],
+    mon: [cardioSession("Caminata suave 30' · 5 km/h · 3-5% · sin pesas"), core(true)],
+    tue: [cardioSession(`10' suave + 3×1 km a ${RC} (2' trote) + 10' suave`, "Correr afuera")],
+    wed: [cardioSession("Caminata suave 30' · 5 km/h")],
+    thu: [cardioSession(`25' suave + 3 aceleraciones de 20"`, "Correr afuera")],
+    fri: [restDay("Descanso — arranca la carga de carbohidratos")],
+    sat: [
+      longSession(
+        "Activación",
+        "15' trote suave + 3 aceleraciones · retirar kit y preparar ropa",
+        "run",
+      ),
+    ],
     sun: null,
   };
 }
@@ -291,8 +316,7 @@ function eventOverrideFor(date: Date): { sessions: Session[] } | null {
         {
           tag: "event",
           label: "MEDIA MARATÓN 21K — Mar del Plata",
-          detail:
-            "Objetivo: completarla. 7:30 min/km es un colchón cómodo — caminá los tramos que haga falta, no hay premio por el tiempo.",
+          detail: `Objetivo 2h20 (${RC}) · km 1-3 a 6:45, km 4-16 a 6:35, km 17-21 a 6:30 si vas entero · gel a los 45' y 90'.`,
         },
       ],
     };
