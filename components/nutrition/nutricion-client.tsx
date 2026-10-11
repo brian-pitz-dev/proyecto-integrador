@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { ChevronDown } from "lucide-react";
-import { addDays, fromISO, toISO } from "@/lib/date";
-import type { PlanWeek } from "@/lib/training-plan";
+import { addDays, fromISO, toISO, todayNormalized, WEEKDAY_LABELS } from "@/lib/date";
+import { getCurrentWeekNum, type PlanWeek } from "@/lib/training-plan";
 import { getMealsForDay } from "@/lib/meal-plan";
 import { getCalorieTargetForDate } from "@/app/(app)/nutricion/actions";
 import type { CalorieTarget } from "@/lib/calorie-target";
@@ -12,25 +10,14 @@ import { WeekSelector } from "@/components/week-selector/week-selector";
 import { MealCard } from "@/components/nutrition/meal-card";
 import { FixedRules } from "@/components/nutrition/fixed-rules";
 
-const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-
-function currentWeekNum(weeks: PlanWeek[], today: Date): number {
-  const todayNorm = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const w = weeks.find((wk) => {
-    const start = fromISO(wk.start);
-    return todayNorm >= start && todayNorm <= addDays(start, 6);
-  });
-  return w?.num ?? weeks[0]?.num ?? 1;
-}
-
 function currentDayIdx(today: Date): number {
   const jsDay = today.getDay();
   return jsDay === 0 ? 6 : jsDay - 1;
 }
 
 export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
-  const today = new Date();
-  const todayWeek = currentWeekNum(weeks, today);
+  const today = todayNormalized();
+  const todayWeek = getCurrentWeekNum(weeks, today);
   const todayDay = currentDayIdx(today);
 
   const [week, setWeek] = useState(todayWeek);
@@ -40,7 +27,7 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
   const dayPlan = getMealsForDay(week, day);
   const weekObj = weeks.find((w) => w.num === week) ?? weeks[0];
   const weekStart = fromISO(weekObj.start);
-  const dayOptions = DAY_LABELS.map((label, i) => ({
+  const dayOptions = WEEKDAY_LABELS.map((label, i) => ({
     idx: i,
     label: `${label} ${addDays(weekStart, i).getDate()}`,
   }));
@@ -76,34 +63,18 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
 
       <WeekSelector weeks={weeks} selectedWeek={week} onSelectWeek={handleSelectWeek} />
 
-      <SelectPrimitive.Root value={day} onValueChange={(value) => setDay(value as number)}>
-        <SelectPrimitive.Trigger className="flex w-fit items-center justify-between gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground">
-          <SelectPrimitive.Value>
-            {(value: number | null) => dayOptions.find((d) => d.idx === value)?.label ?? ""}
-          </SelectPrimitive.Value>
-          <SelectPrimitive.Icon>
-            <ChevronDown className="size-4 opacity-60" aria-hidden="true" />
-          </SelectPrimitive.Icon>
-        </SelectPrimitive.Trigger>
-
-        <SelectPrimitive.Portal>
-          <SelectPrimitive.Positioner sideOffset={4} className="z-50">
-            <SelectPrimitive.Popup className="rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md">
-              <SelectPrimitive.List>
-                {dayOptions.map(({ idx, label }) => (
-                  <SelectPrimitive.Item
-                    key={idx}
-                    value={idx}
-                    className="cursor-default rounded-sm px-2.5 py-1.5 text-sm font-medium text-muted-foreground outline-none data-highlighted:bg-accent/20 data-selected:bg-primary data-selected:text-primary-foreground"
-                  >
-                    <SelectPrimitive.ItemText>{label}</SelectPrimitive.ItemText>
-                  </SelectPrimitive.Item>
-                ))}
-              </SelectPrimitive.List>
-            </SelectPrimitive.Popup>
-          </SelectPrimitive.Positioner>
-        </SelectPrimitive.Portal>
-      </SelectPrimitive.Root>
+      <select
+        aria-label="Día"
+        value={day}
+        onChange={(e) => setDay(Number(e.target.value))}
+        className="w-fit rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground"
+      >
+        {dayOptions.map(({ idx, label }) => (
+          <option key={idx} value={idx}>
+            {label}
+          </option>
+        ))}
+      </select>
 
       {dayPlan.isWeekday ? (
         <div className="grid gap-4">

@@ -1,14 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveLog } from "@/app/registro/actions";
-import { useCloseLogEntryDialog } from "@/components/log-form/registro-category-card";
+import { useLogSubmit } from "@/components/log-form/registro-category-card";
 import { formatPace } from "@/lib/pace";
 import { toISO } from "@/lib/date";
 import { getEvents } from "@/lib/training-plan";
@@ -16,15 +13,11 @@ import { getEvents } from "@/lib/training-plan";
 const EVENTS = getEvents();
 
 export function EventForm() {
-  const closeDialog = useCloseLogEntryDialog();
-  const [pending, setPending] = useState(false);
-  const pendingRef = useRef(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const { pending, formRef, submit } = useLogSubmit("Evento guardado");
   const [eventName, setEventName] = useState(EVENTS[0]?.name ?? "");
   const selectedEvent = EVENTS.find((e) => e.name === eventName);
 
   async function handleSubmit(formData: FormData) {
-    if (pendingRef.current) return;
     const km = Number(formData.get("km"));
     const hs = Number(formData.get("hs") || 0);
     const min = Number(formData.get("min") || 0);
@@ -38,64 +31,31 @@ export function EventForm() {
     const totalSec = hs * 3600 + min * 60;
     const timeLabel = hs > 0 ? `${hs}h ${min}min` : `${min}min`;
     const paceStr = formatPace(totalSec / km);
-    pendingRef.current = true;
-    setPending(true);
-    const result = await saveLog({
+    const ok = await submit({
       categoria: "evento",
       fecha,
       valor: km,
       nota: `${eventName} · ${timeLabel} · ${paceStr}`,
     });
-    pendingRef.current = false;
-    setPending(false);
-
-    if (result.ok) {
-      toast.success("Evento guardado");
-      formRef.current?.reset();
-      setEventName(EVENTS[0]?.name ?? "");
-      closeDialog();
-    } else {
-      toast.error(result.message ?? "No se pudo guardar.");
-    }
+    if (ok) setEventName(EVENTS[0]?.name ?? "");
   }
 
   return (
     <form ref={formRef} action={handleSubmit} className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor="event-name">Evento</Label>
-        <SelectPrimitive.Root
+        <select
+          id="event-name"
           value={eventName}
-          onValueChange={(value) => setEventName(value as string)}
+          onChange={(e) => setEventName(e.target.value)}
+          className="rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground"
         >
-          <SelectPrimitive.Trigger
-            id="event-name"
-            type="button"
-            className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground"
-          >
-            <SelectPrimitive.Value />
-            <SelectPrimitive.Icon>
-              <ChevronDown className="size-4 opacity-60" aria-hidden="true" />
-            </SelectPrimitive.Icon>
-          </SelectPrimitive.Trigger>
-
-          <SelectPrimitive.Portal>
-            <SelectPrimitive.Positioner sideOffset={4} className="z-50">
-              <SelectPrimitive.Popup className="rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md">
-                <SelectPrimitive.List>
-                  {EVENTS.map((e) => (
-                    <SelectPrimitive.Item
-                      key={e.name}
-                      value={e.name}
-                      className="cursor-default rounded-sm px-2.5 py-1.5 text-sm font-medium text-muted-foreground outline-none data-highlighted:bg-accent/20 data-selected:bg-primary data-selected:text-primary-foreground"
-                    >
-                      <SelectPrimitive.ItemText>{e.name}</SelectPrimitive.ItemText>
-                    </SelectPrimitive.Item>
-                  ))}
-                </SelectPrimitive.List>
-              </SelectPrimitive.Popup>
-            </SelectPrimitive.Positioner>
-          </SelectPrimitive.Portal>
-        </SelectPrimitive.Root>
+          {EVENTS.map((e) => (
+            <option key={e.name} value={e.name}>
+              {e.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="grid gap-2">

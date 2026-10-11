@@ -53,6 +53,16 @@ export const MONTHS_ES = [
   "dic",
 ];
 
+export const WEEKDAY_LABELS = [
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
+  "Domingo",
+];
+
 export const DAYS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
 export function formatShort(d: Date): string {

@@ -1,12 +1,7 @@
 import { getSessionsForDate, TARGET_PACE_SEC } from "@/lib/training-plan";
 import { paceStrToSeconds } from "@/lib/pace";
 import type { Registro } from "@/lib/types";
-import { toISO } from "@/lib/date";
-
-function todayNormalized(): Date {
-  const t = new Date();
-  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
-}
+import { toISO, todayNormalized } from "@/lib/date";
 
 /** Portado de plan_vida_2026.html. */
 export function getLastNSaturdays(fromDate: Date, n: number): Date[] {

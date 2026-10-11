@@ -1,12 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlanWeek } from "@/lib/training-plan";
-
-const MONTH_LABELS = ["Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 /** `w.start` es ISO YYYY-MM-DD: se parsea el string directo, sin pasar por `Date`, para no arrastrar el desfase de timezone (ver lib/date.ts fromISO). */
 function monthKey(iso: string): string {
@@ -27,46 +23,25 @@ export function WeekSelector({ weeks, selectedWeek, onSelectWeek }: WeekSelector
 
   const monthsInPlan = Array.from(new Set(weeks.map((w) => monthKey(w.start)))).map((key) => {
     const [year, month] = key.split("-").map(Number);
-    const date = new Date(year, month, 1);
-    const label = MONTH_LABELS[date.getMonth() - 7] ?? date.toLocaleDateString("es-AR", { month: "long" });
-    return { key, date, label };
+    return { key, label: new Date(year, month, 1).toLocaleDateString("es-AR", { month: "long" }) };
   });
 
   const weeksOfMonth = weeks.filter((w) => monthKey(w.start) === selectedMonth);
 
   return (
     <div className="grid gap-4">
-      <SelectPrimitive.Root
+      <select
+        aria-label="Mes"
         value={selectedMonth}
-        onValueChange={(value) => setSelectedMonth(value as string)}
+        onChange={(e) => setSelectedMonth(e.target.value)}
+        className="w-fit rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground capitalize"
       >
-        <SelectPrimitive.Trigger className="flex w-fit items-center justify-between gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground">
-          <SelectPrimitive.Value>
-            {(value: string | null) => monthsInPlan.find((m) => m.key === value)?.label ?? ""}
-          </SelectPrimitive.Value>
-          <SelectPrimitive.Icon>
-            <ChevronDown className="size-4 opacity-60" aria-hidden="true" />
-          </SelectPrimitive.Icon>
-        </SelectPrimitive.Trigger>
-
-        <SelectPrimitive.Portal>
-          <SelectPrimitive.Positioner sideOffset={4} className="z-50">
-            <SelectPrimitive.Popup className="rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md">
-              <SelectPrimitive.List>
-                {monthsInPlan.map(({ key, label }) => (
-                  <SelectPrimitive.Item
-                    key={key}
-                    value={key}
-                    className="cursor-default rounded-sm px-2.5 py-1.5 text-sm font-medium text-muted-foreground outline-none data-highlighted:bg-accent/20 data-selected:bg-primary data-selected:text-primary-foreground"
-                  >
-                    <SelectPrimitive.ItemText>{label}</SelectPrimitive.ItemText>
-                  </SelectPrimitive.Item>
-                ))}
-              </SelectPrimitive.List>
-            </SelectPrimitive.Popup>
-          </SelectPrimitive.Positioner>
-        </SelectPrimitive.Portal>
-      </SelectPrimitive.Root>
+        {monthsInPlan.map(({ key, label }) => (
+          <option key={key} value={key}>
+            {label}
+          </option>
+        ))}
+      </select>
 
       <div className="flex flex-wrap gap-1.5">
         {weeksOfMonth.map((w) => (

@@ -3,7 +3,7 @@
  * No es dato de Supabase (Principio IV): vive como constante en el código,
  */
 
-import { toISO } from "@/lib/date";
+import { toISO, fromISO, addDays, isSameDay } from "@/lib/date";
 
 export type SessionTag = "core" | "run" | "gym" | "long" | "walk" | "rest" | "event" | "luj";
 
@@ -30,20 +30,6 @@ export const TARGET_PACE_SEC = 7 * 60 + 30; // 7:30 min/km
 // Ritmos del 21K para el objetivo de 2h20m: ajustar después del test 5K del 15/10
 const RC = "6:38/km";
 const SERIES = "6:00/km";
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
 
 function core(short: boolean): Session {
   return {
@@ -359,6 +345,15 @@ export function getWeeks(): PlanWeek[] {
     isEventWeek: containsEvent(w),
     isPrepWeek: weeks[i + 1] ? containsEvent(weeks[i + 1]) : false,
   }));
+}
+
+/** Número de la semana del plan que contiene `today` (o la primera si está fuera del plan). */
+export function getCurrentWeekNum(weeks: PlanWeek[], today: Date): number {
+  const w = weeks.find((wk) => {
+    const start = fromISO(wk.start);
+    return today >= start && today <= addDays(start, 6);
+  });
+  return w?.num ?? weeks[0]?.num ?? 1;
 }
 
 /** Últimas semanas de p2 y p5 (carga de carbohidratos previa a Luján y al 21K). */

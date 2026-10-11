@@ -1,11 +1,7 @@
-export type Categoria =
-  | "tirada"
-  | "caminata"
-  | "calorias"
-  | "peso"
-  | "sueno"
-  | "completado"
-  | "evento";
+import type { z } from "zod";
+import type { categoriaSchema } from "@/lib/validation/registro";
+
+export type Categoria = z.infer<typeof categoriaSchema>;
 
 export interface Registro {
   id: number;

@@ -11,16 +11,12 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const path = request.nextUrl.pathname;
   const isPublicPath =
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname === "/robots.txt" ||
-    request.nextUrl.pathname === "/sitemap.xml" ||
-    request.nextUrl.pathname.startsWith("/opengraph-image") ||
-    request.nextUrl.pathname.startsWith("/twitter-image") ||
-    request.nextUrl.pathname === "/manifest.webmanifest" ||
-    request.nextUrl.pathname.startsWith("/icon") ||
-    request.nextUrl.pathname.startsWith("/apple-icon");
+    ["/", "/robots.txt", "/sitemap.xml", "/manifest.webmanifest"].includes(path) ||
+    ["/login", "/opengraph-image", "/twitter-image", "/icon", "/apple-icon"].some((p) =>
+      path.startsWith(p),
+    );
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();

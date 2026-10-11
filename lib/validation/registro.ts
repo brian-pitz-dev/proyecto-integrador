@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const categoriaSchema = z.enum([
+export const categoriaSchema = z.enum([
   "tirada",
   "caminata",
   "calorias",

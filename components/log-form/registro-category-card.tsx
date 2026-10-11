@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useRef, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -11,12 +12,36 @@ import {
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DeleteLogButton } from "@/components/log-form/delete-log-button";
+import { saveLog } from "@/app/registro/actions";
 
 const CloseDialogContext = createContext<() => void>(() => {});
 
-/** Los formularios dentro de un RegistroCategoryCard lo usan para cerrar el modal al guardar con éxito. */
-export function useCloseLogEntryDialog() {
-  return useContext(CloseDialogContext);
+/** Guardado de los formularios de un RegistroCategoryCard: evita el doble submit, avisa con toast y cierra el modal si sale bien. */
+export function useLogSubmit(successMessage: string) {
+  const closeDialog = useContext(CloseDialogContext);
+  const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  async function submit(input: Parameters<typeof saveLog>[0]): Promise<boolean> {
+    if (pendingRef.current) return false;
+    pendingRef.current = true;
+    setPending(true);
+    const result = await saveLog(input);
+    pendingRef.current = false;
+    setPending(false);
+
+    if (!result.ok) {
+      toast.error(result.message ?? "No se pudo guardar.");
+      return false;
+    }
+    toast.success(successMessage);
+    formRef.current?.reset();
+    closeDialog();
+    return true;
+  }
+
+  return { pending, formRef, submit };
 }
 
 export interface RegistroEntry {

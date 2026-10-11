@@ -20,7 +20,7 @@ import {
 } from "@/lib/stats-summary";
 import { getMonday, todayNormalized } from "@/lib/date";
 import { formatPace, paceStrToSeconds } from "@/lib/pace";
-import type { Registro } from "@/lib/types";
+import type { Categoria, Registro } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Estadísticas · Plan de Vida 2026",
@@ -30,62 +30,19 @@ export const metadata: Metadata = {
 
 async function fetchData() {
   const supabase = await createClient();
-  const [
-    { data: completadoRows },
-    { data: pesoRows },
-    { data: suenoRows },
-    { data: caloriasRows },
-    { data: caminataRows },
-    { data: tiradaRows },
-    { data: eventoRows },
-  ] = await Promise.all([
-    supabase.from("registro").select("fecha").eq("categoria", "completado"),
-    supabase
-      .from("registro")
-      .select("*")
-      .eq("categoria", "peso")
-      .order("fecha", { ascending: false })
-      .limit(500),
-    supabase
-      .from("registro")
-      .select("*")
-      .eq("categoria", "sueno")
-      .order("fecha", { ascending: false })
-      .limit(500),
-    supabase
-      .from("registro")
-      .select("*")
-      .eq("categoria", "calorias")
-      .order("fecha", { ascending: false })
-      .limit(30),
-    supabase
-      .from("registro")
-      .select("*")
-      .eq("categoria", "caminata")
-      .order("fecha", { ascending: false })
-      .limit(200),
-    supabase
-      .from("registro")
-      .select("*")
-      .eq("categoria", "tirada")
-      .order("fecha", { ascending: false })
-      .limit(200),
-    supabase
-      .from("registro")
-      .select("*")
-      .eq("categoria", "evento")
-      .order("fecha", { ascending: false })
-      .limit(50),
-  ]);
+  // ponytail: una sola query, PostgREST corta en 1000 filas; con un usuario y el plan hasta dic no se llega, si no volver a una query por categoría
+  const { data } = await supabase.from("registro").select("*").order("fecha", { ascending: false });
+  const rows = (data as Registro[] | null) ?? [];
+  const of = (categoria: Categoria) => rows.filter((r) => r.categoria === categoria);
 
   return {
-    completedDates: new Set((completadoRows ?? []).map((r) => r.fecha as string)),
-    peso: (pesoRows as Registro[] | null) ?? [],
-    sueno: (suenoRows as Registro[] | null) ?? [],
-    calorias: (caloriasRows as Registro[] | null) ?? [],
-    caminata: (caminataRows as Registro[] | null) ?? [],
-    tirada: (tiradaRows as Registro[] | null) ?? [],
-    evento: (eventoRows as Registro[] | null) ?? [],
+    completedDates: new Set(of("completado").map((r) => r.fecha)),
+    peso: of("peso"),
+    sueno: of("sueno"),
+    calorias: of("calorias"),
+    caminata: of("caminata"),
+    tirada: of("tirada"),
+    evento: of("evento"),
   };
 }
 

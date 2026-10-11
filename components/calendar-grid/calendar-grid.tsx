@@ -3,25 +3,11 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Check } from "lucide-react";
-import { toggleDayDone } from "@/app/(app)/calendario/actions";
-import { getSessionsForDate, type PlanWeek, type Session } from "@/lib/training-plan";
-import { toISO, fromISO, addDays, MONTHS_ES } from "@/lib/date";
+import { toggleDayDone } from "@/app/registro/actions";
+import { getSessionsForDate, getCurrentWeekNum, type PlanWeek } from "@/lib/training-plan";
+import { toISO, fromISO, addDays, todayNormalized, MONTHS_ES, WEEKDAY_LABELS } from "@/lib/date";
 import { WeekSelector } from "@/components/week-selector/week-selector";
 import { ExerciseBlock } from "@/components/calendar-grid/exercise-block";
-
-function currentWeekNum(weeks: PlanWeek[], todayNorm: Date): number {
-  const w = weeks.find((wk) => {
-    const start = fromISO(wk.start);
-    return todayNorm >= start && todayNorm <= addDays(start, 6);
-  });
-  return w?.num ?? weeks[0]?.num ?? 1;
-}
-
-const DOW_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-
-function isTrainable(sessions: Session[]): boolean {
-  return sessions.some((s) => s.tag !== "rest");
-}
 
 export function CalendarGrid({
   completedDates,
@@ -30,9 +16,8 @@ export function CalendarGrid({
   completedDates: string[];
   weeks: PlanWeek[];
 }) {
-  const today = new Date();
-  const todayNorm = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const [selectedWeek, setSelectedWeek] = useState(() => currentWeekNum(weeks, todayNorm));
+  const todayNorm = todayNormalized();
+  const [selectedWeek, setSelectedWeek] = useState(() => getCurrentWeekNum(weeks, todayNorm));
   const [completed, setCompleted] = useState(new Set(completedDates));
   const [isPending, startTransition] = useTransition();
 
@@ -77,7 +62,7 @@ export function CalendarGrid({
           const isToday = toISO(todayNorm) === iso;
           const isDone = completed.has(iso);
           const sessions = getSessionsForDate(date);
-          const trainable = isTrainable(sessions);
+          const trainable = sessions.some((s) => s.tag !== "rest");
 
           return (
             <div
@@ -94,7 +79,7 @@ export function CalendarGrid({
                 <div className="flex min-w-0 flex-1 gap-4">
                   <div className="w-14 shrink-0 self-center text-center">
                     <p className="text-xs font-medium text-muted-foreground">
-                      {DOW_LABELS[i].slice(0, 3)}
+                      {WEEKDAY_LABELS[i].slice(0, 3)}
                     </p>
                     <p className="text-lg font-semibold text-foreground">{date.getDate()}</p>
                     <p className="text-[0.65rem] uppercase text-muted-foreground">

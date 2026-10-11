@@ -7,17 +7,14 @@ import { toISO } from "@/lib/date";
 const PERSONAL_DATA = {
   edad: 28,
   alturaCm: 180,
-  sexo: "M" as "M" | "F",
   factorActividad: 1.55, // moderado — solo se usa si no hay calorías activas cargadas
 };
 
 // Calibración con InBody real (18/06/2026): BMR medido 1859 kcal a 94.9kg
 const INBODY_REFERENCE = { peso: 94.9, bmrReal: 1859 };
 
-export function mifflin(peso: number): number {
-  return PERSONAL_DATA.sexo === "M"
-    ? 10 * peso + 6.25 * PERSONAL_DATA.alturaCm - 5 * PERSONAL_DATA.edad + 5
-    : 10 * peso + 6.25 * PERSONAL_DATA.alturaCm - 5 * PERSONAL_DATA.edad - 161;
+function mifflin(peso: number): number {
+  return 10 * peso + 6.25 * PERSONAL_DATA.alturaCm - 5 * PERSONAL_DATA.edad + 5;
 }
 
 const CALIBRATION_FACTOR = INBODY_REFERENCE.bmrReal / mifflin(INBODY_REFERENCE.peso);
@@ -49,13 +46,14 @@ export async function getCalorieTarget(dateObj: Date): Promise<CalorieTarget | n
   const fechaISO = toISO(dateObj);
   const supabase = await createClient();
 
-  const [{ data: calLogs }, { data: pesoLogs }] = await Promise.all([
+  const [{ data: logDelDia }, { data: pesoLogs }] = await Promise.all([
     supabase
       .from("registro")
       .select("*")
       .eq("categoria", "calorias")
-      .order("fecha", { ascending: false })
-      .limit(500),
+      .eq("fecha", fechaISO)
+      .limit(1)
+      .maybeSingle<Registro>(),
     supabase
       .from("registro")
       .select("*")
@@ -68,7 +66,6 @@ export async function getCalorieTarget(dateObj: Date): Promise<CalorieTarget | n
 
   const pesoActual = Number((pesoLogs[0] as Registro).valor);
   const bmrCalibrado = computeBmrCalibrado(pesoActual);
-  const logDelDia = (calLogs as Registro[] | null)?.find((r) => r.fecha === fechaISO);
 
   let gastoCalorico: number;
   let fuente: CalorieTarget["fuente"];

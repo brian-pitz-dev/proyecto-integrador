@@ -1,23 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveLog } from "@/app/registro/actions";
-import { useCloseLogEntryDialog } from "@/components/log-form/registro-category-card";
+import { useLogSubmit } from "@/components/log-form/registro-category-card";
 import { toISO, addDays } from "@/lib/date";
 
 export function SleepForm() {
-  const closeDialog = useCloseLogEntryDialog();
-  const [pending, setPending] = useState(false);
-  const pendingRef = useRef(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const { pending, formRef, submit } = useLogSubmit("Sueño guardado");
   const defaultDate = toISO(addDays(new Date(), -1));
 
   async function handleSubmit(formData: FormData) {
-    if (pendingRef.current) return;
     const hs = Number(formData.get("hs") || 0);
     const min = Number(formData.get("min") || 0);
     const fecha = String(formData.get("fecha") || defaultDate);
@@ -28,19 +22,7 @@ export function SleepForm() {
     }
 
     const total = Number((hs + min / 60).toFixed(2));
-    pendingRef.current = true;
-    setPending(true);
-    const result = await saveLog({ categoria: "sueno", fecha, valor: total });
-    pendingRef.current = false;
-    setPending(false);
-
-    if (result.ok) {
-      toast.success("Sueño guardado");
-      formRef.current?.reset();
-      closeDialog();
-    } else {
-      toast.error(result.message ?? "No se pudo guardar.");
-    }
+    await submit({ categoria: "sueno", fecha, valor: total });
   }
 
   return (
