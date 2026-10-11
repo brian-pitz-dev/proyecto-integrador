@@ -30,6 +30,7 @@ const deficitPorFase: Record<string, number> = {
   p3: 130, // reactivación post-Luján: priorizar recuperación sobre bajar de peso
   p4: 150, // construcción 21K: casi mantenimiento, energía para sostener la carga
   p5: 100, // tapering: casi mantenimiento + carga de carbohidratos
+  p5r: 130, // recuperación post-21K, igual que post-Luján
   p6: 550,
 };
 

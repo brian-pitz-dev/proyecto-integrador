@@ -25,8 +25,6 @@ const EV_10K = new Date(2026, 8, 13);
 const EV_LUJAN = new Date(2026, 9, 3);
 const EV_21K = new Date(2026, 10, 8);
 
-export const TARGET_PACE_SEC = 7 * 60 + 30; // 7:30 min/km
-
 // Ritmos del 21K para el objetivo de 2h20m: ajustar después del test 5K del 15/10
 const RC = "6:38/km";
 const SERIES = "6:00/km";
@@ -165,7 +163,7 @@ function phase5Week(): WeekConfig {
     tue: [cardioSession(`10' suave + 3×1 km a ${RC} (2' trote) + 10' suave`, "Correr afuera")],
     wed: [cardioSession("Caminata suave 30' · 5 km/h")],
     thu: [cardioSession(`25' suave + 3 aceleraciones de 20"`, "Correr afuera")],
-    fri: [restDay("Descanso — arranca la carga de carbohidratos")],
+    fri: [restDay("Descanso — carga de carbohidratos (jueves a sábado)")],
     sat: [
       longSession(
         "Activación",
@@ -238,6 +236,13 @@ const phaseDefs: PhaseDef[] = [
     desc: "Última semana antes del 21K",
     weeks: 1,
     fn: phase5Week,
+  },
+  {
+    key: "p5r",
+    label: "FASE 5b — Recuperación",
+    desc: "Post-21K, sin apuro",
+    weeks: 1,
+    fn: phase3Week,
   },
   {
     key: "p6",

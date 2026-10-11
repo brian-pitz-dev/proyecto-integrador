@@ -9,7 +9,7 @@ import { CalorieForm } from "@/components/log-form/calorie-form";
 import { SleepForm } from "@/components/log-form/sleep-form";
 import { EventForm } from "@/components/log-form/event-form";
 import { createClient } from "@/lib/supabase/server";
-import { checkGymStreak, checkRunAlert } from "@/lib/streaks";
+import { checkGymStreak } from "@/lib/streaks";
 import { getCalorieTarget, computeBmrCalibrado } from "@/lib/calorie-target";
 import {
   countTrainableVsCompleted,
@@ -55,9 +55,8 @@ export default async function EstadisticasPage() {
   const today = todayNormalized();
 
   const gymAtRisk = checkGymStreak(completedDates);
-  const runAtRisk = checkRunAlert(tirada);
   const missingYesterdayItems = getMissingYesterdayItems(sueno, calorias, new Date());
-  const hasRisk = gymAtRisk || runAtRisk || missingYesterdayItems.length > 0;
+  const hasRisk = gymAtRisk || missingYesterdayItems.length > 0;
 
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const { trainable: monthTrainable, completed: monthCompleted } = countTrainableVsCompleted(
@@ -78,12 +77,12 @@ export default async function EstadisticasPage() {
     : null;
   const totalRunKm = tirada.reduce((a, r) => a + Number(r.valor || 0), 0);
 
-  // Luján es caminata: no cuenta para el ritmo de running
-  const last3Paces = [...tirada, ...evento.filter((r) => !r.nota?.startsWith("Luján"))]
+  const last3Paces = [...tirada, ...evento]
     .sort((a, b) => (a.fecha > b.fecha ? -1 : 1))
-    .slice(0, 3)
     .map((r) => paceStrToSeconds(r.nota))
-    .filter((p): p is number => p !== null);
+    // más lento que 10:00/km es caminata (ej. Luján): no cuenta como ritmo de running
+    .filter((p): p is number => p !== null && p < 10 * 60)
+    .slice(0, 3);
   const avgPaceLabel = last3Paces.length
     ? formatPace(last3Paces.reduce((a, b) => a + b, 0) / last3Paces.length)
     : "—";
@@ -134,18 +133,13 @@ export default async function EstadisticasPage() {
               label="Perdiste 3 o más sesiones de gym programadas seguidas"
               okLabel="Racha de gym al día"
             />
-            <AlertBadge
-              atRisk={runAtRisk}
-              label="Tu ritmo de las últimas 2 tiradas de sábado no mejoró"
-              okLabel="Ritmo de running al día"
-            />
           </CardContent>
         </Card>
       ) : (
         <Card className="border-accent/30">
           <CardContent className="flex items-center gap-2 py-4 text-sm text-foreground">
             <CircleCheck className="size-4 text-accent" aria-hidden="true" />
-            Todo en orden: sin rachas ni ritmos en riesgo.
+            Todo en orden: sin rachas en riesgo.
           </CardContent>
         </Card>
       )}

@@ -306,7 +306,8 @@ const cenaSequence = buildRecencySequence(mealBank.cena.length, ROTATION_SLOTS, 
 
 function pickAlmuerzo(weekNum: number, dayIdx: number): Meal {
   const bank = mealBank.almuerzo;
-  if (getCarbLoadWeeks().includes(weekNum)) {
+  // la carga va solo jueves y viernes (dayIdx 3-4): para 21K alcanzan 1-2 días
+  if (dayIdx >= 3 && getCarbLoadWeeks().includes(weekNum)) {
     const carbArr = bank.filter((m) => m.carbLoad);
     if (carbArr.length) return carbArr[dayIdx % carbArr.length];
   }
