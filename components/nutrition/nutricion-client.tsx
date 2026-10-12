@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { addDays, fromISO, toISO, todayNormalized, WEEKDAY_LABELS } from "@/lib/date";
 import { getCurrentWeekNum, type PlanWeek } from "@/lib/training-plan";
+import { cn } from "@/lib/utils";
 import { getMealsForDay } from "@/lib/meal-plan";
 import { getCalorieTargetForDate } from "@/app/(app)/nutricion/actions";
 import type { CalorieTarget } from "@/lib/calorie-target";
@@ -17,20 +18,16 @@ function currentDayIdx(today: Date): number {
 
 export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
   const today = todayNormalized();
-  const todayWeek = getCurrentWeekNum(weeks, today);
-  const todayDay = currentDayIdx(today);
+  // el fin de semana no tiene plan: abrir directo en el lunes que viene
+  const start = addDays(today, today.getDay() === 6 ? 2 : today.getDay() === 0 ? 1 : 0);
 
-  const [week, setWeek] = useState(todayWeek);
-  const [day, setDay] = useState(todayDay);
+  const [week, setWeek] = useState(() => getCurrentWeekNum(weeks, start));
+  const [day, setDay] = useState(() => currentDayIdx(start));
   const [calorieTarget, setCalorieTarget] = useState<CalorieTarget | null>(null);
 
   const dayPlan = getMealsForDay(week, day);
   const weekObj = weeks.find((w) => w.num === week) ?? weeks[0];
   const weekStart = fromISO(weekObj.start);
-  const dayOptions = WEEKDAY_LABELS.map((label, i) => ({
-    idx: i,
-    label: `${label} ${addDays(weekStart, i).getDate()}`,
-  }));
 
   function handleSelectWeek(weekNum: number) {
     setWeek(weekNum);
@@ -55,34 +52,44 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
   return (
     <div className="mx-auto grid w-full max-w-4xl gap-5">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Nutrición</h1>
-        <p className="text-sm text-muted-foreground">
-          4 comidas/día · Lunes a Viernes · Método del plato · Rota semana a semana
+        <h1 className="text-4xl font-bold">Nutrición</h1>
+        <p className="max-w-prose text-muted-foreground">
+          Cuatro comidas de lunes a viernes con el método del plato. El menú rota cada semana.
         </p>
       </div>
 
       <WeekSelector weeks={weeks} selectedWeek={week} onSelectWeek={handleSelectWeek} />
 
-      <select
-        aria-label="Día"
-        value={day}
-        onChange={(e) => setDay(Number(e.target.value))}
-        className="w-fit rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground"
-      >
-        {dayOptions.map(({ idx, label }) => (
-          <option key={idx} value={idx}>
-            {label}
-          </option>
+      <div className="grid grid-cols-7 gap-1.5">
+        {WEEKDAY_LABELS.map((label, i) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => setDay(i)}
+            aria-pressed={day === i}
+            className={cn(
+              "rounded-md border py-1.5 text-center text-sm transition-colors",
+              day === i
+                ? "border-primary bg-primary/15 font-semibold"
+                : "border-border text-muted-foreground hover:bg-muted",
+              i >= 5 && day !== i && "border-dashed",
+            )}
+          >
+            <span className="block text-xs">{label.slice(0, 3)}</span>
+            <span className="font-heading text-lg tabular-nums">
+              {addDays(weekStart, i).getDate()}
+            </span>
+          </button>
         ))}
-      </select>
+      </div>
 
       {dayPlan.isWeekday ? (
         <div className="grid gap-4">
           {dayPlan.meals.map((meal) => (
             <MealCard key={meal.type} meal={meal} />
           ))}
-          <div className="grid gap-1 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-medium text-foreground">
-            <p>Total del día: {dayPlan.totalProteinG.toFixed(1)}g proteína</p>
+          <div className="grid gap-1 rounded-lg bg-muted/50 px-4 py-3 text-sm font-medium tabular-nums">
+            <p>Total del día: {dayPlan.totalProteinG.toFixed(1)} g de proteína</p>
             {calorieTarget && (
               <p>
                 Meta calórica ({calorieTarget.fuente === "xiaomi" ? "BMR + activas" : "estimado"}):{" "}
@@ -93,8 +100,8 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-          Fin de semana libre — comé lo que quieras/puedas. Excepción: los días de evento (10K,
-          Luján, 21K) tienen indicaciones propias en Calendario.
+          El fin de semana no tiene menú fijo. Antes del 21K, seguí la guía de carga de
+          carbohidratos del Calendario.
         </div>
       )}
 

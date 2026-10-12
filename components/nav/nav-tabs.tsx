@@ -35,3 +35,30 @@ export function NavTabs() {
     </nav>
   );
 }
+
+/** Pestañas fijas abajo en mobile: se alcanzan con el pulgar, con una mano, en el gym. */
+export function BottomTabs() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t bg-background pb-[env(safe-area-inset-bottom)] lg:hidden">
+      {NAV_ITEMS.map(({ href, label, Icon }) => {
+        const active = pathname.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "flex flex-col items-center gap-1 py-2.5 text-xs font-medium",
+              active ? "text-foreground" : "text-muted-foreground",
+            )}
+          >
+            <Icon className={cn("size-5", active && "text-primary")} aria-hidden="true" />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

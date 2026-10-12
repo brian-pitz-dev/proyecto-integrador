@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CircleCheck, Scale, Moon, Flame, PersonStanding, Footprints, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertBadge } from "@/components/stats/alert-badge";
@@ -18,7 +19,8 @@ import {
   buildMonthHistory,
   getMissingYesterdayItems,
 } from "@/lib/stats-summary";
-import { getMonday, todayNormalized } from "@/lib/date";
+import { PLAN_GOAL } from "@/lib/training-plan";
+import { getMonday, todayNormalized, fromISO, formatShort } from "@/lib/date";
 import { formatPace, paceStrToSeconds } from "@/lib/pace";
 import type { Categoria, Registro } from "@/lib/types";
 
@@ -47,7 +49,9 @@ async function fetchData() {
 }
 
 function entriesOf(registros: Registro[], format: (r: Registro) => string) {
-  return registros.slice(0, 5).map((r) => ({ id: r.id, label: format(r), date: r.fecha }));
+  return registros
+    .slice(0, 5)
+    .map((r) => ({ id: r.id, label: format(r), date: formatShort(fromISO(r.fecha)) }));
 }
 
 export default async function EstadisticasPage() {
@@ -56,26 +60,15 @@ export default async function EstadisticasPage() {
 
   const gymAtRisk = checkGymStreak(completedDates);
   const missingYesterdayItems = getMissingYesterdayItems(sueno, calorias, new Date());
-  const hasRisk = gymAtRisk || missingYesterdayItems.length > 0;
 
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const { trainable: monthTrainable, completed: monthCompleted } = countTrainableVsCompleted(
-    monthStart,
-    today,
-    completedDates,
-  );
-  const weekStart = getMonday(today);
   const { trainable: weekTrainable, completed: weekCompleted } = countTrainableVsCompleted(
-    weekStart,
+    getMonday(today),
     today,
     completedDates,
   );
-
-  const totalDist = caminata.reduce((a, r) => a + Number(r.valor || 0), 0);
   const avgSleep = sueno.length
     ? sueno.reduce((a, r) => a + Number(r.valor || 0), 0) / sueno.length
     : null;
-  const totalRunKm = tirada.reduce((a, r) => a + Number(r.valor || 0), 0);
 
   const last3Paces = [...tirada, ...evento]
     .sort((a, b) => (a.fecha > b.fecha ? -1 : 1))
@@ -99,93 +92,80 @@ export default async function EstadisticasPage() {
     const activas = Number(r.valor);
     if (bmrCalibradoActual === null) return `${r.valor} kcal activas`;
     const total = Math.round(bmrCalibradoActual + activas);
-    return `${total} kcal total (${activas} activas)`;
+    return `${total} kcal (${activas} activas)`;
   }
 
   const statBoxes = [
-    { value: String(completedDates.size), label: "Días entrenados (total)" },
-    { value: `${monthCompleted}/${monthTrainable}`, label: "Días este mes" },
-    { value: `${weekCompleted}/${weekTrainable}`, label: "Días esta semana" },
-    { value: totalDist.toFixed(1), label: "Km caminados (libre)" },
-    { value: peso[0] ? String(peso[0].valor) : "—", label: "Último peso (kg)" },
-    { value: avgSleep !== null ? formatSleepHours(avgSleep) : "—", label: "Promedio de sueño" },
-    { value: totalRunKm.toFixed(1), label: "Km tirada larga (total)" },
-    { value: avgPaceLabel, label: "Ritmo prom. últimas 3 tiradas" },
+    { value: `${weekCompleted}/${weekTrainable}`, label: "Entrenamientos esta semana" },
+    { value: avgPaceLabel, label: "Ritmo promedio, últimas 3 corridas" },
+    { value: peso[0] ? `${peso[0].valor} kg` : "—", label: "Último peso" },
+    { value: avgSleep !== null ? formatSleepHours(avgSleep) : "—", label: "Sueño promedio" },
   ];
 
   return (
     <div className="grid gap-8">
-      <h1 className="text-3xl font-bold text-foreground">Estadísticas</h1>
+      <h1 className="text-4xl font-bold">Estadísticas</h1>
 
-      {hasRisk ? (
-        <Card className="border-destructive/30">
-          <CardHeader className="border-b">
-            <CardTitle className="text-destructive">Necesita atención</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2">
-            <AlertBadge
-              atRisk={missingYesterdayItems.length > 0}
-              label={`Todavía no cargaste hoy: ${missingYesterdayItems.join(", ")}`}
-              okLabel="Registro del día al día"
-            />
-            <AlertBadge
-              atRisk={gymAtRisk}
-              label="Perdiste 3 o más sesiones de gym programadas seguidas"
-              okLabel="Racha de gym al día"
-            />
-          </CardContent>
-        </Card>
+      {gymAtRisk || missingYesterdayItems.length > 0 ? (
+        <div className="grid gap-2">
+          <AlertBadge
+            atRisk={missingYesterdayItems.length > 0}
+            label={
+              <>
+                Te falta cargar: {missingYesterdayItems.join(", ")}.{" "}
+                <Link href="/calendario" className="font-semibold underline underline-offset-2">
+                  Cargalo desde Hoy
+                </Link>
+              </>
+            }
+            okLabel="Registro del día al día"
+          />
+          <AlertBadge
+            atRisk={gymAtRisk}
+            label="Te salteaste 3 o más sesiones de gym seguidas."
+            okLabel="Racha de gym al día"
+          />
+        </div>
       ) : (
-        <Card className="border-accent/30">
-          <CardContent className="flex items-center gap-2 py-4 text-sm text-foreground">
-            <CircleCheck className="size-4 text-accent" aria-hidden="true" />
-            Todo en orden: sin rachas en riesgo.
-          </CardContent>
-        </Card>
+        <p className="flex items-center gap-2 text-sm">
+          <CircleCheck className="size-4 text-accent" aria-hidden="true" />
+          Todo al día: cargaste los datos de ayer y venís cumpliendo el gym.
+        </p>
       )}
 
-      <section className="grid gap-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Resumen de logros
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-          {statBoxes.map((box) => (
-            <div
-              key={box.label}
-              className="rounded-lg border-t-2 border-t-primary bg-card p-4 text-center ring-1 ring-foreground/10"
-            >
-              <p className="text-2xl font-bold text-primary">{box.value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{box.label}</p>
-            </div>
-          ))}
-        </div>
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <h2 className="sr-only">Resumen</h2>
+        {statBoxes.map((box) => (
+          <div key={box.label} className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+            <p className="font-heading text-3xl font-semibold tabular-nums">{box.value}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{box.label}</p>
+          </div>
+        ))}
       </section>
 
       <Card>
         <CardHeader className="border-b">
-          <CardTitle>Progreso hacia el objetivo (80 kg)</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            Objetivo: {PLAN_GOAL.weightKg} kg y {PLAN_GOAL.bodyFatPct} de grasa
+          </CardTitle>
         </CardHeader>
-        <CardContent className="pt-(--card-spacing)">
+        <CardContent>
           {weightProgress ? (
             <div className="grid gap-2">
-              <div className="flex flex-wrap justify-between gap-2 text-sm">
+              <div className="flex flex-wrap justify-between gap-2 text-sm tabular-nums">
                 <span>
-                  Inicio:{" "}
-                  <strong className="text-foreground">{weightProgress.start.toFixed(1)} kg</strong>
+                  Inicio: <strong>{weightProgress.start.toFixed(1)} kg</strong>
                 </span>
                 <span>
-                  Actual:{" "}
-                  <strong className="text-foreground">
-                    {weightProgress.current.toFixed(1)} kg
-                  </strong>
+                  Actual: <strong>{weightProgress.current.toFixed(1)} kg</strong>
                 </span>
                 <span>
-                  Meta: <strong className="text-foreground">{weightProgress.target} kg</strong>
+                  Meta: <strong>{weightProgress.target} kg</strong>
                 </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-primary transition-all"
+                  className="h-full rounded-full bg-accent"
                   style={{ width: `${weightProgress.pct.toFixed(0)}%` }}
                 />
               </div>
@@ -195,30 +175,20 @@ export default async function EstadisticasPage() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Todavía no cargaste ningún peso.</p>
+            <p className="text-sm text-muted-foreground">
+              Cargá tu peso desde Hoy para ver el progreso.
+            </p>
           )}
         </CardContent>
       </Card>
 
-      <RegistroCategoryCard
-        className="border-primary/30"
-        icon={<Trophy className="size-4 text-primary" aria-hidden="true" />}
-        title="Eventos del plan"
-        buttonLabel="Registrar resultado de evento"
-        entries={entriesOf(evento, (r) => `${r.nota} — ${r.valor} km`)}
-      >
-        <EventForm />
-      </RegistroCategoryCard>
-
       <section className="grid gap-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Registro por categoría
-        </h2>
-        <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <h2 className="text-2xl font-semibold">Registros</h2>
+        <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <RegistroCategoryCard
             icon={<Scale className="size-4" aria-hidden="true" />}
             title="Peso"
-            buttonLabel="Registrar peso"
+            buttonLabel="Cargar"
             entries={entriesOf(peso, (r) => `${r.valor} kg`)}
           >
             <NumericLogForm
@@ -232,7 +202,7 @@ export default async function EstadisticasPage() {
           <RegistroCategoryCard
             icon={<Moon className="size-4" aria-hidden="true" />}
             title="Sueño"
-            buttonLabel="Registrar sueño"
+            buttonLabel="Cargar"
             entries={entriesOf(sueno, (r) => formatSleepHours(Number(r.valor)))}
           >
             <SleepForm />
@@ -241,16 +211,34 @@ export default async function EstadisticasPage() {
           <RegistroCategoryCard
             icon={<Flame className="size-4" aria-hidden="true" />}
             title="Calorías"
-            buttonLabel="Registrar calorías"
+            buttonLabel="Cargar"
             entries={entriesOf(calorias, formatCalorias)}
           >
             <CalorieForm calorieTarget={calorieTarget} />
           </RegistroCategoryCard>
 
           <RegistroCategoryCard
+            icon={<Footprints className="size-4 text-run" aria-hidden="true" />}
+            title="Tirada larga"
+            buttonLabel="Cargar"
+            entries={entriesOf(tirada, (r) => `${r.valor} km${r.nota ? `, ${r.nota}` : ""}`)}
+          >
+            <RunForm />
+          </RegistroCategoryCard>
+
+          <RegistroCategoryCard
+            icon={<Trophy className="size-4 text-run" aria-hidden="true" />}
+            title="Eventos"
+            buttonLabel="Cargar"
+            entries={entriesOf(evento, (r) => `${r.nota}, ${r.valor} km`)}
+          >
+            <EventForm />
+          </RegistroCategoryCard>
+
+          <RegistroCategoryCard
             icon={<PersonStanding className="size-4" aria-hidden="true" />}
             title="Caminata"
-            buttonLabel="Registrar caminata"
+            buttonLabel="Cargar"
             entries={entriesOf(caminata, (r) => `${r.valor} km`)}
           >
             <NumericLogForm
@@ -260,41 +248,33 @@ export default async function EstadisticasPage() {
               successMessage="Caminata guardada"
             />
           </RegistroCategoryCard>
-
-          <RegistroCategoryCard
-            icon={<Footprints className="size-4" aria-hidden="true" />}
-            title="Tirada larga"
-            buttonLabel="Registrar tirada"
-            entries={entriesOf(tirada, (r) => `${r.valor} km${r.nota ? ` — ${r.nota}` : ""}`)}
-          >
-            <RunForm />
-          </RegistroCategoryCard>
-
-          <Card>
-            <CardHeader className="border-b">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Histórico mensual
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {monthHistory.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Todavía no cerró ningún mes</p>
-              ) : (
-                <ul className="grid gap-1.5">
-                  {monthHistory.map((m) => (
-                    <li key={m.label} className="flex items-center justify-between text-sm">
-                      <span className="capitalize">{m.label}</span>
-                      <span className="text-muted-foreground">
-                        {m.completed}/{m.trainable}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </section>
+
+      {monthHistory.length > 0 && (
+        <section className="grid gap-3">
+          <h2 className="text-2xl font-semibold">Días entrenados por mes</h2>
+          <ul className="grid gap-2">
+            {monthHistory.map((m) => (
+              <li
+                key={m.label}
+                className="grid grid-cols-[5rem_1fr_3.5rem] items-center gap-3 text-sm"
+              >
+                <span className="capitalize">{m.label}</span>
+                <span className="h-2 overflow-hidden rounded-full bg-muted">
+                  <span
+                    className="block h-full rounded-full bg-accent"
+                    style={{ width: `${m.trainable ? (m.completed / m.trainable) * 100 : 0}%` }}
+                  />
+                </span>
+                <span className="text-right text-muted-foreground tabular-nums">
+                  {m.completed}/{m.trainable}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

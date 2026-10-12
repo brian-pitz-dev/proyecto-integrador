@@ -127,8 +127,8 @@ function phase4Week(n: number): WeekConfig {
     `10' suave + 4×1 km a ${SERIES} (2' trote) + 10' suave`,
   ];
   const casa = [
-    "Romanian deadlift 2×8 + gemelos a una pierna 2×12",
-    "Romanian deadlift 3×8 + gemelos a una pierna 3×12",
+    "Peso muerto rumano 2×8 + gemelos a una pierna 2×12",
+    "Peso muerto rumano 3×8 + gemelos a una pierna 3×12",
     "Gemelos a una pierna 2×12",
   ];
   const thu = [

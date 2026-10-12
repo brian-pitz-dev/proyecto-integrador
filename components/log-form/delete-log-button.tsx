@@ -34,8 +34,8 @@ export function DeleteLogButton({ id }: { id: number }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
-        variant="outline"
-        size="icon-sm"
+        variant="ghost"
+        size="icon-lg"
         className="shrink-0 text-muted-foreground hover:text-destructive"
         aria-label="Borrar registro"
         onClick={() => setOpen(true)}

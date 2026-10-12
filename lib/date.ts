@@ -33,9 +33,11 @@ export function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
+/** Hoy a las 00:00, según la fecha de Buenos Aires: en el server (UTC) `new Date()` ya es mañana después de las 21 h. */
 export function todayNormalized(): Date {
-  const t = new Date();
-  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  return fromISO(
+    new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }),
+  );
 }
 
 export const MONTHS_ES = [
