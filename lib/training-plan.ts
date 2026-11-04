@@ -49,7 +49,7 @@ function cardioSession(desc: string, label = "Cinta / Cardio"): Session {
 
 function gymSession(key: string, withCore?: boolean): Session[] {
   const arr: Session[] = [{ tag: "gym", label: "Gym", gymKey: key }];
-  if (withCore) arr.push(core(key.includes("Light") || key === "upperOnly"));
+  if (withCore) arr.push(core(key.includes("Light")));
   return arr;
 }
 

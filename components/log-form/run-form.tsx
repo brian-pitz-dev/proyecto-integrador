@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLogSubmit } from "@/components/log-form/registro-category-card";
 import { formatPace } from "@/lib/pace";
-import { toISO } from "@/lib/date";
+import { toISO, todayNormalized } from "@/lib/date";
 
 export function RunForm() {
   const { pending, formRef, submit } = useLogSubmit("Tirada guardada");
@@ -15,7 +15,7 @@ export function RunForm() {
     const km = Number(formData.get("km"));
     const hs = Number(formData.get("hs") || 0);
     const min = Number(formData.get("min") || 0);
-    const fecha = String(formData.get("fecha") || toISO(new Date()));
+    const fecha = String(formData.get("fecha") || toISO(todayNormalized()));
 
     if (!km || (!hs && !min)) {
       toast.error("Completá distancia y tiempo.");
@@ -46,7 +46,7 @@ export function RunForm() {
       </div>
       <div className="grid gap-2">
         <Label htmlFor="run-fecha">Fecha</Label>
-        <Input id="run-fecha" name="fecha" type="date" defaultValue={toISO(new Date())} />
+        <Input id="run-fecha" name="fecha" type="date" defaultValue={toISO(todayNormalized())} />
       </div>
       <Button type="submit" disabled={pending}>
         Guardar tirada

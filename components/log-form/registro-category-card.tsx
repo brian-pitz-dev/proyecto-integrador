@@ -45,7 +45,7 @@ export function useLogSubmit(successMessage: string) {
 }
 
 export interface RegistroEntry {
-  id: number;
+  id: string;
   label: string;
   date: string;
 }

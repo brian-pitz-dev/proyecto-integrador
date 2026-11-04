@@ -73,14 +73,6 @@ export const gymRoutines: Record<string, Routine> = {
       { name: "Leg Extension", sets: "2×12, sin fallo" },
     ],
   },
-  upperOnly: {
-    label: "Solo superior — nada de piernas",
-    exercises: [
-      { name: "Chest Press", sets: "2×8, 60%" },
-      { name: "Lat Pull Down", sets: "2×8, 60%" },
-      { name: "Deltoid Raise", sets: "2×10, suave" },
-    ],
-  },
 };
 
 export const coreRoutines: Record<string, Routine> = {

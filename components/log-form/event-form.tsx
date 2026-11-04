@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLogSubmit } from "@/components/log-form/registro-category-card";
 import { formatPace } from "@/lib/pace";
-import { toISO } from "@/lib/date";
+import { toISO, todayNormalized } from "@/lib/date";
 import type { UserEvent } from "@/lib/training-plan";
 
 export function EventForm({ events }: { events: UserEvent[] }) {
@@ -19,7 +19,7 @@ export function EventForm({ events }: { events: UserEvent[] }) {
     const km = Number(formData.get("km"));
     const hs = Number(formData.get("hs") || 0);
     const min = Number(formData.get("min") || 0);
-    const fecha = String(formData.get("fecha") || toISO(new Date()));
+    const fecha = String(formData.get("fecha") || toISO(todayNormalized()));
 
     if (!eventName || !km || (!hs && !min)) {
       toast.error("Completá evento, distancia y tiempo.");
@@ -77,7 +77,7 @@ export function EventForm({ events }: { events: UserEvent[] }) {
           id="event-fecha"
           name="fecha"
           type="date"
-          defaultValue={selectedEvent ? selectedEvent.fecha : toISO(new Date())}
+          defaultValue={selectedEvent ? selectedEvent.fecha : toISO(todayNormalized())}
         />
       </div>
       <Button type="submit" disabled={pending}>

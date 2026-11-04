@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLogSubmit } from "@/components/log-form/registro-category-card";
 import type { Categoria } from "@/lib/types";
-import { toISO, addDays } from "@/lib/date";
+import { toISO, addDays, todayNormalized } from "@/lib/date";
 
 interface NumericLogFormProps {
   categoria: Categoria;
@@ -28,7 +28,7 @@ export function NumericLogForm({
   const { pending, formRef, submit } = useLogSubmit(successMessage);
   const fieldId = `${categoria}-valor`;
   const dateId = `${categoria}-fecha`;
-  const defaultDate = toISO(defaultToYesterday ? addDays(new Date(), -1) : new Date());
+  const defaultDate = toISO(defaultToYesterday ? addDays(todayNormalized(), -1) : todayNormalized());
 
   async function handleSubmit(formData: FormData) {
     const valor = Number(formData.get("valor"));

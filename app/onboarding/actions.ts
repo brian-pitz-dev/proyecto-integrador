@@ -41,6 +41,12 @@ export async function completeOnboarding(input: OnboardingInput): Promise<Action
     return { ok: false, message: "No se pudo guardar el perfil: " + perfilError.message };
   }
 
+  // Por si este submit es un reintento tras un fallo parcial: evita duplicar eventos.
+  const { error: deleteError } = await supabase.from("evento").delete().eq("user_id", user.id);
+  if (deleteError) {
+    return { ok: false, message: "No se pudieron guardar los eventos: " + deleteError.message };
+  }
+
   const { error: eventosError } = await supabase.from("evento").insert(
     data.eventos.map((e) => ({
       user_id: user.id,

@@ -54,7 +54,7 @@ export async function saveLog(input: {
 }
 
 /** Equivalente a deleteLog(id) de plan_vida_2026.html. */
-export async function deleteLog(id: number): Promise<ActionResult> {
+export async function deleteLog(id: string): Promise<ActionResult> {
   const user = await getAuthedUser();
   if (!user) {
     return { ok: false, message: "No autenticado." };

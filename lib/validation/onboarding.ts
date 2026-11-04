@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toISO, todayNormalized } from "@/lib/date";
 
 export const signupSchema = z.object({
   email: z.string().trim().email(),
@@ -11,7 +12,11 @@ const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida");
 export const eventoSchema = z.object({
   tipo: z.enum(["carrera", "caminata"]),
   nombre: z.string().trim().min(1, "Falta el nombre").max(100),
-  fecha: fechaSchema,
+  // comparación de strings ISO: válida porque YYYY-MM-DD ordena igual lexicográfica y cronológicamente
+  fecha: fechaSchema.refine(
+    (fecha) => fecha > toISO(todayNormalized()),
+    "La fecha del evento tiene que ser futura",
+  ),
   distanciaKm: z.number().finite().positive().max(1000),
 });
 

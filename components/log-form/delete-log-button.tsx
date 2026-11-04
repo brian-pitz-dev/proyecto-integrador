@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { deleteLog } from "@/app/registro/actions";
 
-export function DeleteLogButton({ id }: { id: number }) {
+export function DeleteLogButton({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
 

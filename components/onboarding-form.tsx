@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { completeOnboarding } from "@/app/onboarding/actions";
-import { toISO, todayNormalized } from "@/lib/date";
+import { addDays, toISO, todayNormalized } from "@/lib/date";
 
 interface EventoDraft {
   tipo: "carrera" | "caminata";
@@ -19,8 +19,10 @@ interface EventoDraft {
 }
 
 function emptyEvento(): EventoDraft {
-  return { tipo: "carrera", nombre: "", fecha: toISO(todayNormalized()), distanciaKm: "" };
+  return { tipo: "carrera", nombre: "", fecha: "", distanciaKm: "" };
 }
+
+const minEventoFecha = toISO(addDays(todayNormalized(), 1));
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -226,8 +228,10 @@ export function OnboardingForm() {
                   <Input
                     id={`fecha-${i}`}
                     type="date"
+                    min={minEventoFecha}
                     value={ev.fecha}
                     onChange={(e) => updateEvento(i, { fecha: e.target.value })}
+                    required
                   />
                 </div>
                 <div className="flex items-end gap-2">

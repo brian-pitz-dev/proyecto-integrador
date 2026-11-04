@@ -1,8 +1,12 @@
 /** Portado de plan_vida_2026.html: formatPace. */
 
 export function formatPace(secPerKm: number): string {
-  const min = Math.floor(secPerKm / 60);
-  const sec = Math.round(secPerKm % 60);
+  let min = Math.floor(secPerKm / 60);
+  let sec = Math.round(secPerKm % 60);
+  if (sec === 60) {
+    min += 1;
+    sec = 0;
+  }
   return `${min}:${sec.toString().padStart(2, "0")}/km`;
 }
 

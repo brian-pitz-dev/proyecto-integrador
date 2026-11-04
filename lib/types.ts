@@ -4,7 +4,7 @@ import type { categoriaSchema } from "@/lib/validation/registro";
 export type Categoria = z.infer<typeof categoriaSchema>;
 
 export interface Registro {
-  id: number;
+  id: string; // uuid (ver supabase/migrations/20261102000000_esquema_inicial.sql)
   categoria: Categoria;
   fecha: string; // ISO YYYY-MM-DD
   valor: number;

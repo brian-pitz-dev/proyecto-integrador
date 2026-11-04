@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLogSubmit } from "@/components/log-form/registro-category-card";
-import { toISO, addDays } from "@/lib/date";
+import { toISO, addDays, todayNormalized } from "@/lib/date";
 
 export function SleepForm() {
   const { pending, formRef, submit } = useLogSubmit("Sueño guardado");
-  const defaultDate = toISO(addDays(new Date(), -1));
+  const defaultDate = toISO(addDays(todayNormalized(), -1));
 
   async function handleSubmit(formData: FormData) {
     const hs = Number(formData.get("hs") || 0);
