@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CircleCheck, Scale, Moon, Flame, PersonStanding, Footprints, Trophy } from "lucide-react";
+import {
+  CircleCheck,
+  Scale,
+  Moon,
+  Flame,
+  PersonStanding,
+  Footprints,
+  Trophy,
+  Timer,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertBadge } from "@/components/stats/alert-badge";
 import { RegistroCategoryCard } from "@/components/log-form/registro-category-card";
@@ -105,10 +114,18 @@ export default async function EstadisticasPage() {
   }
 
   const statBoxes = [
-    { value: `${weekCompleted}/${weekTrainable}`, label: "Entrenamientos esta semana" },
-    { value: avgPaceLabel, label: "Ritmo promedio, últimas 3 corridas" },
-    { value: peso[0] ? `${peso[0].valor} kg` : "—", label: "Último peso" },
-    { value: avgSleep !== null ? formatSleepHours(avgSleep) : "—", label: "Sueño promedio" },
+    {
+      icon: CircleCheck,
+      value: `${weekCompleted}/${weekTrainable}`,
+      label: "Entrenamientos esta semana",
+    },
+    { icon: Timer, value: avgPaceLabel, label: "Ritmo promedio, últimas 3 corridas" },
+    { icon: Scale, value: peso[0] ? `${peso[0].valor} kg` : "—", label: "Último peso" },
+    {
+      icon: Moon,
+      value: avgSleep !== null ? formatSleepHours(avgSleep) : "—",
+      label: "Sueño promedio",
+    },
   ];
 
   return (
@@ -146,7 +163,8 @@ export default async function EstadisticasPage() {
         <h2 className="sr-only">Resumen</h2>
         {statBoxes.map((box) => (
           <div key={box.label} className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-            <p className="font-heading text-3xl font-semibold tabular-nums">{box.value}</p>
+            <box.icon className="size-4 text-primary" aria-hidden="true" />
+            <p className="font-heading mt-2 text-3xl font-semibold tabular-nums">{box.value}</p>
             <p className="mt-1 text-sm text-muted-foreground">{box.label}</p>
           </div>
         ))}

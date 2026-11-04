@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6]:
+    - generic [ref=e11]:
+      - heading "Bakata" [level=1] [ref=e12]
+      - paragraph [ref=e13]: Tu plan de entrenamiento, nutrición y progreso hacia tus propios eventos.
+    - generic [ref=e14]:
+      - link "Ingresar" [ref=e15] [cursor=pointer]:
+        - /url: /login
+      - link "Crear cuenta" [ref=e16] [cursor=pointer]:
+        - /url: /signup
+    - list [ref=e17]:
+      - listitem [ref=e18]:
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Plan de gimnasio
+          - paragraph [ref=e23]: Calendario semanal que rota de fase sola, según tus propios eventos.
+      - listitem [ref=e24]:
+        - generic [ref=e30]:
+          - paragraph [ref=e31]: Nutrición
+          - paragraph [ref=e32]: Menú rotativo con objetivo de proteína diario, ajustado a cada fase.
+      - listitem [ref=e33]:
+        - generic [ref=e37]:
+          - paragraph [ref=e38]: Estadísticas
+          - paragraph [ref=e39]: Seguimiento de tiradas, ritmo, peso y resultados de tus eventos.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e45] [cursor=pointer]

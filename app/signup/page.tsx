@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SignupForm } from "@/components/signup-form";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BrandMark } from "@/components/brand-mark";
 
 export const metadata: Metadata = {
   title: "Crear cuenta · Bakata",
@@ -15,8 +16,9 @@ export default function SignupPage() {
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <div className="grid gap-4">
+      <div className="grid w-full max-w-sm gap-6 px-4">
         <h1 className="sr-only">Crear cuenta</h1>
+        <BrandMark />
         <SignupForm />
         <p className="text-center text-sm text-muted-foreground">
           ¿Ya tenés cuenta?{" "}

@@ -8,8 +8,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-sans);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-heading);
   --color-run: var(--run);
   --color-gym: var(--gym);
   --color-warning: var(--warning);

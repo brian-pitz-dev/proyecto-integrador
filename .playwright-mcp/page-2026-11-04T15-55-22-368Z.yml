@@ -1,0 +1,19 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e3]:
+    - button "Cambiar a modo claro" [ref=f1e5]
+    - generic [ref=f1e6]:
+      - heading "Iniciar sesión" [level=1] [ref=f1e7]
+      - paragraph [ref=f1e12]: Bakata
+      - generic [ref=f1e13]:
+        - generic [ref=f1e14]: Iniciar sesión
+        - generic [ref=f1e17]:
+          - generic [ref=f1e18]:
+            - generic [ref=f1e19]: Email
+            - textbox "Email" [ref=f1e20]
+          - generic [ref=f1e21]:
+            - generic [ref=f1e22]: Contraseña
+            - textbox "Contraseña" [ref=f1e23]
+          - button "Ingresar" [ref=f1e24]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f1e30] [cursor=pointer]
+  - alert [ref=f1e34]

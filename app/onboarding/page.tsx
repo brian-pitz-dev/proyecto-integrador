@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { OnboardingForm } from "@/components/onboarding-form";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BrandMark } from "@/components/brand-mark";
 
 export const metadata: Metadata = {
   title: "Completar registro · Bakata",
@@ -14,8 +15,9 @@ export default function OnboardingPage() {
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <div className="grid w-full gap-4">
+      <div className="grid w-full gap-6">
         <h1 className="sr-only">Completar registro</h1>
+        <BrandMark />
         <OnboardingForm />
       </div>
     </div>

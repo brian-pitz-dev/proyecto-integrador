@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { Barlow, Barlow_Condensed } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
-const jetBrainsMono = JetBrains_Mono({
+const barlow = Barlow({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
+});
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-heading",
 });
 
 const isProduction = process.env.CONTEXT === "production";
@@ -30,7 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="es"
-      className={`h-full antialiased ${jetBrainsMono.variable}`}
+      className={`h-full antialiased ${barlow.variable} ${barlowCondensed.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-foreground">
