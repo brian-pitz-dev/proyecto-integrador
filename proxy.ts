@@ -14,7 +14,7 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isPublicPath =
     ["/", "/robots.txt", "/sitemap.xml", "/manifest.webmanifest"].includes(path) ||
-    ["/login", "/opengraph-image", "/twitter-image", "/icon", "/apple-icon"].some((p) =>
+    ["/login", "/signup", "/opengraph-image", "/twitter-image", "/icon", "/apple-icon"].some((p) =>
       path.startsWith(p),
     );
 
@@ -24,9 +24,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && request.nextUrl.pathname === "/") {
+  const isOnboardingPath = path === "/onboarding";
+  const needsOnboarding = !!user && !user.user_metadata?.onboarding_completed;
+
+  if (needsOnboarding && !isOnboardingPath && !isPublicPath) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/onboarding";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && !needsOnboarding && isOnboardingPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/calendario";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && request.nextUrl.pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = needsOnboarding ? "/onboarding" : "/calendario";
     return NextResponse.redirect(url);
   }
 
