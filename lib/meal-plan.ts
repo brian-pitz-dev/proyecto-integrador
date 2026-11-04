@@ -4,8 +4,6 @@
  * igual que lib/training-plan.ts.
  */
 
-import { getWeeks, getCarbLoadWeeks } from "@/lib/training-plan";
-
 export type MealType = "desayuno" | "media" | "almuerzo" | "merienda" | "cena";
 
 export interface Ingrediente {
@@ -300,14 +298,17 @@ function buildRecencySequence(length: number, totalSlots: number, seed: number):
   return seq;
 }
 
-const ROTATION_SLOTS = getWeeks().length * 5 + 10;
+// Generoso a propósito (~20 años de semanas): la secuencia mulberry32 es
+// estrictamente secuencial, alargarla no cambia los valores que ya se usan,
+// solo agrega más al final — ver lib/training-plan.ts buildPlan().
+const ROTATION_SLOTS = 1040 * 5 + 10;
 const almuerzoSequence = buildRecencySequence(mealBank.almuerzo.length, ROTATION_SLOTS, 42);
 const cenaSequence = buildRecencySequence(mealBank.cena.length, ROTATION_SLOTS, 99);
 
-function pickAlmuerzo(weekNum: number, dayIdx: number): Meal {
+function pickAlmuerzo(weekNum: number, dayIdx: number, carbLoadWeeks: number[]): Meal {
   const bank = mealBank.almuerzo;
-  // la carga va solo jueves y viernes (dayIdx 3-4): para 21K alcanzan 1-2 días
-  if (dayIdx >= 3 && getCarbLoadWeeks().includes(weekNum)) {
+  // la carga va solo jueves y viernes (dayIdx 3-4): para una carrera larga alcanzan 1-2 días
+  if (dayIdx >= 3 && carbLoadWeeks.includes(weekNum)) {
     const carbArr = bank.filter((m) => m.carbLoad);
     if (carbArr.length) return carbArr[dayIdx % carbArr.length];
   }
@@ -434,14 +435,14 @@ export interface DayPlan {
  * Comidas del día para una semana (1-indexed, igual que lib/training-plan.ts)
  * y un índice de día 0=lunes..6=domingo. Sábado/domingo no tienen estructura fija.
  */
-export function getMealsForDay(weekNum: number, dayIdx: number): DayPlan {
+export function getMealsForDay(weekNum: number, dayIdx: number, carbLoadWeeks: number[]): DayPlan {
   if (dayIdx >= 5) {
     return { meals: [], totalProteinG: 0, isWeekday: false };
   }
 
   const offsets = { desayuno: 0, media: 1, merienda: 2 } as const;
   const meriendaMeal = pickMeal("merienda", weekNum, dayIdx, offsets.merienda);
-  const almuerzoMeal = pickAlmuerzo(weekNum, dayIdx);
+  const almuerzoMeal = pickAlmuerzo(weekNum, dayIdx, carbLoadWeeks);
   const almuerzoProtein = calcMealProtein(almuerzoMeal);
 
   let meals: DayMeal[] = [

@@ -1,4 +1,4 @@
-import { getSessionsForDate } from "@/lib/training-plan";
+import { getSessionsForDate, type Week, type UserEvent } from "@/lib/training-plan";
 import { toISO, todayNormalized } from "@/lib/date";
 
 /**
@@ -6,13 +6,17 @@ import { toISO, todayNormalized } from "@/lib/date";
  * programadas seguidas (mirando hacia atrás desde ayer) sin marcar como
  * completadas.
  */
-export function checkGymStreak(completedDates: Set<string>): boolean {
+export function checkGymStreak(
+  weeks: Week[],
+  events: UserEvent[],
+  completedDates: Set<string>,
+): boolean {
   let missedStreak = 0;
   const d = todayNormalized();
   d.setDate(d.getDate() - 1);
   let checkedDays = 0;
   while (checkedDays < 30) {
-    const sessions = getSessionsForDate(d);
+    const sessions = getSessionsForDate(weeks, events, d);
     if (sessions.some((s) => s.tag === "gym")) {
       if (!completedDates.has(toISO(d))) {
         missedStreak++;

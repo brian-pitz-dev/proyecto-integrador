@@ -1,6 +1,9 @@
 /**
- * Plan de entrenamiento semanal — portado 1:1 de plan_vida_2026.html.
- * No es dato de Supabase (Principio IV): vive como constante en el código,
+ * Motor de plan de entrenamiento — generaliza plan_vida_2026.html a múltiples
+ * usuarios: las fechas de cada fase se calculan relativas a los propios
+ * eventos de cada usuario (buildPlan), no a un calendario fijo. El contenido
+ * de cada fase (phase1Week..phase6Week) es la misma plantilla para todos —
+ * ver specs/004-multi-user-onboarding/spec.md, sección de Asunciones.
  */
 
 import { toISO, fromISO, addDays, isSameDay } from "@/lib/date";
@@ -18,12 +21,15 @@ export interface Session {
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type WeekConfig = Record<DayKey, Session[] | null>;
 
-export const PLAN_START = new Date(2026, 7, 17);
-export const PLAN_END = new Date(2026, 11, 31);
-
-const EV_10K = new Date(2026, 8, 13);
-const EV_LUJAN = new Date(2026, 9, 3);
-const EV_21K = new Date(2026, 10, 8);
+export interface UserEvent {
+  id: string;
+  tipo: "carrera" | "caminata";
+  nombre: string;
+  fecha: string; // ISO YYYY-MM-DD
+  distanciaKm: number;
+  etiqueta?: string | null;
+  detalle?: string | null;
+}
 
 // Ritmos del 21K para el objetivo de 2h20m: ajustar después del test 5K del 15/10
 const RC = "6:38/km";
@@ -89,7 +95,7 @@ function phase1Week(n: number): WeekConfig {
 function phase2Week(n: number): WeekConfig {
   const walks = [
     "14 km caminando, ritmo conservador",
-    "18 km caminando, probá el calzado/hidratación de Luján",
+    "18 km caminando, probá el calzado/hidratación de tu caminata",
     "10 km caminando muy suave — descarga, piernas frescas para el sábado siguiente",
   ];
   return {
@@ -98,7 +104,7 @@ function phase2Week(n: number): WeekConfig {
     wed: gymSession(n === 3 ? "inferiorLight" : "inferior", true),
     thu: [cardioSession("5.5 km/h con inclinación 8-10% · 40 min · caminata en cinta")],
     fri: n === 3 ? gymSession("tironLight", true) : gymSession("tiron", true),
-    sat: [longSession("Caminata larga — prep Luján", walks[n - 1], "long")],
+    sat: [longSession("Caminata larga — prep", walks[n - 1], "long")],
     sun: [restDay()],
   };
 }
@@ -193,167 +199,248 @@ function phase6Week(n: number): WeekConfig {
   };
 }
 
-interface PhaseDef {
-  key: string;
-  label: string;
-  desc: string;
-  weeks: number;
-  fn: (n: number) => WeekConfig;
-}
-
-const phaseDefs: PhaseDef[] = [
-  {
-    key: "p1",
-    label: "FASE 1 — Construcción velocidad",
-    desc: "Rumbo al 10K del 13/9",
-    weeks: 4,
-    fn: phase1Week,
-  },
-  {
-    key: "p2",
-    label: "FASE 2 — Transición a resistencia",
-    desc: "Preparación específica para Luján (3/10)",
-    weeks: 3,
-    fn: phase2Week,
-  },
-  {
-    key: "p3",
-    label: "FASE 3 — Recuperación",
-    desc: "Post-Luján, sin apuro",
-    weeks: 1,
-    fn: phase3Week,
-  },
-  {
-    key: "p4",
-    label: "FASE 4 — Construcción 21K",
-    desc: "Rumbo al 21K de Mar del Plata (8/11)",
-    weeks: 3,
-    fn: phase4Week,
-  },
-  {
-    key: "p5",
-    label: "FASE 5 — Tapering",
-    desc: "Última semana antes del 21K",
-    weeks: 1,
-    fn: phase5Week,
-  },
-  {
-    key: "p5r",
-    label: "FASE 5b — Recuperación",
-    desc: "Post-21K, sin apuro",
-    weeks: 1,
-    fn: phase3Week,
-  },
-  {
-    key: "p6",
-    label: "FASE 6 — Cierre de año",
-    desc: "Mantenimiento + foco 100% en composición corporal",
-    weeks: 8,
-    fn: phase6Week,
-  },
-];
-
-interface Week {
-  num: number;
-  start: Date;
-  phase: PhaseDef;
-  cfg: WeekConfig;
-}
-
-const weeks: Week[] = [];
-{
-  let cursor = new Date(PLAN_START);
-  let wnum = 1;
-  for (const phase of phaseDefs) {
-    for (let i = 1; i <= phase.weeks; i++) {
-      const startD = new Date(cursor);
-      if (startD > PLAN_END) break;
-      const cfg = phase.fn(i);
-      weeks.push({ num: wnum, start: startD, phase, cfg });
-      cursor = addDays(cursor, 7);
-      wnum++;
-    }
-  }
-}
-
 const dowKeys: DayKey[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
-function eventOverrideFor(date: Date): { sessions: Session[] } | null {
-  if (isSameDay(date, EV_10K)) {
-    return {
-      sessions: [
-        {
-          tag: "event",
-          label: "CARRERA 10K",
-          detail: "Objetivo: menos de 1:00:00 · Salí controlado los primeros 2km, después soltá.",
-        },
-      ],
-    };
-  }
-  if (isSameDay(date, EV_LUJAN)) {
-    return {
-      sessions: [
-        {
-          tag: "luj",
-          label: "PROCESIÓN A LUJÁN — 80KM",
-          detail: "De un tirón · Ritmo muy conservador · Hidratación constante.",
-        },
-      ],
-    };
-  }
-  if (isSameDay(date, EV_21K)) {
-    return {
-      sessions: [
-        {
-          tag: "event",
-          label: "MEDIA MARATÓN 21K — Mar del Plata",
-          detail: `Objetivo 2h20 (${RC}) · km 1-3 a 6:45, km 4-16 a 6:35, km 17-21 a 6:30 si vas entero · gel a los 45' y 90'.`,
-        },
-      ],
-    };
-  }
-  return null;
+function genericLabel(e: UserEvent): string {
+  return e.tipo === "carrera" ? `CARRERA — ${e.nombre}` : `CAMINATA — ${e.nombre}`;
 }
 
-/** Clave de fase (p1..p6) vigente para una fecha, usada por getCalorieTarget(). */
-export function getPhaseKeyForDate(date: Date): string | null {
-  const w = weeks.find((wk) => date >= wk.start && date <= addDays(wk.start, 6));
-  return w ? w.phase.key : null;
+function genericDetail(e: UserEvent): string {
+  return `${e.distanciaKm} km · Ritmo conservador los primeros km, después soltá según sensaciones.`;
 }
 
-export interface PlanWeek {
+function eventOverrideFor(events: UserEvent[], date: Date): { sessions: Session[] } | null {
+  const ev = events.find((e) => isSameDay(fromISO(e.fecha), date));
+  if (!ev) return null;
+  return {
+    sessions: [
+      {
+        tag: ev.tipo === "carrera" ? "event" : "luj",
+        label: ev.etiqueta ?? genericLabel(ev),
+        detail: ev.detalle ?? genericDetail(ev),
+      },
+    ],
+  };
+}
+
+export interface Week {
   num: number;
   /** ISO YYYY-MM-DD — no `Date`: cruzar un `Date` de Server a Client Component lo reinterpreta en el timezone del navegador y desfasa el día (ver lib/date.ts fromISO). */
   start: string;
   phaseKey: string;
   phaseLabel: string;
-  /** La semana contiene la fecha de un evento (10K, Luján o 21K). */
+  cfg: WeekConfig;
+  /** La semana contiene la fecha de un evento del usuario. */
   isEventWeek: boolean;
   /** La semana es la inmediata anterior a una semana de evento. */
   isPrepWeek: boolean;
 }
 
-/** Semanas del plan (17/ago–31/dic 2026) con marca de evento/preparación, para el selector de semanas (US6). */
-export function getWeeks(): PlanWeek[] {
-  const eventDates = [EV_10K, EV_LUJAN, EV_21K];
+interface RawWeek {
+  num: number;
+  start: Date;
+  phaseKey: string;
+  phaseLabel: string;
+  cfg: WeekConfig;
+}
 
-  function containsEvent(w: Week): boolean {
-    const wEnd = addDays(w.start, 6);
-    return eventDates.some((ev) => ev >= w.start && ev <= wEnd);
+/** Umbral de distancia que distingue un bloque de carrera "corto" (sin taper, ideal 4 semanas) de uno "largo" (construcción + taper, ideal 3+1 semanas) — separa el 10K del 21K en los datos históricos. */
+const CARRERA_LARGA_KM = 15;
+
+function weeksAvailableBetween(cursor: Date, eventDate: Date): number {
+  const days = Math.round((eventDate.getTime() - cursor.getTime()) / 86_400_000);
+  return Math.max(1, Math.ceil(days / 7));
+}
+
+/** Empuja `count` semanas de contenido `fn(n)` para n=1..count, avanzando cursor/wnum. */
+function pushContentWeeks(
+  out: RawWeek[],
+  cursor: { d: Date },
+  wnumRef: { n: number },
+  count: number,
+  fn: (n: number) => WeekConfig,
+  startN: number,
+  phaseKey: string,
+  phaseLabel: string,
+): void {
+  for (let i = 0; i < count; i++) {
+    out.push({
+      num: wnumRef.n,
+      start: new Date(cursor.d),
+      phaseKey,
+      phaseLabel,
+      cfg: fn(startN + i),
+    });
+    cursor.d = addDays(cursor.d, 7);
+    wnumRef.n++;
+  }
+}
+
+/** Rellena `weeksAvailable` semanas con contenido `fn`, ideal `ideal` semanas: recorta desde el final si faltan semanas, rellena el frente con mantenimiento si sobran. */
+function pushCompressedBlock(
+  out: RawWeek[],
+  cursor: { d: Date },
+  wnumRef: { n: number },
+  weeksAvailable: number,
+  ideal: number,
+  fn: (n: number) => WeekConfig,
+  phaseKey: string,
+  phaseLabel: string,
+): void {
+  if (weeksAvailable >= ideal) {
+    const padding = weeksAvailable - ideal;
+    if (padding > 0) {
+      pushContentWeeks(out, cursor, wnumRef, padding, phase6Week, 1, "p6", "FASE — Mantenimiento");
+    }
+    pushContentWeeks(out, cursor, wnumRef, ideal, fn, 1, phaseKey, phaseLabel);
+  } else {
+    // menos semanas que el ideal: usar las últimas `weeksAvailable` entradas (las más cercanas al evento)
+    const startN = ideal - weeksAvailable + 1;
+    pushContentWeeks(out, cursor, wnumRef, weeksAvailable, fn, startN, phaseKey, phaseLabel);
+  }
+}
+
+/**
+ * Arma el plan de un usuario: recorre sus eventos en orden de fecha, un bloque
+ * de construcción por evento (según tipo/distancia) + recuperación (salvo
+ * carrera seguida inmediatamente de caminata), y mantenimiento abierto después
+ * del último evento. Ver specs/004-multi-user-onboarding/ para el resto del
+ * razonamiento — reusa el mismo contenido de phase1Week..phase6Week de siempre,
+ * solo cambia qué fechas de calendario ocupa cada fase.
+ */
+export function buildPlan(planStartISO: string, events: UserEvent[], today: Date): Week[] {
+  const sorted = [...events].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0));
+  const out: RawWeek[] = [];
+  const cursor = { d: fromISO(planStartISO) };
+  const wnum = { n: 1 };
+
+  for (let i = 0; i < sorted.length; i++) {
+    const ev = sorted[i];
+    const eventDate = fromISO(ev.fecha);
+    const weeksAvailable = weeksAvailableBetween(cursor.d, eventDate);
+    const eventLabel = `rumbo a ${ev.nombre} (${ev.fecha})`;
+
+    if (ev.tipo === "caminata") {
+      pushCompressedBlock(
+        out,
+        cursor,
+        wnum,
+        weeksAvailable,
+        3,
+        phase2Week,
+        "p2",
+        `FASE — Preparación caminata · ${eventLabel}`,
+      );
+    } else if (ev.distanciaKm < CARRERA_LARGA_KM) {
+      pushCompressedBlock(
+        out,
+        cursor,
+        wnum,
+        weeksAvailable,
+        4,
+        phase1Week,
+        "p1",
+        `FASE — Construcción · ${eventLabel}`,
+      );
+    } else {
+      // carrera larga: construcción (ideal 3) + taper (ideal 1, nunca se salta salvo weeksAvailable<=1)
+      if (weeksAvailable <= 1) {
+        pushContentWeeks(
+          out,
+          cursor,
+          wnum,
+          1,
+          phase5Week,
+          1,
+          "p5",
+          `FASE — Tapering · última semana antes de ${ev.nombre}`,
+        );
+      } else {
+        pushCompressedBlock(
+          out,
+          cursor,
+          wnum,
+          weeksAvailable - 1,
+          3,
+          phase4Week,
+          "p4",
+          `FASE — Construcción · ${eventLabel}`,
+        );
+        pushContentWeeks(
+          out,
+          cursor,
+          wnum,
+          1,
+          phase5Week,
+          1,
+          "p5",
+          `FASE — Tapering · última semana antes de ${ev.nombre}`,
+        );
+      }
+    }
+
+    const next = sorted[i + 1];
+    const skipRecovery = ev.tipo === "carrera" && next?.tipo === "caminata";
+    if (!skipRecovery) {
+      pushContentWeeks(
+        out,
+        cursor,
+        wnum,
+        1,
+        phase3Week,
+        1,
+        "p3",
+        `FASE — Recuperación · post ${ev.nombre}`,
+      );
+    }
   }
 
-  return weeks.map((w, i) => ({
-    num: w.num,
-    start: toISO(w.start),
-    phaseKey: w.phase.key,
-    phaseLabel: w.phase.label,
-    isEventWeek: containsEvent(w),
-    isPrepWeek: weeks[i + 1] ? containsEvent(weeks[i + 1]) : false,
+  // Mantenimiento abierto tras el último evento (o todo el plan si no hay eventos):
+  // siempre cubre al menos 12 semanas por delante de "hoy" para que el calendario
+  // nunca se quede corto, recalculado en cada llamada (buildPlan es barato y puro).
+  const horizon = addDays(today, 12 * 7);
+  const horizonWeeks = Math.ceil((horizon.getTime() - cursor.d.getTime()) / (7 * 86_400_000));
+  const maintenanceWeeks = Math.max(horizonWeeks, 4);
+  pushContentWeeks(
+    out,
+    cursor,
+    wnum,
+    maintenanceWeeks,
+    phase6Week,
+    1,
+    "p6",
+    "FASE — Mantenimiento",
+  );
+
+  const isoWeeks = out.map((w) => ({ ...w, start: toISO(w.start) }));
+
+  function containsEvent(weekStartISO: string): boolean {
+    const start = fromISO(weekStartISO);
+    const end = addDays(start, 6);
+    return events.some((e) => {
+      const d = fromISO(e.fecha);
+      return d >= start && d <= end;
+    });
+  }
+
+  return isoWeeks.map((w, i) => ({
+    ...w,
+    isEventWeek: containsEvent(w.start),
+    isPrepWeek: isoWeeks[i + 1] ? containsEvent(isoWeeks[i + 1].start) : false,
   }));
 }
 
+/** Clave de fase (p1..p6) vigente para una fecha, usada por getCalorieTarget(). */
+export function getPhaseKeyForDate(weeks: Week[], date: Date): string | null {
+  const w = weeks.find((wk) => {
+    const start = fromISO(wk.start);
+    return date >= start && date <= addDays(start, 6);
+  });
+  return w ? w.phaseKey : null;
+}
+
 /** Número de la semana del plan que contiene `today` (o la primera si está fuera del plan). */
-export function getCurrentWeekNum(weeks: PlanWeek[], today: Date): number {
+export function getCurrentWeekNum(weeks: Week[], today: Date): number {
   const w = weeks.find((wk) => {
     const start = fromISO(wk.start);
     return today >= start && today <= addDays(start, 6);
@@ -361,50 +448,37 @@ export function getCurrentWeekNum(weeks: PlanWeek[], today: Date): number {
   return w?.num ?? weeks[0]?.num ?? 1;
 }
 
-/** Últimas semanas de p2 y p5 (carga de carbohidratos previa a Luján y al 21K). */
-export function getCarbLoadWeeks(): number[] {
+/** Últimas semanas de "p2"/"p5" vigentes (carga de carbohidratos previa a una caminata/carrera larga). */
+export function getCarbLoadWeeks(weeks: Week[]): number[] {
   return ["p2", "p5"]
-    .map((key) => weeks.filter((w) => w.phase.key === key))
+    .map((key) => weeks.filter((w) => w.phaseKey === key))
     .filter((ws) => ws.length > 0)
     .map((ws) => ws[ws.length - 1].num);
 }
 
-export interface PlanEvent {
-  name: string;
-  date: Date;
-}
+/** Equivalente a getSessionsForDate() de plan_vida_2026.html, generalizado por usuario. */
+export function getSessionsForDate(weeks: Week[], events: UserEvent[], date: Date): Session[] {
+  if (weeks.length === 0) return [restDay()];
+  const planStart = fromISO(weeks[0].start);
+  if (date < planStart) return [restDay()];
 
-/** Los 3 eventos del plan (10K, Luján, 21K), para el header y el footer. */
-export function getEvents(): PlanEvent[] {
-  return [
-    { name: "10K", date: EV_10K },
-    { name: "Luján", date: EV_LUJAN },
-    { name: "21K Mar del Plata", date: EV_21K },
-  ];
-}
-
-/** El próximo evento pendiente (fecha >= `today`), o null si los 3 ya pasaron. */
-export function getNextEvent(today: Date): PlanEvent | null {
-  const upcoming = getEvents()
-    .filter((e) => e.date >= today)
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
-  return upcoming[0] ?? null;
-}
-
-/** Meta de peso/composición del plan, mostrada en el header (portado de plan_vida_2026.html). */
-export const PLAN_GOAL = {
-  weightKg: 80,
-  bodyFatPct: "14-15%",
-} as const;
-
-/** Equivalente a getSessionsForDate() de plan_vida_2026.html. */
-export function getSessionsForDate(date: Date): Session[] {
-  if (date < PLAN_START || date > PLAN_END) return [restDay()];
-  const override = eventOverrideFor(date);
+  const override = eventOverrideFor(events, date);
   if (override) return override.sessions;
-  const w = weeks.find((wk) => date >= wk.start && date <= addDays(wk.start, 6));
+
+  const w = weeks.find((wk) => {
+    const start = fromISO(wk.start);
+    return date >= start && date <= addDays(start, 6);
+  });
   if (!w) return [restDay()];
-  const di = Math.round((date.getTime() - w.start.getTime()) / (1000 * 60 * 60 * 24));
+  const di = Math.round((date.getTime() - fromISO(w.start).getTime()) / (1000 * 60 * 60 * 24));
   const dk = dowKeys[di];
   return w.cfg[dk] || [restDay()];
+}
+
+/** El próximo evento pendiente (fecha >= `today`), o null si no queda ninguno. */
+export function getNextEvent(events: UserEvent[], today: Date): UserEvent | null {
+  const upcoming = events
+    .filter((e) => fromISO(e.fecha) >= today)
+    .sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
+  return upcoming[0] ?? null;
 }
