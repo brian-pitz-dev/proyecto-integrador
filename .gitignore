@@ -52,3 +52,7 @@ next-env.d.ts
 # config local de herramientas de desarrollo — no forma parte del proyecto
 /.claude/
 /.specify/
+/supabase/.temp/
+
+# Local Netlify folder
+.netlify
