@@ -11,6 +11,7 @@ type Attempts = Map<string, { count: number; windowStart: number }>;
 // becomes multi-instance.
 const loginAttempts: Attempts = new Map();
 const saveLogAttempts: Attempts = new Map();
+const signupAttempts: Attempts = new Map();
 
 function isLimited(attempts: Attempts, key: string, windowMs: number, max: number): boolean {
   const entry = attempts.get(key);
@@ -59,4 +60,14 @@ export function isSaveLogRateLimited(userId: string): boolean {
 /** Records a saveLog attempt for `userId`, starting a new window if needed. */
 export function recordSaveLogAttempt(userId: string): void {
   record(saveLogAttempts, userId, SAVE_LOG_WINDOW_MS);
+}
+
+/** Returns true if `key` (e.g. client IP) is currently rate-limited on signup. */
+export function isSignupRateLimited(key: string): boolean {
+  return isLimited(signupAttempts, key, WINDOW_MS, MAX_ATTEMPTS);
+}
+
+/** Records a failed signup attempt for `key`, starting a new window if needed. */
+export function recordSignupAttempt(key: string): void {
+  record(signupAttempts, key, WINDOW_MS);
 }

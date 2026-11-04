@@ -33,7 +33,7 @@ export async function login(input: {
     return { ok: false, message: "Demasiados intentos. Probá de nuevo en unos minutos." };
   }
 
-  const humanVerified = await verifyTurnstileToken(parsed.data.turnstileToken, clientKey);
+  const humanVerified = await verifyTurnstileToken(parsed.data.turnstileToken, clientKey, "login");
   if (!humanVerified) {
     return { ok: false, message: "Verificación anti-bot fallida. Recargá la página." };
   }
