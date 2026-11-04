@@ -3,7 +3,7 @@ import { getUserPlanContext } from "@/lib/user-plan";
 import { NutricionClient } from "@/components/nutrition/nutricion-client";
 
 export const metadata: Metadata = {
-  title: "Nutrición · Plan de Vida 2026",
+  title: "Nutrición · Bakata",
   description:
     "Plan de comidas del día: desayuno, almuerzo, merienda y cena, con rotación semanal.",
   alternates: { canonical: "/nutricion" },

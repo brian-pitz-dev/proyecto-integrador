@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local Netlify CLI build/deploy artifacts — not part of the repo (gitignored).
+    ".netlify/**",
   ]),
   // Debe ir al final: desactiva reglas de estilo que pisarían a Prettier.
   prettier,

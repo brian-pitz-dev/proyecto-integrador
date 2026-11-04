@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { dumbbellRoutines } from "@/lib/dumbbell-exercises";
 
 export const metadata: Metadata = {
-  title: "Mancuernas · Plan de Vida 2026",
+  title: "Mancuernas · Bakata",
   description: "Ejercicios de mancuernas para pausas de Pomodoro en casa, por grupo muscular.",
   alternates: { canonical: "/mancuernas" },
 };

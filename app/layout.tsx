@@ -13,10 +13,10 @@ const isProduction = process.env.CONTEXT === "production";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  title: "Plan de Vida 2026",
+  title: "Bakata",
   description: "Registro de ejercicio, dieta y calendario de entrenamiento",
   openGraph: {
-    title: "Plan de Vida 2026",
+    title: "Bakata",
     description: "Registro de ejercicio, dieta y calendario de entrenamiento",
     type: "website",
   },

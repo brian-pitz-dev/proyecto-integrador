@@ -6,14 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"Plan de Vida 2026" — a personal Next.js app for one user (Brian) to track training
-(running/gym), nutrition, and progress toward three 2026 events (a 10K, the 80km
-Luján procession, and a 21K). It's a migration of a static `plan_vida_2026.html`
-(not in this repo — excluded via `.gitignore`), preserving its logic 1:1 while
-moving storage to Supabase and the UI to Next.js + shadcn/ui.
+"Bakata" — a multi-user Next.js app to track training (running/gym), nutrition, and
+progress toward each user's own events, with public signup and an onboarding flow
+that captures a user's profile and events (specs/004-multi-user-onboarding). It
+started as "Plan de Vida 2026," a personal app for one user (Brian) tracking three
+specific 2026 events (a 10K, the 80km Luján procession, and a 21K) — itself a
+migration of a static `plan_vida_2026.html` (not in this repo — excluded via
+`.gitignore`). Brian's original plan now lives as the first migrated account in the
+multi-user model (`specs/004-multi-user-onboarding/contracts/brian-migration.sql`),
+not as a special case in the code.
 
 Read `README.md` for the product framing and `specs/*/spec.md` + `plan.md` for the
-history of *why* things are built the way they are — this repo uses a spec-driven
+history of _why_ things are built the way they are — this repo uses a spec-driven
 workflow (`specs/001-...` through `specs/004-...`, each with `spec.md`, `plan.md`,
 `research.md`, `data-model.md`, `contracts/`). When touching auth, RLS, or the
 training/nutrition data model, check the matching spec folder before assuming the
@@ -40,55 +44,71 @@ dev/build/lint.
 data directly; Server Actions mutate it. The only external dependency is Supabase
 (Postgres + Auth), accessed via `@supabase/ssr`.
 
-### Core principle: plan content is code, user data is Supabase
+### Core principle: plan _methodology_ is code, plan _data_ is per-user Supabase rows
 
-The training plan, meal plans, and exercise catalogs are **hardcoded TypeScript
-constants**, not database rows — they're decisions made in advance, not data that
-changes on its own:
+The 6-phase training methodology, the meal bank, and the exercise catalogs are
+**hardcoded TypeScript constants** shared by every user — they're decisions made in
+advance, not data that changes on its own. What's no longer hardcoded (since spec 004) is which calendar dates each phase occupies and whose profile/events drive the
+calorie math — that's per-user data in `perfil`/`evento` (see
+`specs/004-multi-user-onboarding/data-model.md`), read once per request via
+`lib/user-plan.ts`'s `getUserPlanContext()`:
 
-- `lib/training-plan.ts` — the weekly gym/run schedule, keyed off fixed calendar
-  dates (`PLAN_START`/`PLAN_END` and three hardcoded event dates) and a 6-phase
-  methodology (speed-building → endurance → recovery → race-specific build →
-  taper → maintenance). `getPhaseKeyForDate()` and `getSessionsForDate()` are the
-  main entry points other modules call.
-- `lib/meal-plan.ts` — the rotating meal bank and protein-reinforcement logic.
+- `lib/training-plan.ts` — the weekly gym/run schedule content (`phase1Week`..
+  `phase6Week`) is a fixed, shared 6-phase methodology (speed-building → endurance →
+  recovery → race-specific build → taper → maintenance); `buildPlan(planStart,
+events, today)` maps that content onto a specific user's own event dates (see
+  `specs/004-multi-user-onboarding/research.md` Decision 1 for the algorithm).
+  `getPhaseKeyForDate()` and `getSessionsForDate()` now take that user's computed
+  `Week[]`/events instead of operating on module-level globals.
+- `lib/meal-plan.ts` — the rotating meal bank and protein-reinforcement logic (shared
+  content; `getMealsForDay()` takes `carbLoadWeeks` from the caller's own plan).
 - `lib/gym-exercises.ts` / `lib/dumbbell-exercises.ts` — exercise catalogs keyed by
-  routine/phase.
-- `lib/calorie-target.ts` — Mifflin-St Jeor BMR calibrated against one hardcoded
-  InBody measurement (`PERSONAL_DATA`, `INBODY_REFERENCE`), with a per-phase
-  calorie deficit table.
-- `lib/plan-content.ts` — static event/rules cards shown in the UI.
+  routine/phase (shared content, unchanged by spec 004).
+- `lib/calorie-target.ts` — Mifflin-St Jeor BMR, now taking a `UserProfile` (age,
+  height, sex, activity factor, optional personal calibration) instead of one
+  hardcoded `PERSONAL_DATA`/`INBODY_REFERENCE` pair — fixing a latent bug along the
+  way (the old formula had no sex term at all).
+- `lib/plan-content.ts` — static event/rules cards shown in the UI (shared, generic).
 
-**`specs/004-multi-user-onboarding/spec.md` is a draft spec (not yet implemented)**
-to generalize all of the above away from hardcoded-for-Brian constants into
-per-user data. If you're asked to work on onboarding, multi-tenancy, or making the
-plan "someone else's," read that spec first — it documents the open design
-questions (e.g., how phases anchor to a user's own event dates) explicitly left
-unresolved.
+**`specs/004-multi-user-onboarding/` is implemented for its core scope** (US1-US3:
+signup, onboarding, per-user plan generation, Brian's migration) — `lib/training-plan.ts`
+and `lib/calorie-target.ts` no longer hold hardcoded-for-Brian constants; they take a
+user's own profile/events (`lib/user-plan.ts`'s `getUserPlanContext()`) and compute
+phases relative to those events (see `specs/004-multi-user-onboarding/research.md`
+Decision 1 for how the spec's open design question was resolved). US4 (per-user
+editable meal/exercise catalogs, via AI generation) and US5 (full event CRUD UI) are
+still open — `lib/meal-plan.ts`/`lib/gym-exercises.ts`/`lib/dumbbell-exercises.ts`
+remain shared, read-only content for every user. If you're asked to work on those,
+read `specs/004-multi-user-onboarding/spec.md` and `research.md` first.
 
-The only thing persisted in Supabase is what actually changes day-to-day: weight,
-calories, sleep, runs/walks, completed-day checkmarks, and event results — all in
-one flat table, `registro` (`categoria`, `fecha`, `valor`, `nota`, `user_id`). There
-are no foreign keys; "relations" (e.g. scheduled gym session vs. completed) are
-resolved in application code by cross-referencing the static plan against
-`registro` rows. See `specs/001-nextjs-migration/data-model.md` for the full
-`categoria` enum and what `valor`/`nota` mean per category.
+Day-to-day data (weight, calories, sleep, runs/walks, completed-day checkmarks, and
+event results) lives in one flat table, `registro` (`categoria`, `fecha`, `valor`,
+`nota`, `user_id`) — no foreign keys; "relations" (e.g. scheduled gym session vs.
+completed) are resolved in application code by cross-referencing a user's computed
+plan against their `registro` rows. See `specs/001-nextjs-migration/data-model.md`
+for the full `categoria` enum and what `valor`/`nota` mean per category. Plan
+_configuration_ (profile and events — what used to be hardcoded constants) lives in
+`perfil`/`evento`, added by spec 004; see
+`specs/004-multi-user-onboarding/data-model.md`.
 
 ### Routing and auth
 
 - `app/(app)/` is the authenticated route group: `calendario`, `nutricion`,
   `estadisticas`, `mancuernas`, sharing `app/(app)/layout.tsx` (nav + theme toggle).
-- `app/login/` is public. `app/page.tsx` and `proxy.ts` handle the redirect logic
-  (logged-out → `/login`, logged-in at `/` → `/calendario`).
+- `app/login/` and `app/signup/` are public. `app/onboarding/` requires a session but
+  not a completed profile. `app/page.tsx` and `proxy.ts` handle the redirect logic
+  (logged-out → `/login`, logged-in without a completed profile → `/onboarding`,
+  logged-in at `/` → `/calendario`).
 - **Next.js 16 renamed `middleware.ts` to `proxy.ts`** — this is not a typo or a
   custom convention, it's current upstream Next.js. `proxy.ts` is regenerated/kept
   in sync by `next dev`; see `node_modules/next/dist/server/lib/generate-agent-files.js`.
   Don't reintroduce `middleware.ts`.
-- Auth is Supabase Auth (email+password, single owner, no public signup — that's
-  what spec 004 would add). Session lives in httpOnly cookies via `@supabase/ssr`.
+- Auth is Supabase Auth (email+password, public signup via `app/signup/`, protected
+  by the same Turnstile + rate-limit pattern as login — see spec 004). Session lives
+  in httpOnly cookies via `@supabase/ssr`.
 - **Two-layer auth gate, both required**: `proxy.ts` (via `lib/supabase/proxy.ts`'s
   `createProxyClient`) redirects unauthenticated requests at the edge, but
-  `research.md`/`plan.md` for spec 003 are explicit that the proxy is *not*
+  `research.md`/`plan.md` for spec 003 are explicit that the proxy is _not_
   sufficient alone (a matcher change or route refactor can silently drop
   coverage). Every data-mutating Server Action must independently call
   `getAuthedUser()` from `lib/supabase/auth.ts` and bail if there's no user —

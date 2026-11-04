@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Plan de Vida 2026",
-    short_name: "Plan de Vida",
+    name: "Bakata",
+    short_name: "Bakata",
     description: "Registro de ejercicio, dieta y calendario de entrenamiento",
     start_url: "/",
     display: "standalone",

@@ -4,7 +4,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Plan de Vida 2026",
+  title: "Bakata",
   description: "Registro de ejercicio, dieta y calendario de entrenamiento.",
   alternates: { canonical: "/" },
   robots: { index: false, follow: false },
@@ -19,7 +19,7 @@ export default function HomePage() {
 
       <div className="grid max-w-md gap-6 text-center">
         <div className="grid gap-1.5">
-          <h1 className="text-5xl font-bold">Plan de Vida 2026</h1>
+          <h1 className="text-5xl font-bold">Bakata</h1>
           <p className="text-sm text-muted-foreground">
             Tu plan de entrenamiento, nutrición y progreso hacia tus propios eventos.
           </p>

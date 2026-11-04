@@ -4,7 +4,7 @@ import { SignupForm } from "@/components/signup-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
-  title: "Crear cuenta · Plan de Vida 2026",
+  title: "Crear cuenta · Bakata",
   description: "Registrate para armar tu propio plan de entrenamiento y nutrición.",
   robots: { index: false, follow: false },
 };

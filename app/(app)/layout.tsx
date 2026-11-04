@@ -11,7 +11,7 @@ export default function AppLayout({ children }: Readonly<{ children: React.React
           href="/calendario"
           className="col-start-1 font-heading text-lg font-semibold text-foreground lg:hidden"
         >
-          Plan de Vida 2026
+          Bakata
         </Link>
         <div className="col-start-2 min-w-0 justify-self-center">
           <NavTabs />

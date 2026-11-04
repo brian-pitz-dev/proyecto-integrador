@@ -25,7 +25,7 @@ import { formatPace, paceStrToSeconds } from "@/lib/pace";
 import type { Categoria, Registro } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Estadísticas · Plan de Vida 2026",
+  title: "Estadísticas · Bakata",
   description: "Resumen de logros, progreso de peso y registro de datos diarios.",
   alternates: { canonical: "/estadisticas" },
 };

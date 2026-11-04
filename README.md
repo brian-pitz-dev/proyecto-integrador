@@ -1,20 +1,41 @@
-# Plan de Vida 2026
+# Bakata
 
-App personal para organizar entrenamiento, comidas y seguimiento de objetivos a lo largo de 2026: un 10K, la Procesión a Luján (80km) y una media maratón (21K).
+App para organizar entrenamiento, comidas y seguimiento de objetivos propios: cada
+usuario se registra, carga su perfil y sus propios eventos (carreras o caminatas), y
+a partir de eso se arma su plan de gimnasio, nutrición y calorías.
 
 ## Qué es
 
-Un plan de vida hecho app: en vez de una planilla o un PDF estático, el entrenamiento y las comidas viven como una web personal que se actualiza según la fecha y la fase en la que se está (construcción, preparación para un evento, recuperación, tapering).
+Un plan de vida hecho app: en vez de una planilla o un PDF estático, el
+entrenamiento y las comidas viven como una web que se actualiza según la fecha y la
+fase de entrenamiento en la que está cada usuario (construcción, preparación para un
+evento, recuperación, tapering), calculada en relación a sus propios eventos — no a
+un calendario fijo.
+
+Arrancó como un proyecto personal de un solo usuario (fechas y eventos
+hardcodeados), y se generalizó a multi-usuario: cualquiera puede crear una cuenta.
 
 ## Secciones
 
-- **Plan de gimnasio** — calendario semanal con el entrenamiento, dividido en fases que rotan automáticamente según la fecha (velocidad, resistencia, recuperación, construcción para el 21K, tapering, mantenimiento).
-- **Mancuernas** — rutinas cortas de mancuernas por grupo muscular para pausas de Pomodoro en casa, para los días que no dan para ir al gym.
-- **Nutrición** — plan de comidas rotativo con objetivo de proteína diario, ajustado según la fase de entrenamiento (menos déficit calórico y más carbohidratos antes de los eventos largos).
-- **Stats** — seguimiento de tiradas, ritmo y resultados de los eventos.
+- **Plan de gimnasio** — calendario semanal con el entrenamiento, dividido en fases
+  que rotan automáticamente según la fecha y los eventos propios de cada usuario
+  (velocidad, resistencia, recuperación, construcción para una carrera larga,
+  tapering, mantenimiento).
+- **Mancuernas** — rutinas cortas de mancuernas por grupo muscular para pausas de
+  Pomodoro en casa, para los días que no dan para ir al gym.
+- **Nutrición** — plan de comidas rotativo con objetivo de proteína diario, ajustado
+  según la fase de entrenamiento (menos déficit calórico y más carbohidratos antes de
+  los eventos largos).
+- **Estadísticas** — seguimiento de tiradas, ritmo y resultados de los eventos.
 
 ## Cómo está pensada
 
-El plan de entrenamiento y de comidas vive hardcodeado en el código, no en una base de datos: son decisiones tomadas de antemano, no datos que cambien solos. Lo único que se registra día a día (peso, calorías, tiradas, sueño, resultados de eventos) es lo que sí necesita persistirse.
+La metodología de entrenamiento (las 6 fases y su contenido semana a semana) y el
+banco de comidas/ejercicios viven hardcodeados en el código, compartidos por todos
+los usuarios — son decisiones tomadas de antemano, no datos que cambien solos. Lo que
+sí es dato de cada usuario: su perfil (edad, altura, peso, objetivo) y sus eventos
+propios, que determinan qué fechas ocupa cada fase — y lo que se registra día a día
+(peso, calorías, tiradas, sueño, resultados de eventos).
 
-Stack: Next.js + React + TypeScript, con Supabase para lo que el usuario va registrando.
+Stack: Next.js + React + TypeScript, con Supabase para auth y para todo lo que cada
+usuario va registrando/configurando. Desplegado en Netlify.

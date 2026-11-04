@@ -5,7 +5,7 @@ import { getUserPlanContext } from "@/lib/user-plan";
 import { EVENT_CARDS, RULE_CARDS } from "@/lib/plan-content";
 
 export const metadata: Metadata = {
-  title: "Calendario · Plan de Vida 2026",
+  title: "Calendario · Bakata",
   description: "Plan de entrenamiento semana a semana: sesiones, fases y eventos.",
   alternates: { canonical: "/calendario" },
 };

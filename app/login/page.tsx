@@ -3,7 +3,7 @@ import { LoginForm } from "@/components/login-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
-  title: "Iniciar sesión · Plan de Vida 2026",
+  title: "Iniciar sesión · Bakata",
   description: "Acceso privado para el dueño de la app.",
   robots: { index: false, follow: false },
 };

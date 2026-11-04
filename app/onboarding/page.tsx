@@ -3,7 +3,7 @@ import { OnboardingForm } from "@/components/onboarding-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
-  title: "Completar registro · Plan de Vida 2026",
+  title: "Completar registro · Bakata",
   description: "Contanos tu perfil y tus eventos para armar tu plan.",
   robots: { index: false, follow: false },
 };
