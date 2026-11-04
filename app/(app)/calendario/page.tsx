@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CalendarGrid } from "@/components/calendar-grid/calendar-grid";
 import { createClient } from "@/lib/supabase/server";
-import { getWeeks } from "@/lib/training-plan";
+import { getUserPlanContext } from "@/lib/user-plan";
 import { EVENT_CARDS, RULE_CARDS } from "@/lib/plan-content";
 
 export const metadata: Metadata = {
@@ -18,12 +18,21 @@ async function fetchCompletedDates(): Promise<string[]> {
 }
 
 export default async function CalendarioPage() {
-  const completedDates = await fetchCompletedDates();
+  const [completedDates, planContext] = await Promise.all([
+    fetchCompletedDates(),
+    getUserPlanContext(),
+  ]);
+
+  if (!planContext) return null; // proxy.ts ya redirige a /onboarding antes de esto
 
   return (
     <div className="grid gap-8">
       <h1 className="mx-auto w-full max-w-4xl text-4xl font-bold">Calendario</h1>
-      <CalendarGrid completedDates={completedDates} weeks={getWeeks()} />
+      <CalendarGrid
+        completedDates={completedDates}
+        weeks={planContext.weeks}
+        events={planContext.events}
+      />
 
       <div className="mx-auto grid w-full max-w-4xl gap-3">
         {EVENT_CARDS.map((event) => (

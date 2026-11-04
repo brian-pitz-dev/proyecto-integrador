@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getWeeks } from "@/lib/training-plan";
+import { getUserPlanContext } from "@/lib/user-plan";
 import { NutricionClient } from "@/components/nutrition/nutricion-client";
 
 export const metadata: Metadata = {
@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/nutricion" },
 };
 
-export default function NutricionPage() {
-  return <NutricionClient weeks={getWeeks()} />;
+export default async function NutricionPage() {
+  const planContext = await getUserPlanContext();
+  if (!planContext) return null; // proxy.ts ya redirige a /onboarding antes de esto
+  return <NutricionClient weeks={planContext.weeks} />;
 }

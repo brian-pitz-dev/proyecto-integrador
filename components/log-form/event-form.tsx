@@ -8,14 +8,12 @@ import { Label } from "@/components/ui/label";
 import { useLogSubmit } from "@/components/log-form/registro-category-card";
 import { formatPace } from "@/lib/pace";
 import { toISO } from "@/lib/date";
-import { getEvents } from "@/lib/training-plan";
+import type { UserEvent } from "@/lib/training-plan";
 
-const EVENTS = getEvents();
-
-export function EventForm() {
+export function EventForm({ events }: { events: UserEvent[] }) {
   const { pending, formRef, submit } = useLogSubmit("Evento guardado");
-  const [eventName, setEventName] = useState(EVENTS[0]?.name ?? "");
-  const selectedEvent = EVENTS.find((e) => e.name === eventName);
+  const [eventName, setEventName] = useState(events[0]?.nombre ?? "");
+  const selectedEvent = events.find((e) => e.nombre === eventName);
 
   async function handleSubmit(formData: FormData) {
     const km = Number(formData.get("km"));
@@ -37,7 +35,7 @@ export function EventForm() {
       valor: km,
       nota: `${eventName} · ${timeLabel} · ${paceStr}`,
     });
-    if (ok) setEventName(EVENTS[0]?.name ?? "");
+    if (ok) setEventName(events[0]?.nombre ?? "");
   }
 
   return (
@@ -50,9 +48,9 @@ export function EventForm() {
           onChange={(e) => setEventName(e.target.value)}
           className="rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground"
         >
-          {EVENTS.map((e) => (
-            <option key={e.name} value={e.name}>
-              {e.name}
+          {events.map((e) => (
+            <option key={e.id} value={e.nombre}>
+              {e.nombre}
             </option>
           ))}
         </select>
@@ -79,7 +77,7 @@ export function EventForm() {
           id="event-fecha"
           name="fecha"
           type="date"
-          defaultValue={selectedEvent ? toISO(selectedEvent.date) : toISO(new Date())}
+          defaultValue={selectedEvent ? selectedEvent.fecha : toISO(new Date())}
         />
       </div>
       <Button type="submit" disabled={pending}>

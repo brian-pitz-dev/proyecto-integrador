@@ -19,7 +19,7 @@ import {
   buildMonthHistory,
   getMissingYesterdayItems,
 } from "@/lib/stats-summary";
-import { PLAN_GOAL } from "@/lib/training-plan";
+import { getUserPlanContext } from "@/lib/user-plan";
 import { getMonday, todayNormalized, fromISO, formatShort } from "@/lib/date";
 import { formatPace, paceStrToSeconds } from "@/lib/pace";
 import type { Categoria, Registro } from "@/lib/types";
@@ -55,13 +55,20 @@ function entriesOf(registros: Registro[], format: (r: Registro) => string) {
 }
 
 export default async function EstadisticasPage() {
-  const { completedDates, peso, sueno, calorias, caminata, tirada, evento } = await fetchData();
+  const [{ completedDates, peso, sueno, calorias, caminata, tirada, evento }, planContext] =
+    await Promise.all([fetchData(), getUserPlanContext()]);
+  if (!planContext) return null; // proxy.ts ya redirige a /onboarding antes de esto
+  const { profile, events, weeks } = planContext;
   const today = todayNormalized();
+  const planStart = fromISO(profile.planStart);
 
-  const gymAtRisk = checkGymStreak(completedDates);
+  const gymAtRisk = checkGymStreak(weeks, events, completedDates);
   const missingYesterdayItems = getMissingYesterdayItems(sueno, calorias, new Date());
 
   const { trainable: weekTrainable, completed: weekCompleted } = countTrainableVsCompleted(
+    weeks,
+    events,
+    planStart,
     getMonday(today),
     today,
     completedDates,
@@ -73,7 +80,7 @@ export default async function EstadisticasPage() {
   const last3Paces = [...tirada, ...evento]
     .sort((a, b) => (a.fecha > b.fecha ? -1 : 1))
     .map((r) => paceStrToSeconds(r.nota))
-    // más lento que 10:00/km es caminata (ej. Luján): no cuenta como ritmo de running
+    // más lento que 10:00/km es caminata: no cuenta como ritmo de running
     .filter((p): p is number => p !== null && p < 10 * 60)
     .slice(0, 3);
   const avgPaceLabel = last3Paces.length
@@ -82,11 +89,13 @@ export default async function EstadisticasPage() {
 
   const weightProgress = computeWeightProgress(
     peso.map((r) => Number(r.valor)),
+    profile.metaPesoKg ?? profile.pesoInicialKg,
+    events,
     today,
   );
-  const calorieTarget = await getCalorieTarget(today);
-  const monthHistory = buildMonthHistory(completedDates);
-  const bmrCalibradoActual = peso[0] ? computeBmrCalibrado(Number(peso[0].valor)) : null;
+  const calorieTarget = await getCalorieTarget(today, profile, weeks);
+  const monthHistory = buildMonthHistory(weeks, events, planStart, completedDates);
+  const bmrCalibradoActual = peso[0] ? computeBmrCalibrado(Number(peso[0].valor), profile) : null;
 
   function formatCalorias(r: Registro): string {
     const activas = Number(r.valor);
@@ -146,7 +155,9 @@ export default async function EstadisticasPage() {
       <Card>
         <CardHeader className="border-b">
           <CardTitle className="text-lg font-semibold">
-            Objetivo: {PLAN_GOAL.weightKg} kg y {PLAN_GOAL.bodyFatPct} de grasa
+            {profile.metaPesoKg
+              ? `Objetivo: ${profile.metaPesoKg} kg${profile.metaGrasaPct ? ` y ${profile.metaGrasaPct} de grasa` : ""}`
+              : "Progreso de peso"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -171,7 +182,9 @@ export default async function EstadisticasPage() {
               </div>
               <div className="flex flex-wrap justify-between gap-2 text-sm text-muted-foreground">
                 <span>{weightProgress.diffLabel}</span>
-                <span>{weightProgress.daysLeft} días hasta el 31 dic</span>
+                {weightProgress.daysToNextEvent !== null && (
+                  <span>{weightProgress.daysToNextEvent} días hasta tu próximo evento</span>
+                )}
               </div>
             </div>
           ) : (
@@ -232,7 +245,7 @@ export default async function EstadisticasPage() {
             buttonLabel="Cargar"
             entries={entriesOf(evento, (r) => `${r.nota}, ${r.valor} km`)}
           >
-            <EventForm />
+            <EventForm events={events} />
           </RegistroCategoryCard>
 
           <RegistroCategoryCard

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { PlanWeek } from "@/lib/training-plan";
+import type { Week } from "@/lib/training-plan";
 
 /** `w.start` es ISO YYYY-MM-DD: se parsea el string directo, sin pasar por `Date`, para no arrastrar el desfase de timezone (ver lib/date.ts fromISO). */
 function monthKey(iso: string): string {
@@ -11,7 +11,7 @@ function monthKey(iso: string): string {
 }
 
 interface WeekSelectorProps {
-  weeks: PlanWeek[];
+  weeks: Week[];
   selectedWeek: number;
   onSelectWeek: (weekNum: number) => void;
 }

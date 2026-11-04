@@ -8,7 +8,8 @@ import {
   getSessionsForDate,
   getCurrentWeekNum,
   getNextEvent,
-  type PlanWeek,
+  type Week,
+  type UserEvent,
   type Session,
   type SessionTag,
 } from "@/lib/training-plan";
@@ -78,9 +79,11 @@ function DoneButton({
 export function CalendarGrid({
   completedDates,
   weeks,
+  events,
 }: {
   completedDates: string[];
-  weeks: PlanWeek[];
+  weeks: Week[];
+  events: UserEvent[];
 }) {
   const todayNorm = todayNormalized();
   // el domingo ya interesa la semana que arranca
@@ -95,10 +98,10 @@ export function CalendarGrid({
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const todayISO = toISO(todayNorm);
-  const todaySessions = getSessionsForDate(todayNorm);
-  const nextEvent = getNextEvent(todayNorm);
+  const todaySessions = getSessionsForDate(weeks, events, todayNorm);
+  const nextEvent = getNextEvent(events, todayNorm);
   const daysToEvent = nextEvent
-    ? Math.round((nextEvent.date.getTime() - todayNorm.getTime()) / 86_400_000)
+    ? Math.round((fromISO(nextEvent.fecha).getTime() - todayNorm.getTime()) / 86_400_000)
     : null;
 
   function handleToggle(date: Date) {
@@ -131,8 +134,8 @@ export function CalendarGrid({
           {nextEvent && daysToEvent !== null && (
             <p className="text-sm text-muted-foreground">
               {daysToEvent === 0
-                ? `Hoy es el ${nextEvent.name}`
-                : `${nextEvent.name} en ${daysToEvent} día${daysToEvent === 1 ? "" : "s"}`}
+                ? `Hoy es el ${nextEvent.nombre}`
+                : `${nextEvent.nombre} en ${daysToEvent} día${daysToEvent === 1 ? "" : "s"}`}
             </p>
           )}
         </div>
@@ -179,7 +182,7 @@ export function CalendarGrid({
         <div className="grid gap-2">
           {days.map((date, i) => {
             const iso = toISO(date);
-            const sessions = getSessionsForDate(date);
+            const sessions = getSessionsForDate(weeks, events, date);
             const dayLabel = WEEKDAY_LABELS[i].slice(0, 3);
 
             if (sessions.every((s) => s.tag === "rest")) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { addDays, fromISO, toISO, todayNormalized, WEEKDAY_LABELS } from "@/lib/date";
-import { getCurrentWeekNum, type PlanWeek } from "@/lib/training-plan";
+import { getCurrentWeekNum, getCarbLoadWeeks, type Week } from "@/lib/training-plan";
 import { cn } from "@/lib/utils";
 import { getMealsForDay } from "@/lib/meal-plan";
 import { getCalorieTargetForDate } from "@/app/(app)/nutricion/actions";
@@ -16,7 +16,7 @@ function currentDayIdx(today: Date): number {
   return jsDay === 0 ? 6 : jsDay - 1;
 }
 
-export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
+export function NutricionClient({ weeks }: { weeks: Week[] }) {
   const today = todayNormalized();
   // el fin de semana no tiene plan: abrir directo en el lunes que viene
   const start = addDays(today, today.getDay() === 6 ? 2 : today.getDay() === 0 ? 1 : 0);
@@ -25,7 +25,8 @@ export function NutricionClient({ weeks }: { weeks: PlanWeek[] }) {
   const [day, setDay] = useState(() => currentDayIdx(start));
   const [calorieTarget, setCalorieTarget] = useState<CalorieTarget | null>(null);
 
-  const dayPlan = getMealsForDay(week, day);
+  const carbLoadWeeks = getCarbLoadWeeks(weeks);
+  const dayPlan = getMealsForDay(week, day, carbLoadWeeks);
   const weekObj = weeks.find((w) => w.num === week) ?? weeks[0];
   const weekStart = fromISO(weekObj.start);
 
