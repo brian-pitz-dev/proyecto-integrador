@@ -1,7 +1,7 @@
 /** Resumen de logros (Stats) — portado de plan_vida_2026.html: countTrainableVsCompleted, buildMonthHistory, weight progress. */
 
 import { getSessionsForDate, getNextEvent, type Week, type UserEvent } from "@/lib/training-plan";
-import { addDays, toISO, fromISO, todayNormalized, MONTHS_ES } from "@/lib/date";
+import { addDays, getMonday, toISO, fromISO, todayNormalized, MONTHS_ES } from "@/lib/date";
 import type { Registro } from "@/lib/types";
 
 export function isTrainableDate(weeks: Week[], events: UserEvent[], date: Date): boolean {
@@ -154,4 +154,99 @@ export function getMissingYesterdayItems(
   if (!sueno.some((r) => r.fecha === yesterdayISO)) missing.push("sueño de anoche");
   if (!calorias.some((r) => r.fecha === yesterdayISO)) missing.push("calorías de ayer");
   return missing;
+}
+
+const kg = (n: number) => n.toLocaleString("es-AR", { maximumFractionDigits: 1 });
+
+/**
+ * Resumen de la semana para el Coach, sin IA (no gasta cuota): entrenamientos, km, sueño, peso y
+ * próximo evento. `registros`: los de las últimas dos semanas, por fecha y created_at ascendente.
+ */
+export function resumenSemanal({
+  weeks,
+  events,
+  planStart,
+  completedDates,
+  registros,
+  pesoActual,
+  metaPesoKg,
+  hoy,
+}: {
+  weeks: Week[];
+  events: UserEvent[];
+  planStart: Date;
+  completedDates: Set<string>;
+  registros: Registro[];
+  pesoActual: number | null;
+  metaPesoKg: number | null;
+  hoy: Date;
+}): string[] {
+  const lunes = toISO(getMonday(hoy));
+  const hoyISO = toISO(hoy);
+  const haceUnaSemana = toISO(addDays(hoy, -7));
+  // un valor por día y categoría: si se corrigió, vale el último cargado
+  const porDia = (categoria: string) =>
+    new Map(
+      registros.filter((r) => r.categoria === categoria).map((r) => [r.fecha, Number(r.valor)]),
+    );
+  const lineas: string[] = [];
+
+  const { trainable, completed } = countTrainableVsCompleted(
+    weeks,
+    events,
+    planStart,
+    getMonday(hoy),
+    hoy,
+    completedDates,
+  );
+  if (trainable > 0)
+    lineas.push(`Entrenaste ${completed} de ${trainable} días que tocaban esta semana.`);
+
+  const km = registros
+    .filter(
+      (r) =>
+        ["tirada", "caminata", "evento"].includes(r.categoria) &&
+        r.fecha >= lunes &&
+        r.fecha <= hoyISO,
+    )
+    .reduce((a, r) => a + Number(r.valor), 0);
+  lineas.push(
+    km > 0
+      ? `Sumaste ${kg(km)} km corriendo y caminando.`
+      : "Todavía no registraste kilómetros esta semana.",
+  );
+
+  const sueno = [...porDia("sueno")].filter(([f]) => f >= haceUnaSemana && f < hoyISO);
+  if (sueno.length) {
+    const prom = sueno.reduce((a, [, v]) => a + v, 0) / sueno.length;
+    lineas.push(`Dormiste ${formatSleepHours(prom)} en promedio los últimos 7 días.`);
+  }
+
+  if (pesoActual !== null) {
+    const antes = [...porDia("peso")].filter(([f]) => f <= haceUnaSemana).at(-1)?.[1];
+    const delta = antes === undefined ? 0 : pesoActual - antes;
+    const cambio =
+      antes === undefined || Math.abs(delta) < 0.05
+        ? ""
+        : ` (${delta > 0 ? "+" : "−"}${kg(Math.abs(delta))} kg en la semana)`;
+    const falta = metaPesoKg === null ? 0 : pesoActual - metaPesoKg;
+    const meta =
+      metaPesoKg === null
+        ? ""
+        : falta > 0.05
+          ? `: te faltan ${kg(falta)} kg para tu meta`
+          : ": ya estás en tu meta";
+    lineas.push(`Pesás ${kg(pesoActual)} kg${cambio}${meta}.`);
+  }
+
+  const proximo = getNextEvent(events, hoy);
+  if (proximo) {
+    const dias = Math.round((fromISO(proximo.fecha).getTime() - hoy.getTime()) / 86_400_000);
+    lineas.push(
+      dias === 0
+        ? `Hoy es ${proximo.nombre}. ¡Éxitos!`
+        : `Faltan ${dias} ${dias === 1 ? "día" : "días"} para ${proximo.nombre}.`,
+    );
+  }
+  return lineas;
 }

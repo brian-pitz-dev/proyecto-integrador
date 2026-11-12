@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { computeWeightProgress, getMissingYesterdayItems } from "@/lib/stats-summary";
+import {
+  computeWeightProgress,
+  getMissingYesterdayItems,
+  resumenSemanal,
+} from "@/lib/stats-summary";
+import { buildPlan } from "@/lib/training-plan";
 import { fromISO } from "@/lib/date";
 import type { Categoria, Registro } from "@/lib/types";
 
@@ -63,5 +68,46 @@ describe("getMissingYesterdayItems", () => {
       now,
     );
     expect(completo).toEqual([]);
+  });
+});
+
+describe("resumenSemanal", () => {
+  // jueves 12/11/2026: la semana arranca el lunes 9
+  const base = {
+    weeks: buildPlan("2026-11-02", [], hoy),
+    events: [
+      { id: "e", tipo: "carrera" as const, nombre: "21K", fecha: "2026-11-22", distanciaKm: 21 },
+    ],
+    planStart: fromISO("2026-11-02"),
+    completedDates: new Set(["2026-11-09", "2026-11-11"]),
+    pesoActual: 90.2,
+    metaPesoKg: 85,
+    hoy,
+  };
+
+  it("arma el resumen con lo registrado", () => {
+    const registros = [
+      { ...reg("peso", "2026-11-04"), valor: 91 },
+      { ...reg("peso", "2026-11-05"), valor: 91 },
+      { ...reg("tirada", "2026-11-08"), valor: 15 }, // semana pasada: no suma
+      { ...reg("sueno", "2026-11-10"), valor: 7 },
+      { ...reg("sueno", "2026-11-11"), valor: 5 }, // corregido abajo: vale el último
+      { ...reg("sueno", "2026-11-11"), valor: 6 },
+      { ...reg("tirada", "2026-11-10"), valor: 8.5 },
+      { ...reg("caminata", "2026-11-11"), valor: 4 },
+    ];
+    const r = resumenSemanal({ ...base, registros });
+    expect(r[0]).toMatch(/^Entrenaste 2 de \d días que tocaban esta semana\.$/);
+    expect(r.slice(1)).toEqual([
+      "Sumaste 12,5 km corriendo y caminando.",
+      "Dormiste 6:30 hs en promedio los últimos 7 días.",
+      "Pesás 90,2 kg (−0,8 kg en la semana): te faltan 5,2 kg para tu meta.",
+      "Faltan 10 días para 21K.",
+    ]);
+  });
+
+  it("sin registros ni meta: avisa que no hay km y no inventa el resto", () => {
+    const r = resumenSemanal({ ...base, registros: [], pesoActual: null, events: [] });
+    expect(r.slice(1)).toEqual(["Todavía no registraste kilómetros esta semana."]);
   });
 });

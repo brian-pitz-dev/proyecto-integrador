@@ -24,6 +24,7 @@ const TEXTAREA =
   "w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
 
 export function CoachClient({
+  resumen,
   usosHoy,
   limite,
   tieneComidas,
@@ -31,6 +32,8 @@ export function CoachClient({
   comidasDesactualizadas,
   rutinasDesactualizadas,
 }: {
+  /** Resumen de la semana armado en el server sin IA (lib/stats-summary.ts resumenSemanal). */
+  resumen: string[];
   usosHoy: number;
   limite: number;
   tieneComidas: boolean;
@@ -121,6 +124,19 @@ export function CoachClient({
           Te quedan {restantes}/{limite} consultas hoy.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Tu semana</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="grid list-disc gap-1 pl-5 text-sm marker:text-primary">
+            {resumen.map((linea) => (
+              <li key={linea}>{linea}</li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="grid gap-4">

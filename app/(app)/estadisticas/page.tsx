@@ -31,7 +31,9 @@ import {
 import { getUserPlanContext } from "@/lib/user-plan";
 import { getPhaseKeyForDate } from "@/lib/training-plan";
 import { getMonday, todayNormalized, fromISO, formatShort, toISO } from "@/lib/date";
-import { formatPace, paceStrToSeconds } from "@/lib/pace";
+import { formatDuracion, formatPace, paceStrToSeconds } from "@/lib/pace";
+import { esfuerzosDe, predecirCarrera } from "@/lib/race-prediction";
+import { LineaTiempo, type Punto } from "@/components/stats/linea-tiempo";
 import type { Categoria, Registro } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -71,6 +73,16 @@ async function fetchData() {
   };
 }
 
+/** Un punto por día, ascendente. `regs` vienen por fecha desc: el primero de cada día es el último cargado. */
+function serie(regs: Registro[], valor: (r: Registro) => number | null): Punto[] {
+  const porDia = new Map<string, number>();
+  for (const r of regs) {
+    const v = valor(r);
+    if (v !== null && !porDia.has(r.fecha)) porDia.set(r.fecha, v);
+  }
+  return [...porDia].map(([fecha, v]) => ({ fecha, valor: v })).reverse();
+}
+
 function entriesOf(registros: Registro[], format: (r: Registro) => string) {
   return registros
     .slice(0, 5)
@@ -100,8 +112,8 @@ export default async function EstadisticasPage() {
     ? sueno.reduce((a, r) => a + Number(r.valor || 0), 0) / sueno.length
     : null;
 
-  const last3Paces = [...tirada, ...evento]
-    .sort((a, b) => (a.fecha > b.fecha ? -1 : 1))
+  const corridas = [...tirada, ...evento].sort((a, b) => (a.fecha > b.fecha ? -1 : 1));
+  const last3Paces = corridas
     .map((r) => paceStrToSeconds(r.nota))
     // más lento que 10:00/km es caminata: no cuenta como ritmo de running
     .filter((p): p is number => p !== null && p < 10 * 60)
@@ -126,6 +138,16 @@ export default async function EstadisticasPage() {
         getPhaseKeyForDate(weeks, today),
       )
     : null;
+  const pesoSerie = serie(peso, (r) => Number(r.valor));
+  const ritmoSerie = serie(corridas, (r) => {
+    const p = paceStrToSeconds(r.nota);
+    return p !== null && p < 10 * 60 ? p : null;
+  });
+  const esfuerzos = esfuerzosDe(corridas);
+  const predicciones = events
+    .filter((e) => e.tipo === "carrera" && fromISO(e.fecha) >= today)
+    .sort((a, b) => (a.fecha < b.fecha ? -1 : 1))
+    .map((ev) => ({ ev, p: predecirCarrera(esfuerzos, ev.distanciaKm, today) }));
   const monthHistory = buildMonthHistory(weeks, events, planStart, completedDates);
   const bmrCalibradoActual = peso[0] ? computeBmrCalibrado(Number(peso[0].valor), profile) : null;
 
@@ -235,6 +257,99 @@ export default async function EstadisticasPage() {
           )}
         </CardContent>
       </Card>
+
+      {predicciones.length > 0 && (
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="text-lg font-semibold">
+              Tiempo estimado para tus carreras
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {predicciones.map(({ ev, p }) => {
+                const ritmo = p ? p.seg / ev.distanciaKm : null;
+                const dif =
+                  ritmo && ev.ritmoObjetivoSeg ? Math.round(ritmo - ev.ritmoObjetivoSeg) : null;
+                return (
+                  <li key={ev.id} className="grid gap-1">
+                    <p className="text-sm text-muted-foreground">
+                      {ev.nombre} · {ev.distanciaKm} km
+                    </p>
+                    {p && ritmo ? (
+                      <>
+                        <p className="font-heading text-3xl font-semibold tabular-nums">
+                          {formatDuracion(p.seg)}{" "}
+                          <span className="text-base font-normal text-muted-foreground">
+                            {formatPace(ritmo)}
+                          </span>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Según tu corrida de {p.base.km} km del{" "}
+                          {formatShort(fromISO(p.base.fecha))}.
+                        </p>
+                        {dif !== null && ev.ritmoObjetivoSeg && (
+                          <p className="text-sm">
+                            {dif > 0
+                              ? `Tu objetivo es ${formatPace(ev.ritmoObjetivoSeg)}: te faltan ${dif} s/km.`
+                              : `Ya estás en ritmo de tu objetivo (${formatPace(ev.ritmoObjetivoSeg)}).`}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm">
+                        Registrá una tirada de al menos {Math.ceil(Math.max(3, ev.distanciaKm / 4))}{" "}
+                        km en los últimos 60 días para estimar tu tiempo.
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="text-xs text-muted-foreground">
+              Estimación con la fórmula de Riegel: orientativa, y supone que entrenaste para esa
+              distancia.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <section className="grid gap-4">
+        <h2 className="text-2xl font-semibold">Evolución</h2>
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Peso</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pesoSerie.length >= 2 ? (
+                <LineaTiempo puntos={pesoSerie} tipo="kg" meta={profile.metaPesoKg} nombre="Peso" />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Cargá tu peso al menos dos días para ver cómo evoluciona.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Ritmo de tus corridas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {ritmoSerie.length >= 2 ? (
+                <>
+                  <p className="mb-2 text-xs text-muted-foreground">Más arriba = más rápido.</p>
+                  <LineaTiempo puntos={ritmoSerie} tipo="ritmo" nombre="Ritmo" />
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Registrá al menos dos corridas para ver cómo evoluciona tu ritmo.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
       <section className="grid gap-4">
         <h2 className="text-2xl font-semibold">Registros</h2>

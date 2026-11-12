@@ -77,6 +77,9 @@ events, today)` maps that content onto a specific user's own event dates (see
   hardcoded `PERSONAL_DATA`/`INBODY_REFERENCE` pair — fixing a latent bug along the
   way (the old formula had no sex term at all).
 - `lib/plan-content.ts` — static event/rules cards shown in the UI (shared, generic).
+- `lib/race-prediction.ts` — Riegel race-time estimate from the user's recent `tirada`/`evento`
+  rows (shown in Estadísticas). `lib/stats-summary.ts`'s `resumenSemanal()` builds the
+  "Tu semana" card on `/coach` without calling the AI (doesn't spend quota).
 
 **`specs/004-multi-user-onboarding/` is implemented for its core scope** (US1-US3:
 signup, onboarding, per-user plan generation, Brian's migration) — `lib/training-plan.ts`

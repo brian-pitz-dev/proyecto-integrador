@@ -16,3 +16,12 @@ export function paceStrToSeconds(nota: string | null): number | null {
   const m = nota.match(/(\d+):(\d+)\/km/);
   return m ? Number(m[1]) * 60 + Number(m[2]) : null;
 }
+
+/** Duración en "h:mm:ss" (o "mm:ss" si dura menos de una hora). */
+export function formatDuracion(seg: number): string {
+  const total = Math.round(seg);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = String(total % 60).padStart(2, "0");
+  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
+}

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getUserPlanContext } from "@/lib/user-plan";
-import { toISO, todayNormalized } from "@/lib/date";
+import { addDays, fromISO, toISO, todayNormalized } from "@/lib/date";
+import { resumenSemanal } from "@/lib/stats-summary";
+import type { Registro } from "@/lib/types";
 import { AI_DAILY_LIMIT } from "@/lib/coach";
 import { CoachClient } from "@/components/coach/coach-client";
 
@@ -16,13 +18,35 @@ export default async function CoachPage() {
   if (!planContext) return null; // proxy.ts ya redirige a /onboarding antes de esto
 
   const supabase = await createClient();
-  const [{ data: uso }, { data: perfil }, { data: ultimoEvento }] = await Promise.all([
+  const hoy = todayNormalized();
+  const [
+    { data: uso },
+    { data: perfil },
+    { data: ultimoEvento },
+    { data: registros },
+    { data: ultimoPeso },
+  ] = await Promise.all([
     supabase.from("uso_ia").select("usos").eq("fecha", toISO(todayNormalized())).maybeSingle(),
     supabase.from("perfil").select("updated_at").maybeSingle(),
     supabase
       .from("evento")
       .select("updated_at")
       .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // dos semanas: cubre desde el lunes y el peso de hace 7 días
+    supabase
+      .from("registro")
+      .select("*")
+      .gte("fecha", toISO(addDays(hoy, -14)))
+      .order("fecha", { ascending: true })
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("registro")
+      .select("valor")
+      .eq("categoria", "peso")
+      .order("fecha", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
   ]);
@@ -34,10 +58,22 @@ export default async function CoachPage() {
     .sort()
     .at(-1);
   const isStale = (updatedAt?: string) => !!updatedAt && !!lastChange && updatedAt < lastChange;
-  const { planIa } = planContext;
+  const { planIa, profile, events, weeks } = planContext;
+  const regs = (registros as Registro[] | null) ?? [];
+  const resumen = resumenSemanal({
+    weeks,
+    events,
+    planStart: fromISO(profile.planStart),
+    completedDates: new Set(regs.filter((r) => r.categoria === "completado").map((r) => r.fecha)),
+    registros: regs,
+    pesoActual: ultimoPeso ? Number(ultimoPeso.valor) : null,
+    metaPesoKg: profile.metaPesoKg ?? null,
+    hoy,
+  });
 
   return (
     <CoachClient
+      resumen={resumen}
       usosHoy={uso?.usos ?? 0}
       limite={AI_DAILY_LIMIT}
       tieneComidas={!!planIa.comidas}
