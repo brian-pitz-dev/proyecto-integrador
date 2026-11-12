@@ -54,9 +54,9 @@ export async function registrar(input: unknown): Promise<RegistroResult> {
     email: cuenta.email,
     password: cuenta.password,
     options: {
-      // El link del mail vuelve al mismo sitio desde el que se registró (prod o localhost); Supabase
-      // solo lo acepta si está en Redirect URLs, si no usa el Site URL. Ver /auth/confirm.
-      emailRedirectTo: h.get("origin") ?? undefined,
+      // El link del mail vuelve a /auth/confirm del mismo sitio desde el que se registró (prod o
+      // localhost). Supabase solo lo acepta si está en Redirect URLs; si no, usa el Site URL.
+      emailRedirectTo: h.get("origin") ? `${h.get("origin")}/auth/confirm` : undefined,
       data: {
         nombre: cuenta.nombre,
         terminos_aceptados_at: new Date().toISOString(),

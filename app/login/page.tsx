@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; confirmada?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, confirmada } = await searchParams;
 
   return (
     <div className="relative grid min-h-dvh place-items-center">
@@ -32,6 +32,14 @@ export default async function LoginPage({
           >
             El link de confirmación venció o ya se usó. Si ya confirmaste tu cuenta, iniciá sesión
             normalmente.
+          </p>
+        )}
+        {confirmada && (
+          <p
+            role="status"
+            className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm"
+          >
+            Tu email quedó confirmado. Iniciá sesión para entrar a tu plan.
           </p>
         )}
         <LoginForm />
