@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function getAuthedUser(): Promise<{
   id: string;
   nombre: string | null;
+  email: string | null;
   tutorialVisto: boolean;
 } | null> {
   const supabase = await createClient();
@@ -25,6 +26,7 @@ export async function getAuthedUser(): Promise<{
   return {
     id: data.claims.sub,
     nombre: typeof meta.nombre === "string" ? meta.nombre : null,
+    email: typeof data.claims.email === "string" ? data.claims.email : null,
     tutorialVisto: meta.tutorial_visto === true,
   };
 }

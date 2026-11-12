@@ -15,15 +15,9 @@ import {
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
-/** null si salió bien; si no, el mensaje de error para mostrar. */
-export async function guardarPerfilYEventos(
-  supabase: Supabase,
-  userId: string,
-  perfil: PerfilInput,
-  eventos: EventoInput[],
-): Promise<string | null> {
-  const { error: perfilError } = await supabase.from("perfil").upsert({
-    user_id: userId,
+/** Columnas de `perfil` que el usuario puede editar (plan_start no: se fija al registrarse). */
+export function filaPerfil(perfil: PerfilInput) {
+  return {
     fecha_nacimiento: perfil.fechaNacimiento,
     // edad se sigue guardando (columna not null de spec 004), pero se recalcula al leer desde fecha_nacimiento
     edad: edadDesde(perfil.fechaNacimiento),
@@ -35,6 +29,33 @@ export async function guardarPerfilYEventos(
     meta_grasa_pct: perfil.metaGrasaPct ?? null,
     calibracion_peso_kg: perfil.calibracionPesoKg ?? null,
     calibracion_bmr_kcal: perfil.calibracionBmrKcal ?? null,
+    dias_entrenamiento: perfil.diasEntrenamiento,
+    minutos_sesion: perfil.minutosSesion,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+export function filaEvento(e: EventoInput) {
+  return {
+    tipo: e.tipo,
+    nombre: e.nombre,
+    fecha: e.fecha,
+    distancia_km: e.distanciaKm,
+    ritmo_objetivo_seg: e.tipo === "carrera" ? (e.ritmoObjetivoSeg ?? null) : null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+/** null si salió bien; si no, el mensaje de error para mostrar. */
+export async function guardarPerfilYEventos(
+  supabase: Supabase,
+  userId: string,
+  perfil: PerfilInput,
+  eventos: EventoInput[],
+): Promise<string | null> {
+  const { error: perfilError } = await supabase.from("perfil").upsert({
+    user_id: userId,
+    ...filaPerfil(perfil),
     plan_start: toISO(todayNormalized()),
   });
   if (perfilError) return "No se pudo guardar el perfil: " + perfilError.message;
@@ -43,16 +64,9 @@ export async function guardarPerfilYEventos(
   const { error: deleteError } = await supabase.from("evento").delete().eq("user_id", userId);
   if (deleteError) return "No se pudieron guardar los eventos: " + deleteError.message;
 
-  const { error: eventosError } = await supabase.from("evento").insert(
-    eventos.map((e) => ({
-      user_id: userId,
-      tipo: e.tipo,
-      nombre: e.nombre,
-      fecha: e.fecha,
-      distancia_km: e.distanciaKm,
-      ritmo_objetivo_seg: e.tipo === "carrera" ? (e.ritmoObjetivoSeg ?? null) : null,
-    })),
-  );
+  const { error: eventosError } = await supabase
+    .from("evento")
+    .insert(eventos.map((e) => ({ user_id: userId, ...filaEvento(e) })));
   if (eventosError) return "No se pudieron guardar los eventos: " + eventosError.message;
 
   const { error: metaError } = await supabase.auth.updateUser({

@@ -3,36 +3,30 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Check, MailCheck, Plus, Trash2 } from "lucide-react";
-import type { z } from "zod";
+import { Check, MailCheck, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Opciones } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useTurnstile } from "@/components/turnstile";
-import { addDays, toISO, todayNormalized } from "@/lib/date";
+import {
+  CamposDisponibilidad,
+  CamposEvento,
+  CamposPerfil,
+  emptyEvento,
+  emptyPerfil,
+  errorsOf,
+  Field,
+  invalid,
+  toEvento,
+  toPerfil,
+  type Errors,
+  type EventoDraft,
+  type PerfilDraft,
+} from "@/components/perfil/campos";
 import { cuentaSchema, eventosSchema, perfilSchema } from "@/lib/validation/onboarding";
 import { registrar } from "@/app/signup/actions";
 import { completeOnboarding } from "@/app/onboarding/actions";
-
-const SEXO = [
-  { value: "M", label: "Masculino" },
-  { value: "F", label: "Femenino" },
-];
-const TIPO_EVENTO = [
-  { value: "carrera", label: "Carrera" },
-  { value: "caminata", label: "Caminata" },
-];
-
-const ACTIVIDAD = [
-  { value: "1.2", label: "Sedentario: poco o nada de ejercicio" },
-  { value: "1.375", label: "Liviano: 1-3 días por semana" },
-  { value: "1.55", label: "Moderado: 3-5 días por semana" },
-  { value: "1.725", label: "Activo: 6-7 días por semana" },
-  { value: "1.9", label: "Muy activo: doble turno o trabajo físico" },
-];
 
 interface Cuenta {
   nombre: string;
@@ -40,109 +34,6 @@ interface Cuenta {
   password: string;
   passwordConfirm: string;
   aceptaTerminos: boolean;
-}
-
-interface Perfil {
-  fechaNacimiento: string;
-  sexo: string;
-  alturaCm: string;
-  pesoInicialKg: string;
-  factorActividad: string;
-  metaPesoKg: string;
-  metaGrasaPct: string;
-  calibracionPesoKg: string;
-  calibracionBmrKcal: string;
-}
-
-interface EventoDraft {
-  tipo: "carrera" | "caminata";
-  nombre: string;
-  fecha: string;
-  distanciaKm: string;
-  /** "m:ss" por km, opcional (solo carreras) */
-  ritmo: string;
-}
-
-type Errors = Record<string, string>;
-
-const emptyEvento = (): EventoDraft => ({
-  tipo: "carrera",
-  nombre: "",
-  fecha: "",
-  distanciaKm: "",
-  ritmo: "",
-});
-
-/** "6:30" → 390 segundos; NaN si el formato no sirve (zod muestra el error). */
-function ritmoASegundos(ritmo: string): number {
-  const m = /^(\d{1,2}):([0-5]\d)$/.exec(ritmo.trim());
-  return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
-}
-const num = (s: string) => (s.trim() === "" ? undefined : Number(s));
-
-function toPerfil(p: Perfil) {
-  return {
-    fechaNacimiento: p.fechaNacimiento,
-    sexo: p.sexo as "M" | "F",
-    alturaCm: num(p.alturaCm),
-    pesoInicialKg: num(p.pesoInicialKg),
-    factorActividad: Number(p.factorActividad),
-    metaPesoKg: num(p.metaPesoKg) ?? null,
-    metaGrasaPct: p.metaGrasaPct.trim() || null,
-    calibracionPesoKg: num(p.calibracionPesoKg) ?? null,
-    calibracionBmrKcal: num(p.calibracionBmrKcal) ?? null,
-  };
-}
-
-function toEventos(eventos: EventoDraft[]) {
-  return eventos.map((e) => ({
-    tipo: e.tipo,
-    nombre: e.nombre.trim(),
-    fecha: e.fecha,
-    distanciaKm: num(e.distanciaKm),
-    ritmoObjetivoSeg: e.tipo === "carrera" && e.ritmo.trim() ? ritmoASegundos(e.ritmo) : null,
-  }));
-}
-
-/** Errores de zod → { "campo": "mensaje" } (primer error de cada campo). */
-function errorsOf(result: z.ZodSafeParseResult<unknown>, prefix = ""): Errors {
-  if (result.success) return {};
-  const out: Errors = {};
-  for (const issue of result.error.issues) {
-    const key = prefix + issue.path.join(".");
-    out[key] ??= issue.message;
-  }
-  return out;
-}
-
-function Field({
-  id,
-  label,
-  error,
-  hint,
-  className,
-  children,
-}: {
-  id: string;
-  label: string;
-  error?: string;
-  hint?: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={cn("grid content-start gap-1.5", className)}>
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {error ? (
-        <p id={`${id}-error`} className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : (
-        hint && <p className="text-xs text-muted-foreground">{hint}</p>
-      )}
-    </div>
-  );
 }
 
 /** Requisitos de la contraseña en una línea, bajo su campo; en rojo los que faltan si se intentó avanzar. */
@@ -177,10 +68,6 @@ function Requisitos({
   );
 }
 
-/** Para pasar a cada input: marca inválido y lo vincula a su mensaje. */
-const invalid = (errors: Errors, key: string, id: string) =>
-  errors[key] ? { "aria-invalid": true, "aria-describedby": `${id}-error` } : {};
-
 export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
   const pasos = mode === "signup" ? ["Cuenta", "Perfil", "Eventos"] : ["Perfil", "Eventos"];
   const offset = mode === "signup" ? 0 : 1; // índice lógico: 0 cuenta, 1 perfil, 2 eventos
@@ -195,17 +82,7 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
     passwordConfirm: "",
     aceptaTerminos: false,
   });
-  const [perfil, setPerfil] = useState<Perfil>({
-    fechaNacimiento: "",
-    sexo: "",
-    alturaCm: "",
-    pesoInicialKg: "",
-    factorActividad: "1.55",
-    metaPesoKg: "",
-    metaGrasaPct: "",
-    calibracionPesoKg: "",
-    calibracionBmrKcal: "",
-  });
+  const [perfil, setPerfil] = useState<PerfilDraft>(emptyPerfil);
   const [eventos, setEventos] = useState<EventoDraft[]>([emptyEvento()]);
   const [errors, setErrors] = useState<Errors>({});
   const [pending, setPending] = useState(false);
@@ -222,14 +99,10 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
     formRef.current?.querySelector<HTMLElement>("input, select")?.focus();
   }, [paso]);
 
-  const minNacimiento = toISO(addDays(todayNormalized(), -100 * 365.25));
-  const maxNacimiento = toISO(addDays(todayNormalized(), -13 * 365.25));
-  const minEventoFecha = toISO(addDays(todayNormalized(), 1));
-
   function validarPaso(): Errors {
     if (logico === 0) return errorsOf(cuentaSchema.safeParse(cuenta));
     if (logico === 1) return errorsOf(perfilSchema.safeParse(toPerfil(perfil)));
-    return errorsOf(eventosSchema.safeParse(toEventos(eventos)), "eventos.");
+    return errorsOf(eventosSchema.safeParse(eventos.map(toEvento)), "eventos.");
   }
 
   function focusPrimerError() {
@@ -255,7 +128,7 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
 
     setPending(true);
     const perfilData = toPerfil(perfil);
-    const eventosData = toEventos(eventos);
+    const eventosData = eventos.map(toEvento);
     const result =
       mode === "signup"
         ? await registrar({
@@ -433,134 +306,12 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
           )}
 
           {logico === 1 && (
-            <div className="grid gap-4">
-              <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-3">
-                <Field
-                  id="fechaNacimiento"
-                  label="Fecha de nacimiento"
-                  error={errors.fechaNacimiento}
-                >
-                  <Input
-                    id="fechaNacimiento"
-                    type="date"
-                    min={minNacimiento}
-                    max={maxNacimiento}
-                    autoComplete="bday"
-                    value={perfil.fechaNacimiento}
-                    onChange={(e) => setPerfil({ ...perfil, fechaNacimiento: e.target.value })}
-                    {...invalid(errors, "fechaNacimiento", "fechaNacimiento")}
-                  />
-                </Field>
-                <Field id="sexo" label="Sexo" error={errors.sexo}>
-                  <Opciones
-                    id="sexo"
-                    items={SEXO}
-                    placeholder="Elegí una opción"
-                    value={perfil.sexo}
-                    onChange={(sexo) => setPerfil({ ...perfil, sexo })}
-                    {...invalid(errors, "sexo", "sexo")}
-                  />
-                </Field>
-                <Field id="alturaCm" label="Altura (cm)" error={errors.alturaCm}>
-                  <Input
-                    id="alturaCm"
-                    type="number"
-                    inputMode="numeric"
-                    min="100"
-                    max="250"
-                    value={perfil.alturaCm}
-                    onChange={(e) => setPerfil({ ...perfil, alturaCm: e.target.value })}
-                    {...invalid(errors, "alturaCm", "alturaCm")}
-                  />
-                </Field>
-                <Field id="pesoInicialKg" label="Peso actual (kg)" error={errors.pesoInicialKg}>
-                  <Input
-                    id="pesoInicialKg"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.1"
-                    min="30"
-                    max="300"
-                    value={perfil.pesoInicialKg}
-                    onChange={(e) => setPerfil({ ...perfil, pesoInicialKg: e.target.value })}
-                    {...invalid(errors, "pesoInicialKg", "pesoInicialKg")}
-                  />
-                </Field>
-                <Field id="metaPesoKg" label="Meta de peso (opcional)" error={errors.metaPesoKg}>
-                  <Input
-                    id="metaPesoKg"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.1"
-                    min="30"
-                    max="300"
-                    placeholder="kg"
-                    value={perfil.metaPesoKg}
-                    onChange={(e) => setPerfil({ ...perfil, metaPesoKg: e.target.value })}
-                    {...invalid(errors, "metaPesoKg", "metaPesoKg")}
-                  />
-                </Field>
-                <Field
-                  id="metaGrasaPct"
-                  label="Meta de % grasa (opcional)"
-                  error={errors.metaGrasaPct}
-                >
-                  <Input
-                    id="metaGrasaPct"
-                    placeholder="ej. 14-15%"
-                    value={perfil.metaGrasaPct}
-                    onChange={(e) => setPerfil({ ...perfil, metaGrasaPct: e.target.value })}
-                  />
-                </Field>
-                <Field
-                  id="factorActividad"
-                  label="Nivel de actividad"
-                  className="sm:col-span-2 md:col-span-3"
-                >
-                  <Opciones
-                    id="factorActividad"
-                    items={ACTIVIDAD}
-                    value={perfil.factorActividad}
-                    onChange={(factorActividad) => setPerfil({ ...perfil, factorActividad })}
-                  />
-                </Field>
-              </div>
-              <details className="rounded-lg border border-border p-3">
-                <summary className="cursor-pointer text-sm font-medium">
-                  Calibración personal (opcional, ej. medición InBody)
-                </summary>
-                <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                  <Field
-                    id="calibracionPesoKg"
-                    label="Peso en la medición (kg)"
-                    error={errors.calibracionPesoKg}
-                  >
-                    <Input
-                      id="calibracionPesoKg"
-                      type="number"
-                      inputMode="decimal"
-                      step="0.1"
-                      value={perfil.calibracionPesoKg}
-                      onChange={(e) => setPerfil({ ...perfil, calibracionPesoKg: e.target.value })}
-                      {...invalid(errors, "calibracionPesoKg", "calibracionPesoKg")}
-                    />
-                  </Field>
-                  <Field
-                    id="calibracionBmrKcal"
-                    label="BMR medido (kcal)"
-                    error={errors.calibracionBmrKcal}
-                  >
-                    <Input
-                      id="calibracionBmrKcal"
-                      type="number"
-                      inputMode="numeric"
-                      value={perfil.calibracionBmrKcal}
-                      onChange={(e) => setPerfil({ ...perfil, calibracionBmrKcal: e.target.value })}
-                      {...invalid(errors, "calibracionBmrKcal", "calibracionBmrKcal")}
-                    />
-                  </Field>
-                </div>
-              </details>
+            <div className="grid gap-6">
+              <CamposPerfil perfil={perfil} setPerfil={setPerfil} errors={errors} />
+              <section className="grid gap-3 border-t border-border pt-5">
+                <h3 className="font-heading text-base font-semibold">Tu semana de entrenamiento</h3>
+                <CamposDisponibilidad perfil={perfil} setPerfil={setPerfil} errors={errors} />
+              </section>
             </div>
           )}
 
@@ -571,96 +322,21 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
                 const set = (patch: Partial<EventoDraft>) =>
                   setEventos((prev) => prev.map((e, idx) => (idx === i ? { ...e, ...patch } : e)));
                 return (
-                  <fieldset
-                    key={i}
-                    className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-6"
-                  >
+                  <fieldset key={i} className="rounded-lg border border-border p-3">
                     <legend className="px-1 text-sm font-medium">Evento {i + 1}</legend>
-                    <Field id={`tipo-${i}`} label="Tipo" className="sm:col-span-2">
-                      <Opciones
-                        id={`tipo-${i}`}
-                        items={TIPO_EVENTO}
-                        value={ev.tipo}
-                        onChange={(tipo) => set({ tipo: tipo as EventoDraft["tipo"] })}
-                      />
-                    </Field>
-                    <Field
-                      id={`nombre-${i}`}
-                      label="Nombre"
-                      error={errors[k("nombre")]}
-                      className="sm:col-span-4"
-                    >
-                      <Input
-                        id={`nombre-${i}`}
-                        placeholder="ej. 10K del club"
-                        value={ev.nombre}
-                        onChange={(e) => set({ nombre: e.target.value })}
-                        {...invalid(errors, k("nombre"), `nombre-${i}`)}
-                      />
-                    </Field>
-                    <Field
-                      id={`fecha-${i}`}
-                      label="Fecha"
-                      error={errors[k("fecha")]}
-                      className="sm:col-span-2"
-                    >
-                      <Input
-                        id={`fecha-${i}`}
-                        type="date"
-                        min={minEventoFecha}
-                        value={ev.fecha}
-                        onChange={(e) => set({ fecha: e.target.value })}
-                        {...invalid(errors, k("fecha"), `fecha-${i}`)}
-                      />
-                    </Field>
-                    <div className="flex items-start gap-2 sm:col-span-4">
-                      <Field
-                        id={`km-${i}`}
-                        label="Distancia (km)"
-                        error={errors[k("distanciaKm")]}
-                        className="flex-1"
-                      >
-                        <Input
-                          id={`km-${i}`}
-                          type="number"
-                          inputMode="decimal"
-                          step="0.1"
-                          min="0"
-                          value={ev.distanciaKm}
-                          onChange={(e) => set({ distanciaKm: e.target.value })}
-                          {...invalid(errors, k("distanciaKm"), `km-${i}`)}
-                        />
-                      </Field>
-                      {ev.tipo === "carrera" && (
-                        <Field
-                          id={`ritmo-${i}`}
-                          label="Ritmo objetivo (opcional)"
-                          error={errors[k("ritmoObjetivoSeg")]}
-                          className="flex-1"
-                        >
-                          <Input
-                            id={`ritmo-${i}`}
-                            inputMode="numeric"
-                            placeholder="min/km, ej. 6:30"
-                            value={ev.ritmo}
-                            onChange={(e) => set({ ritmo: e.target.value })}
-                            {...invalid(errors, k("ritmoObjetivoSeg"), `ritmo-${i}`)}
-                          />
-                        </Field>
-                      )}
-                      {eventos.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="mt-6"
-                          aria-label={`Quitar evento ${i + 1}`}
-                          onClick={() => setEventos((prev) => prev.filter((_, idx) => idx !== i))}
-                        >
-                          <Trash2 aria-hidden="true" />
-                        </Button>
-                      )}
-                    </div>
+                    <CamposEvento
+                      ev={ev}
+                      set={set}
+                      errors={errors}
+                      idSuffix={String(i)}
+                      k={k}
+                      onRemove={
+                        eventos.length > 1
+                          ? () => setEventos((prev) => prev.filter((_, idx) => idx !== i))
+                          : undefined
+                      }
+                      removeLabel={`Quitar evento ${i + 1}`}
+                    />
                   </fieldset>
                 );
               })}

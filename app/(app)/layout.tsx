@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NavTabs, BottomTabs } from "@/components/nav/nav-tabs";
 import { LogoutButton } from "@/components/nav/logout-button";
+import { PerfilButton } from "@/components/nav/perfil-button";
 import { Tutorial } from "@/components/tutorial";
 import { getAuthedUser } from "@/lib/supabase/auth";
 
@@ -21,6 +22,7 @@ export default async function AppLayout({ children }: Readonly<{ children: React
           <NavTabs />
         </div>
         <div className="col-start-3 flex items-center justify-self-end gap-2">
+          <PerfilButton />
           <Tutorial abrirAlEntrar={!!user && !user.tutorialVisto} nombre={user?.nombre ?? null} />
           <ThemeToggle />
           <LogoutButton />

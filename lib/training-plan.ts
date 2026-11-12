@@ -17,6 +17,14 @@ export interface Session {
   detail?: string;
   gymKey?: string;
   coreKey?: "base" | "light";
+  /** Tope de ejercicios de la rutina cuando el usuario tiene poco tiempo por sesión. */
+  maxEjercicios?: number;
+}
+
+/** Cuándo puede entrenar el usuario: días 0 = lunes … 6 = domingo, y minutos por sesión. */
+export interface Disponibilidad {
+  dias: number[];
+  minutos: number;
 }
 
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
@@ -220,6 +228,94 @@ function phase6Week(n: number): WeekConfig {
 
 const dowKeys: DayKey[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
+/** Fases que preparan un evento: al recortar días, correr pesa más que el gym. */
+const FASES_EVENTO = new Set(["p1", "p2", "p4", "p5"]);
+
+/** Menor = más importante. La salida larga siempre primero; gym empata con correr fuera de las fases de evento. */
+function prioridad(s: Session, phaseKey: string): number {
+  if (s.tag === "long" || s.tag === "walk" || s.tag === "event" || s.tag === "luj") return 0;
+  if (s.tag === "run") return 1;
+  if (s.tag === "gym") return FASES_EVENTO.has(phaseKey) ? 2 : 1;
+  if (s.tag === "core") return 3;
+  return 9;
+}
+
+/**
+ * Adapta una semana de la plantilla a los días y minutos del usuario (spec 006, research.md):
+ * 1. se quedan las sesiones más prioritarias que entran en sus días (a igual prioridad, rota
+ *    según la semana para no repetir siempre la misma rutina de gym);
+ * 2. se reparten en sus días conservando el orden de la semana y moviéndolas lo menos posible;
+ * 3. con menos de 60', cada día queda con su sesión principal y la rutina con menos ejercicios.
+ * Con los días de la plantilla y 60' o más devuelve la semana tal cual.
+ */
+export function adaptWeek(
+  cfg: WeekConfig,
+  phaseKey: string,
+  weekNum: number,
+  disp: Disponibilidad,
+): WeekConfig {
+  const dias = [...new Set(disp.dias)].sort((a, b) => a - b);
+  const slots = dowKeys.flatMap((dk, day) => {
+    const sessions = (cfg[dk] ?? []).filter((s) => s.tag !== "rest");
+    if (!sessions.length) return [];
+    return [{ day, sessions, prio: Math.min(...sessions.map((s) => prioridad(s, phaseKey))) }];
+  });
+  if (disp.minutos >= 60 && slots.every((s) => dias.includes(s.day))) return cfg;
+
+  const grupos = new Map<number, typeof slots>();
+  for (const s of slots) grupos.set(s.prio, [...(grupos.get(s.prio) ?? []), s]);
+  const elegidos = [...grupos.keys()]
+    .sort((a, b) => a - b)
+    .flatMap((p) => {
+      const g = grupos.get(p)!;
+      const r = weekNum % g.length;
+      return [...g.slice(r), ...g.slice(0, r)];
+    })
+    .slice(0, dias.length)
+    .sort((a, b) => a.day - b.day);
+
+  // costo[i][j]: mínimo corrimiento total ubicando las primeras i sesiones en los primeros j días, en orden
+  const n = elegidos.length;
+  const m = dias.length;
+  const dist = (i: number, j: number) => Math.abs(elegidos[i - 1].day - dias[j - 1]);
+  const costo = Array.from({ length: n + 1 }, (_, i) =>
+    Array<number>(m + 1).fill(i === 0 ? 0 : Infinity),
+  );
+  for (let i = 1; i <= n; i++)
+    for (let j = i; j <= m; j++)
+      costo[i][j] = Math.min(costo[i][j - 1], costo[i - 1][j - 1] + dist(i, j));
+  const asignado = new Map<number, Session[]>();
+  for (let i = n, j = m; i > 0; j--) {
+    if (costo[i][j] === costo[i - 1][j - 1] + dist(i, j)) {
+      asignado.set(dias[j - 1], elegidos[i - 1].sessions);
+      i--;
+    }
+  }
+
+  const tope = disp.minutos <= 30 ? 3 : 4;
+  const recortar = (sessions: Session[]): Session[] => {
+    if (disp.minutos >= 60) return sessions;
+    const [principal] = [...sessions].sort(
+      (a, b) => prioridad(a, phaseKey) - prioridad(b, phaseKey),
+    );
+    const conRutina = principal.tag === "gym" || principal.tag === "core";
+    return [conRutina ? { ...principal, maxEjercicios: tope } : principal];
+  };
+
+  return Object.fromEntries(
+    dowKeys.map((dk, day) => {
+      const s = asignado.get(day);
+      if (s) return [dk, recortar(s)];
+      const original = cfg[dk];
+      // los descansos con texto propio (ej. carga de carbohidratos) se conservan en su día
+      return [
+        dk,
+        original == null || original.every((x) => x.tag === "rest") ? original : [restDay()],
+      ];
+    }),
+  ) as WeekConfig;
+}
+
 function genericLabel(e: UserEvent): string {
   return e.tipo === "carrera" ? `CARRERA — ${e.nombre}` : `CAMINATA — ${e.nombre}`;
 }
@@ -327,10 +423,19 @@ function pushCompressedBlock(
  * razonamiento — reusa el mismo contenido de phase1Week..phase6Week de siempre,
  * solo cambia qué fechas de calendario ocupa cada fase.
  */
-export function buildPlan(planStartISO: string, events: UserEvent[], today: Date): Week[] {
+export function buildPlan(
+  planStartISO: string,
+  events: UserEvent[],
+  today: Date,
+  disp?: Disponibilidad,
+): Week[] {
   const sorted = [...events].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0));
   const out: RawWeek[] = [];
-  const cursor = { d: fromISO(planStartISO) };
+  // Las semanas arrancan el lunes (de la semana del registro): las claves mon..sun y los días que
+  // elige el usuario son días reales de la semana. Antes arrancaban el día del registro y, si no
+  // era lunes, "Lun" caía otro día.
+  const inicio = fromISO(planStartISO);
+  const cursor = { d: addDays(inicio, -((inicio.getDay() + 6) % 7)) };
   const wnum = { n: 1 };
 
   for (let i = 0; i < sorted.length; i++) {
@@ -431,7 +536,11 @@ export function buildPlan(planStartISO: string, events: UserEvent[], today: Date
     "FASE — Mantenimiento",
   );
 
-  const isoWeeks = out.map((w) => ({ ...w, start: toISO(w.start) }));
+  const isoWeeks = out.map((w) => ({
+    ...w,
+    start: toISO(w.start),
+    cfg: disp ? adaptWeek(w.cfg, w.phaseKey, w.num, disp) : w.cfg,
+  }));
 
   function containsEvent(weekStartISO: string): boolean {
     const start = fromISO(weekStartISO);

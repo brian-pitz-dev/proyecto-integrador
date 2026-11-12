@@ -54,6 +54,17 @@ export const perfilSchema = z.object({
   metaGrasaPct: z.string().trim().max(20).nullish(),
   calibracionPesoKg: z.number().finite().min(30).max(300).nullish(),
   calibracionBmrKcal: z.number().finite().min(500).max(6000).nullish(),
+  // defaults = plantilla original: un registro pendiente guardado antes de spec 006 sigue validando
+  diasEntrenamiento: z
+    .array(z.number().int().min(0).max(6))
+    .min(2, "Elegí al menos 2 días para entrenar")
+    .refine((d) => new Set(d).size === d.length, "Días repetidos")
+    .default([0, 1, 2, 3, 4, 5]),
+  minutosSesion: z
+    .union([z.literal(30), z.literal(45), z.literal(60), z.literal(90)], {
+      error: "Elegí cuánto tiempo tenés",
+    })
+    .default(60),
 });
 
 export const eventoSchema = z.object({

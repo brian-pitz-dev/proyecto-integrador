@@ -37,6 +37,7 @@ export function describeUser(ctx: UserPlanContext, pesoActualKg: number | null):
     `Hoy: ${toISO(today)}.`,
     `Perfil: ${profile.sexo === "M" ? "hombre" : "mujer"}, ${profile.edad} años, ${profile.alturaCm} cm, peso actual ${pesoActualKg ?? profile.pesoInicialKg} kg.`,
     `Metas: ${profile.metaPesoKg ? `llegar a ${profile.metaPesoKg} kg` : "sin meta de peso"}${profile.metaGrasaPct ? `, ${profile.metaGrasaPct} de grasa` : ""}.`,
+    `Disponibilidad: entrena ${profile.disponibilidad.dias.map((d) => WEEKDAY_LABELS[d]).join(", ")}, ${profile.disponibilidad.minutos} min por sesión.`,
     `Eventos:\n${eventos.join("\n") || "- ninguno"}`,
     `Fase actual del plan: ${week ? week.phaseLabel : "ninguna"}.`,
     `Semana actual:\n${semana}`,

@@ -48,7 +48,12 @@ function SessionList({
         <div key={i} className={cn("min-w-0 border-l-[3px] pl-3", TAG_STRIPE[s.tag])}>
           <p className="font-semibold break-words text-foreground">{s.label}</p>
           {s.detail && <p className="text-sm break-words text-muted-foreground">{s.detail}</p>}
-          <ExerciseBlock gymKey={s.gymKey} coreKey={s.coreKey} routines={routines} />
+          <ExerciseBlock
+            gymKey={s.gymKey}
+            coreKey={s.coreKey}
+            routines={routines}
+            maxEjercicios={s.maxEjercicios}
+          />
         </div>
       ))}
     </div>

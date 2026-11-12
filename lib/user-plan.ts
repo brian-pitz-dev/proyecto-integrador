@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
-import { buildPlan, type Week, type UserEvent } from "@/lib/training-plan";
+import { buildPlan, type Disponibilidad, type Week, type UserEvent } from "@/lib/training-plan";
 import { edadDesde, todayNormalized } from "@/lib/date";
 import type { UserProfile } from "@/lib/calorie-target";
 import type { MealBank } from "@/lib/meal-plan";
@@ -14,6 +14,9 @@ export interface Perfil extends UserProfile {
   metaPesoKg: number | null;
   metaGrasaPct: string | null;
   planStart: string;
+  /** null en cuentas previas a la fecha de nacimiento (solo guardaban la edad). */
+  fechaNacimiento: string | null;
+  disponibilidad: Disponibilidad;
 }
 
 export interface PlanIa {
@@ -59,6 +62,11 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
     metaPesoKg: perfilRow.meta_peso_kg != null ? Number(perfilRow.meta_peso_kg) : null,
     metaGrasaPct: perfilRow.meta_grasa_pct,
     planStart: perfilRow.plan_start,
+    fechaNacimiento: perfilRow.fecha_nacimiento ?? null,
+    disponibilidad: {
+      dias: perfilRow.dias_entrenamiento ?? [0, 1, 2, 3, 4, 5],
+      minutos: perfilRow.minutos_sesion ?? 60,
+    },
   };
 
   const events: UserEvent[] = (eventoRows ?? []).map((e) => ({
@@ -72,7 +80,7 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
     detalle: e.detalle,
   }));
 
-  const weeks = buildPlan(profile.planStart, events, todayNormalized());
+  const weeks = buildPlan(profile.planStart, events, todayNormalized(), profile.disponibilidad);
 
   // Se re-valida al leer: si una fila no cumple el schema, se ignora y queda el plan base.
   const planIa: PlanIa = {};
