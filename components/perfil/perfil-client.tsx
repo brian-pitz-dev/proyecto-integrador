@@ -97,6 +97,7 @@ export function PerfilClient({
           <Button
             className="justify-self-start"
             disabled={pending !== null}
+            loading={pending === "semana"}
             onClick={() => guardar("semana")}
           >
             {pending === "semana" ? "Rearmando tu plan…" : "Guardar semana"}
@@ -130,6 +131,7 @@ export function PerfilClient({
           <Button
             className="justify-self-start"
             disabled={pending !== null}
+            loading={pending === "datos"}
             onClick={() => guardar("datos")}
           >
             {pending === "datos" ? "Guardando…" : "Guardar datos"}
@@ -201,7 +203,7 @@ function EventosEditor({ events }: { events: UserEvent[] }) {
         k={(campo) => campo}
       />
       <div className="flex gap-2">
-        <Button disabled={pending} onClick={guardar}>
+        <Button loading={pending} onClick={guardar}>
           {pending ? "Guardando…" : id === "nuevo" ? "Agregar evento" : "Guardar cambios"}
         </Button>
         <Button variant="outline" disabled={pending} onClick={() => setEditando(null)}>
@@ -238,7 +240,7 @@ function EventosEditor({ events }: { events: UserEvent[] }) {
             <Button
               size="sm"
               className="bg-destructive text-white hover:bg-destructive/90"
-              disabled={pending}
+              loading={pending}
               onClick={() => borrar(ev.id)}
             >
               Sí, eliminar

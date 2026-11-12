@@ -1,15 +1,14 @@
 "use client";
 
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLogSubmit } from "@/components/log-form/registro-category-card";
+import { SubmitButton, useLogSubmit } from "@/components/log-form/registro-category-card";
 import { formatPace } from "@/lib/pace";
 import { toISO, todayNormalized } from "@/lib/date";
 
 export function RunForm() {
-  const { pending, formRef, submit } = useLogSubmit("Tirada guardada");
+  const { formRef, submit } = useLogSubmit("Tirada guardada");
 
   async function handleSubmit(formData: FormData) {
     const km = Number(formData.get("km"));
@@ -48,9 +47,7 @@ export function RunForm() {
         <Label htmlFor="run-fecha">Fecha</Label>
         <Input id="run-fecha" name="fecha" type="date" defaultValue={toISO(todayNormalized())} />
       </div>
-      <Button type="submit" disabled={pending}>
-        Guardar tirada
-      </Button>
+      <SubmitButton>Guardar tirada</SubmitButton>
     </form>
   );
 }

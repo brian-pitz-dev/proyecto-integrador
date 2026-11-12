@@ -20,7 +20,11 @@ export function DeleteLogButton({ id }: { id: string }) {
 
   async function handleConfirmDelete() {
     setPending(true);
-    const result = await deleteLog(id);
+    // sin el catch, un error de red dejaba el botón girando para siempre
+    const result = await deleteLog(id).catch(() => ({
+      ok: false,
+      message: "No se pudo conectar, probá de nuevo.",
+    }));
     setPending(false);
     setOpen(false);
 
@@ -32,7 +36,7 @@ export function DeleteLogButton({ id }: { id: string }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(o) => (o || !pending) && setOpen(o)}>
       <Button
         variant="ghost"
         size="icon-lg"
@@ -47,8 +51,14 @@ export function DeleteLogButton({ id }: { id: string }) {
           <DialogTitle>¿Borrar este registro?</DialogTitle>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose render={<Button variant="outline">Cancelar</Button>} />
-          <Button variant="destructive" disabled={pending} onClick={handleConfirmDelete}>
+          <DialogClose
+            render={
+              <Button variant="outline" disabled={pending}>
+                Cancelar
+              </Button>
+            }
+          />
+          <Button variant="destructive" loading={pending} onClick={handleConfirmDelete}>
             Borrar
           </Button>
         </DialogFooter>

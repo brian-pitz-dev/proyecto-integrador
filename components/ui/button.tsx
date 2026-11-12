@@ -1,5 +1,6 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
+import { LoaderCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -40,18 +41,31 @@ const buttonVariants = cva(
   },
 );
 
+/**
+ * `loading`: la acción está en curso. Deshabilita el botón, marca aria-busy y muestra un spinner
+ * delante del texto (en los botones de solo ícono reemplaza al ícono, para no cambiar el tamaño).
+ */
 function Button({
   className,
   variant = "default",
   size = "default",
+  loading = false,
+  disabled,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & { loading?: boolean }) {
+  const soloIcono = size?.startsWith("icon");
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
-    />
+    >
+      {loading && <LoaderCircle className="animate-spin" aria-hidden="true" />}
+      {loading && soloIcono ? null : children}
+    </ButtonPrimitive>
   );
 }
 

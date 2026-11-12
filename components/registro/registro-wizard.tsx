@@ -370,7 +370,7 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
             )}
             <Button
               type="submit"
-              disabled={pending || (ultimo && conTurnstile && turnstile.verifying)}
+              loading={pending || (ultimo && conTurnstile && turnstile.verifying)}
             >
               {!ultimo
                 ? "Siguiente"

@@ -18,7 +18,7 @@ export function LogoutButton() {
       variant="outline"
       size="icon-sm"
       aria-label="Cerrar sesión"
-      disabled={pending}
+      loading={pending}
       onClick={handleLogout}
     >
       <LogOut className="size-4" aria-hidden="true" />

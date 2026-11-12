@@ -20,7 +20,7 @@ import { SleepForm } from "@/components/log-form/sleep-form";
 import { EventForm } from "@/components/log-form/event-form";
 import { createClient } from "@/lib/supabase/server";
 import { checkGymStreak } from "@/lib/streaks";
-import { getCalorieTarget, computeBmrCalibrado } from "@/lib/calorie-target";
+import { calcularMeta, computeBmrCalibrado } from "@/lib/calorie-target";
 import {
   countTrainableVsCompleted,
   computeWeightProgress,
@@ -29,7 +29,8 @@ import {
   getMissingYesterdayItems,
 } from "@/lib/stats-summary";
 import { getUserPlanContext } from "@/lib/user-plan";
-import { getMonday, todayNormalized, fromISO, formatShort } from "@/lib/date";
+import { getPhaseKeyForDate } from "@/lib/training-plan";
+import { getMonday, todayNormalized, fromISO, formatShort, toISO } from "@/lib/date";
 import { formatPace, paceStrToSeconds } from "@/lib/pace";
 import type { Categoria, Registro } from "@/lib/types";
 
@@ -50,7 +51,9 @@ async function fetchData() {
       .from("registro")
       .select("*")
       .eq("categoria", categoria)
-      .order("fecha", { ascending: false });
+      .order("fecha", { ascending: false })
+      // varios registros el mismo día (ej. un peso corregido): arriba y como "último", el último cargado
+      .order("created_at", { ascending: false });
     return (data as Registro[] | null) ?? [];
   };
   const [completado, peso, sueno, calorias, caminata, tirada, evento] = await Promise.all(
@@ -113,7 +116,16 @@ export default async function EstadisticasPage() {
     events,
     today,
   );
-  const calorieTarget = await getCalorieTarget(today, profile, weeks);
+  // con los datos ya traídos: getCalorieTarget volvería a buscar peso y calorías en otro viaje
+  const caloriasHoy = calorias.find((r) => r.fecha === toISO(today));
+  const calorieTarget = peso[0]
+    ? calcularMeta(
+        Number(peso[0].valor),
+        caloriasHoy ? Number(caloriasHoy.valor) : null,
+        profile,
+        getPhaseKeyForDate(weeks, today),
+      )
+    : null;
   const monthHistory = buildMonthHistory(weeks, events, planStart, completedDates);
   const bmrCalibradoActual = peso[0] ? computeBmrCalibrado(Number(peso[0].valor), profile) : null;
 

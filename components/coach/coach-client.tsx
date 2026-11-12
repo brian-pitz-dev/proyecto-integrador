@@ -18,7 +18,7 @@ import {
 } from "@/app/(app)/coach/actions";
 
 type Msg = { role: "user" | "model"; text: string };
-type Busy = null | "chat" | "agregar" | "reemplazar" | "rutinas" | "borrar";
+type Busy = null | "chat" | "agregar" | "reemplazar" | "rutinas" | "comidas" | "ejercicios";
 
 const TEXTAREA =
   "w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
@@ -103,7 +103,7 @@ export function CoachClient({
   }
 
   async function handleBorrar(tipo: "comidas" | "ejercicios") {
-    const result = await run("borrar", () => borrarPlanIa(tipo));
+    const result = await run(tipo, () => borrarPlanIa(tipo));
     if (!result) return;
     toast.success("Volviste al plan base.");
     router.refresh();
@@ -163,6 +163,7 @@ export function CoachClient({
               type="submit"
               size="icon"
               aria-label="Enviar"
+              loading={busy === "chat"}
               disabled={!!busy || sinCuota || !draft.trim()}
             >
               <Send aria-hidden="true" />
@@ -199,6 +200,7 @@ export function CoachClient({
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={() => handleComidas("agregar")}
+                loading={busy === "agregar"}
                 disabled={!!busy || sinCuota || comidasTexto.trim().length < 3}
               >
                 {busy === "agregar" ? "Agregando…" : "Agregar al plan"}
@@ -206,12 +208,18 @@ export function CoachClient({
               <Button
                 variant="outline"
                 onClick={() => handleComidas("reemplazar")}
+                loading={busy === "reemplazar"}
                 disabled={!!busy || sinCuota || comidasTexto.trim().length < 3}
               >
                 {busy === "reemplazar" ? "Armando…" : "Armar plan nuevo"}
               </Button>
               {tieneComidas && (
-                <Button variant="ghost" onClick={() => handleBorrar("comidas")} disabled={!!busy}>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleBorrar("comidas")}
+                  loading={busy === "comidas"}
+                  disabled={!!busy}
+                >
                   Volver al plan base
                 </Button>
               )}
@@ -269,7 +277,11 @@ export function CoachClient({
               className={TEXTAREA}
             />
             <div className="flex flex-wrap gap-2">
-              <Button onClick={handleRutinas} disabled={!!busy || sinCuota}>
+              <Button
+                onClick={handleRutinas}
+                loading={busy === "rutinas"}
+                disabled={!!busy || sinCuota}
+              >
                 {busy === "rutinas"
                   ? "Armando…"
                   : tieneRutinas
@@ -280,6 +292,7 @@ export function CoachClient({
                 <Button
                   variant="ghost"
                   onClick={() => handleBorrar("ejercicios")}
+                  loading={busy === "ejercicios"}
                   disabled={!!busy}
                 >
                   Volver a las rutinas base

@@ -1,7 +1,7 @@
 // Self-check del cálculo de calorías (no hay test suite).
 // Correr con: npx tsx scripts/check-calorie-target.mjs   (tsx resuelve los alias "@/" de tsconfig)
 import assert from "node:assert/strict";
-import { computeBmrCalibrado, deficitDeFase } from "../lib/calorie-target.ts";
+import { calcularMeta, computeBmrCalibrado, deficitDeFase } from "../lib/calorie-target.ts";
 
 const base = { edad: 30, alturaCm: 180, factorActividad: 1.55 };
 const hombre = { ...base, sexo: "M" };
@@ -25,5 +25,24 @@ assert.equal(deficitDeFase("p6"), 550);
 assert.equal(deficitDeFase("p5"), 100);
 assert.equal(deficitDeFase(null), 400);
 assert.equal(deficitDeFase("pX"), 400);
+
+// 5. Meta del día: con calorías activas cargadas = BMR + activas − déficit ("xiaomi");
+// sin ellas = BMR × factor de actividad − déficit ("estimado").
+assert.deepEqual(calcularMeta(80, 500, hombre, "p6"), {
+  meta: 1730,
+  gastoCalorico: 2280,
+  deficit: 550,
+  fuente: "xiaomi",
+  pesoKg: 80,
+});
+assert.deepEqual(calcularMeta(80, null, hombre, null), {
+  meta: Math.round(1780 * 1.55 - 400),
+  gastoCalorico: Math.round(1780 * 1.55),
+  deficit: 400,
+  fuente: "estimado",
+  pesoKg: 80,
+});
+// 0 activas cargadas es un dato (día sin actividad), no "sin dato"
+assert.equal(calcularMeta(80, 0, hombre, "p6").fuente, "xiaomi");
 
 console.log("check-calorie-target: OK");

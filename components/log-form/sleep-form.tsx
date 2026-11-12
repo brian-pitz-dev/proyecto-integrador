@@ -1,14 +1,13 @@
 "use client";
 
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLogSubmit } from "@/components/log-form/registro-category-card";
+import { SubmitButton, useLogSubmit } from "@/components/log-form/registro-category-card";
 import { toISO, addDays, todayNormalized } from "@/lib/date";
 
 export function SleepForm() {
-  const { pending, formRef, submit } = useLogSubmit("Sueño guardado");
+  const { formRef, submit } = useLogSubmit("Sueño guardado");
   const defaultDate = toISO(addDays(todayNormalized(), -1));
 
   async function handleSubmit(formData: FormData) {
@@ -41,9 +40,7 @@ export function SleepForm() {
         <Label htmlFor="sleep-fecha">Fecha</Label>
         <Input id="sleep-fecha" name="fecha" type="date" defaultValue={defaultDate} />
       </div>
-      <Button type="submit" disabled={pending}>
-        Guardar
-      </Button>
+      <SubmitButton>Guardar</SubmitButton>
     </form>
   );
 }

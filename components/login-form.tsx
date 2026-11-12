@@ -54,7 +54,7 @@ export function LoginForm() {
             />
           </div>
           {turnstile.widget}
-          <Button type="submit" disabled={pending || turnstile.verifying} className="mt-1">
+          <Button type="submit" loading={pending || turnstile.verifying} className="mt-1">
             {pending ? "Ingresando…" : turnstile.verifying ? "Verificando…" : "Ingresar"}
           </Button>
         </form>

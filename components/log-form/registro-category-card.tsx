@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -14,22 +15,26 @@ import { Button } from "@/components/ui/button";
 import { DeleteLogButton } from "@/components/log-form/delete-log-button";
 import { saveLog } from "@/app/registro/actions";
 
-const CloseDialogContext = createContext<() => void>(() => {});
+const DialogContext = createContext<{ close: () => void; setGuardando: (g: boolean) => void }>({
+  close: () => {},
+  setGuardando: () => {},
+});
 
 /** Guardado de los formularios de un RegistroCategoryCard: evita el doble submit, avisa con toast y cierra el modal si sale bien. */
 export function useLogSubmit(successMessage: string) {
-  const closeDialog = useContext(CloseDialogContext);
-  const [pending, setPending] = useState(false);
+  const { close: closeDialog } = useContext(DialogContext);
   const pendingRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   async function submit(input: Parameters<typeof saveLog>[0]): Promise<boolean> {
     if (pendingRef.current) return false;
     pendingRef.current = true;
-    setPending(true);
-    const result = await saveLog(input);
+    // Un error de red adentro de una acción de formulario sin atrapar tira la página de error entera.
+    const result = await saveLog(input).catch(() => ({
+      ok: false,
+      message: "No se pudo conectar, probá de nuevo.",
+    }));
     pendingRef.current = false;
-    setPending(false);
 
     if (!result.ok) {
       toast.error(result.message ?? "No se pudo guardar.");
@@ -41,7 +46,25 @@ export function useLogSubmit(successMessage: string) {
     return true;
   }
 
-  return { pending, formRef, submit };
+  return { formRef, submit };
+}
+
+/**
+ * Botón de guardar de los formularios de registro. Usa useFormStatus porque el submit es una
+ * acción de formulario (<form action>): React no muestra un setState hecho adentro de la acción
+ * hasta que termina, así que un `pending` propio nunca llegaba a verse.
+ */
+export function SubmitButton({ children }: { children: ReactNode }) {
+  const { pending } = useFormStatus();
+  // Avisa al diálogo (fuera de la acción, para que se vea ya): mientras guarda no se cierra
+  // y los campos quedan bloqueados.
+  const { setGuardando } = useContext(DialogContext);
+  useEffect(() => setGuardando(pending), [pending, setGuardando]);
+  return (
+    <Button type="submit" loading={pending}>
+      {children}
+    </Button>
+  );
 }
 
 export interface RegistroEntry {
@@ -61,17 +84,22 @@ export function LogDialog({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [ctx] = useState(() => ({ close: () => setOpen(false), setGuardando }));
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    // Escape, la X o un clic afuera no cierran mientras guarda: el usuario ve el spinner hasta el final
+    <Dialog open={open} onOpenChange={(o) => (o || !guardando) && setOpen(o)}>
       <DialogTrigger render={<Button variant="outline" size="sm" />}>+ {buttonLabel}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <CloseDialogContext.Provider value={() => setOpen(false)}>
-          {children}
-        </CloseDialogContext.Provider>
+        <DialogContext.Provider value={ctx}>
+          <fieldset disabled={guardando} className="contents">
+            {children}
+          </fieldset>
+        </DialogContext.Provider>
       </DialogContent>
     </Dialog>
   );

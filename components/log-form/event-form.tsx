@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Opciones } from "@/components/ui/select";
-import { useLogSubmit } from "@/components/log-form/registro-category-card";
+import { SubmitButton, useLogSubmit } from "@/components/log-form/registro-category-card";
 import { formatPace } from "@/lib/pace";
 import { toISO, todayNormalized } from "@/lib/date";
 import type { UserEvent } from "@/lib/training-plan";
 
 export function EventForm({ events }: { events: UserEvent[] }) {
-  const { pending, formRef, submit } = useLogSubmit("Evento guardado");
+  const { formRef, submit } = useLogSubmit("Evento guardado");
   const [eventName, setEventName] = useState(events[0]?.nombre ?? "");
   const selectedEvent = events.find((e) => e.nombre === eventName);
 
@@ -75,9 +74,7 @@ export function EventForm({ events }: { events: UserEvent[] }) {
           defaultValue={selectedEvent ? selectedEvent.fecha : toISO(todayNormalized())}
         />
       </div>
-      <Button type="submit" disabled={pending}>
-        Guardar evento
-      </Button>
+      <SubmitButton>Guardar evento</SubmitButton>
     </form>
   );
 }

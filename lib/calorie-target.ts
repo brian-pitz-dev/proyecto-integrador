@@ -66,6 +66,8 @@ export async function getCalorieTarget(
       .select("*")
       .eq("categoria", "calorias")
       .eq("fecha", fechaISO)
+      // varios registros el mismo día: vale el último cargado (igual en todas las consultas de registro)
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle<Registro>(),
     supabase
@@ -73,25 +75,40 @@ export async function getCalorieTarget(
       .select("*")
       .eq("categoria", "peso")
       .order("fecha", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(1),
   ]);
 
   if (!pesoLogs || pesoLogs.length === 0) return null;
+  return calcularMeta(
+    Number((pesoLogs[0] as Registro).valor),
+    logDelDia ? Number(logDelDia.valor) : null,
+    profile,
+    phaseKey,
+  );
+}
 
-  const pesoActual = Number((pesoLogs[0] as Registro).valor);
+/**
+ * La meta del día con datos ya cargados (getCalorieTarget los busca; Estadísticas ya los tiene y
+ * se ahorra un viaje a Supabase). `activasDelDia`: calorías activas registradas ese día, o null.
+ */
+export function calcularMeta(
+  pesoActual: number,
+  activasDelDia: number | null,
+  profile: UserProfile,
+  phaseKey: string | null,
+): CalorieTarget {
   const bmrCalibrado = computeBmrCalibrado(pesoActual, profile);
-
-  let gastoCalorico: number;
-  let fuente: CalorieTarget["fuente"];
-  if (logDelDia) {
-    gastoCalorico = bmrCalibrado + Number(logDelDia.valor);
-    fuente = "xiaomi";
-  } else {
-    gastoCalorico = bmrCalibrado * profile.factorActividad;
-    fuente = "estimado";
-  }
-
+  const xiaomi = activasDelDia !== null;
+  const gastoCalorico = xiaomi
+    ? bmrCalibrado + activasDelDia
+    : bmrCalibrado * profile.factorActividad;
   const deficit = deficitDeFase(phaseKey);
-  const meta = Math.round(gastoCalorico - deficit);
-  return { meta, gastoCalorico: Math.round(gastoCalorico), deficit, fuente, pesoKg: pesoActual };
+  return {
+    meta: Math.round(gastoCalorico - deficit),
+    gastoCalorico: Math.round(gastoCalorico),
+    deficit,
+    fuente: xiaomi ? "xiaomi" : "estimado",
+    pesoKg: pesoActual,
+  };
 }

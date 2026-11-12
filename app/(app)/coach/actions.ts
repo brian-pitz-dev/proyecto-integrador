@@ -83,6 +83,7 @@ async function latestPeso(supabase: Supabase, userId: string): Promise<number | 
     .eq("user_id", userId)
     .eq("categoria", "peso")
     .order("fecha", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   return data ? Number(data.valor) : null;
@@ -146,7 +147,8 @@ export async function chatCoach(
       .eq("user_id", userId)
       .in("categoria", ["peso", "sueno", "tirada", "caminata", "completado"])
       .gte("fecha", desde)
-      .order("fecha", { ascending: true }),
+      .order("fecha", { ascending: true })
+      .order("created_at", { ascending: true }),
   ]);
 
   const registros = (logs ?? []).map((r) => `- ${r.fecha} ${r.categoria}: ${r.valor}`).join("\n");
