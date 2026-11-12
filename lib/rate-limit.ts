@@ -2,6 +2,9 @@ const WINDOW_MS = 5 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 const SAVE_LOG_WINDOW_MS = 60 * 1000;
 const SAVE_LOG_MAX_SAVES = 20;
+// Protege el límite por minuto del tier gratis de Gemini, compartido por todos los usuarios.
+const COACH_WINDOW_MS = 60 * 1000;
+const COACH_MAX_CALLS = 5;
 
 type Attempts = Map<string, { count: number; windowStart: number }>;
 
@@ -12,6 +15,7 @@ type Attempts = Map<string, { count: number; windowStart: number }>;
 const loginAttempts: Attempts = new Map();
 const saveLogAttempts: Attempts = new Map();
 const signupAttempts: Attempts = new Map();
+const coachAttempts: Attempts = new Map();
 
 function isLimited(attempts: Attempts, key: string, windowMs: number, max: number): boolean {
   const entry = attempts.get(key);
@@ -70,4 +74,14 @@ export function isSignupRateLimited(key: string): boolean {
 /** Records a failed signup attempt for `key`, starting a new window if needed. */
 export function recordSignupAttempt(key: string): void {
   record(signupAttempts, key, WINDOW_MS);
+}
+
+/** Returns true if `userId` is currently rate-limited on the AI coach actions. */
+export function isCoachRateLimited(userId: string): boolean {
+  return isLimited(coachAttempts, userId, COACH_WINDOW_MS, COACH_MAX_CALLS);
+}
+
+/** Records an AI coach call for `userId`, starting a new window if needed. */
+export function recordCoachAttempt(userId: string): void {
+  record(coachAttempts, userId, COACH_WINDOW_MS);
 }

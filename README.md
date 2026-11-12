@@ -21,12 +21,13 @@ hardcodeados), y se generalizó a multi-usuario: cualquiera puede crear una cuen
   que rotan automáticamente según la fecha y los eventos propios de cada usuario
   (velocidad, resistencia, recuperación, construcción para una carrera larga,
   tapering, mantenimiento).
-- **Mancuernas** — rutinas cortas de mancuernas por grupo muscular para pausas de
-  Pomodoro en casa, para los días que no dan para ir al gym.
-- **Nutrición** — plan de comidas rotativo con objetivo de proteína diario, ajustado
-  según la fase de entrenamiento (menos déficit calórico y más carbohidratos antes de
+- **Nutrición** — plan de comidas rotativo con porciones escaladas a la meta calórica
+  del día y objetivo de proteína según tu peso, ajustado según la fase de entrenamiento (menos déficit calórico y más carbohidratos antes de
   los eventos largos).
 - **Estadísticas** — seguimiento de tiradas, ritmo y resultados de los eventos.
+- **Coach** — chat con IA (Google Gemini, tier gratis, 20 consultas por día por usuario)
+  que conoce tu plan, y que además arma un plan de comidas a partir de lo que tenés o
+  querés comer y rutinas de gym según tus eventos, metas y equipo.
 
 ## Cómo está pensada
 

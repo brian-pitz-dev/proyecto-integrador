@@ -7,8 +7,10 @@
 export type MealType = "desayuno" | "media" | "almuerzo" | "merienda" | "cena";
 
 export interface Ingrediente {
+  /** Clave de ingredienteNutri; los platos generados por IA usan "ia" + `nombre`. */
   id: string;
   cantidad: number | null;
+  nombre?: string;
 }
 
 export interface Meal {
@@ -17,6 +19,9 @@ export interface Meal {
   ingredientes: Ingrediente[];
   carbLoad?: boolean;
   liviana?: boolean;
+  /** Totales de la porción base estimados por la IA (los platos del banco base no los traen). */
+  proteinG?: number;
+  kcal?: number;
 }
 
 export interface DayMeal {
@@ -26,7 +31,9 @@ export interface DayMeal {
   proteinG: number;
 }
 
-const mealBank: Record<MealType, Meal[]> = {
+export type MealBank = Record<MealType, Meal[]>;
+
+export const mealBank: MealBank = {
   desayuno: [
     {
       name: "3 huevos fritos + café negro",
@@ -223,34 +230,88 @@ const mealBank: Record<MealType, Meal[]> = {
   ],
 };
 
-const ingredienteProteina: Record<string, { prote100?: number; fixed?: number }> = {
-  pollo: { prote100: 31 },
-  carneVaca: { prote100: 27 },
-  carnePicada: { prote100: 28 },
-  milanesa: { prote100: 21 },
-  huevoFrito: { prote100: 13 },
-  arroz: { prote100: 7 },
-  fideosInteg: { prote100: 11.25 },
-  papa: { prote100: 2 },
-  espinaca: { prote100: 3.6 },
-  avena: { prote100: 3.3 },
-  almendras: { prote100: 20 },
-  pastaMani: { prote100: 37 },
-  rapiditas: { prote100: 9.1 },
-  polenta: { prote100: 7.2 },
-  chorizo: { prote100: 17.5 },
-  salsaTomate: { prote100: 1.7 },
-  batidoProte: { fixed: 30 },
-  lecheProte: { fixed: 12.5 },
+interface IngredienteNutri {
+  nombre: string;
+  prote100?: number;
+  kcal100?: number;
+  /** Porción fija (scoop / vaso): no se escala. */
+  fixed?: number;
+  fixedKcal?: number;
+  /** Escalar de a unidades enteras (ej. 1 huevo = 50 g) en vez de a 5 g. */
+  unidadG?: number;
+}
+
+// kcal100: valores de referencia aproximados, en la misma base (crudo/cocido) que
+// el prote100 original de cada ingrediente — revisar contra las etiquetas reales.
+const ingredienteNutri: Record<string, IngredienteNutri> = {
+  pollo: { nombre: "pollo", prote100: 31, kcal100: 165 },
+  carneVaca: { nombre: "carne", prote100: 27, kcal100: 250 },
+  carnePicada: { nombre: "carne picada", prote100: 28, kcal100: 250 },
+  milanesa: { nombre: "milanesa", prote100: 21, kcal100: 230 },
+  huevoFrito: { nombre: "huevo frito", prote100: 13, kcal100: 196, unidadG: 50 },
+  arroz: { nombre: "arroz", prote100: 7, kcal100: 360 },
+  fideosInteg: { nombre: "fideos integrales", prote100: 11.25, kcal100: 350 },
+  papa: { nombre: "papa", prote100: 2, kcal100: 77 },
+  espinaca: { nombre: "espinaca", prote100: 3.6, kcal100: 23 },
+  avena: { nombre: "avena", prote100: 3.3, kcal100: 70 },
+  almendras: { nombre: "almendras", prote100: 20, kcal100: 580 },
+  pastaMani: { nombre: "pasta de maní", prote100: 37, kcal100: 560 },
+  rapiditas: { nombre: "rapiditas", prote100: 9.1, kcal100: 300 },
+  polenta: { nombre: "polenta", prote100: 7.2, kcal100: 360 },
+  chorizo: { nombre: "chorizo", prote100: 17.5, kcal100: 330 },
+  salsaTomate: { nombre: "salsa de tomate", prote100: 1.7, kcal100: 30 },
+  batidoProte: { nombre: "batido de proteína", fixed: 30, fixedKcal: 120 },
+  lecheProte: { nombre: "leche con proteínas", fixed: 12.5, fixedKcal: 120 },
 };
 
-function calcMealProtein(meal: Meal): number {
+function sumNutri(meal: Meal, fixedKey: "fixed" | "fixedKcal", per100Key: "prote100" | "kcal100") {
   return meal.ingredientes.reduce((total, item) => {
-    const ing = ingredienteProteina[item.id];
+    const ing = ingredienteNutri[item.id];
     if (!ing) return total;
-    if (ing.fixed !== undefined) return total + ing.fixed;
-    return total + ((ing.prote100 ?? 0) * (item.cantidad ?? 0)) / 100;
+    if (ing[fixedKey] !== undefined) return total + (ing[fixedKey] ?? 0);
+    return total + ((ing[per100Key] ?? 0) * (item.cantidad ?? 0)) / 100;
   }, 0);
+}
+
+function calcMealProtein(meal: Meal): number {
+  return (meal.proteinG ?? 0) + sumNutri(meal, "fixed", "prote100");
+}
+
+function calcMealKcal(meal: Meal): number {
+  return (meal.kcal ?? 0) + sumNutri(meal, "fixedKcal", "kcal100");
+}
+
+/** "230 g pollo · 175 g arroz" — porción escalada, armada desde los ingredientes. */
+export function formatPortion(meal: Meal): string {
+  return meal.ingredientes
+    .filter((i) => i.cantidad != null && ingredienteNutri[i.id]?.fixed === undefined)
+    .map((i) => `${i.cantidad} g ${i.nombre ?? ingredienteNutri[i.id]?.nombre ?? i.id}`)
+    .join(" · ");
+}
+
+const MIN_FACTOR = 0.75;
+const MAX_FACTOR = 1.3;
+
+/** Factor de porción para acercar las comidas del día a la meta calórica, acotado a [0.75, 1.3] y redondeado a 0.05. */
+export function portionFactor(metaKcal: number, baseKcal: number): number {
+  if (!(metaKcal > 0) || !(baseKcal > 0)) return 1;
+  const f = Math.round((metaKcal / baseKcal) * 20) / 20;
+  return Math.min(MAX_FACTOR, Math.max(MIN_FACTOR, f));
+}
+
+function scaleMeal(meal: Meal, f: number): Meal {
+  if (f === 1) return meal;
+  return {
+    ...meal,
+    proteinG: meal.proteinG != null ? meal.proteinG * f : undefined,
+    kcal: meal.kcal != null ? meal.kcal * f : undefined,
+    ingredientes: meal.ingredientes.map((i) => {
+      const ing = ingredienteNutri[i.id];
+      if (i.cantidad == null || ing?.fixed !== undefined) return { ...i };
+      const unidad = ing?.unidadG ?? 5;
+      return { ...i, cantidad: Math.max(unidad, Math.round((i.cantidad * f) / unidad) * unidad) };
+    }),
+  };
 }
 
 /** mulberry32: PRNG determinístico (misma semilla → misma secuencia siempre). */
@@ -302,11 +363,27 @@ function buildRecencySequence(length: number, totalSlots: number, seed: number):
 // estrictamente secuencial, alargarla no cambia los valores que ya se usan,
 // solo agrega más al final — ver lib/training-plan.ts buildPlan().
 const ROTATION_SLOTS = 1040 * 5 + 10;
-const almuerzoSequence = buildRecencySequence(mealBank.almuerzo.length, ROTATION_SLOTS, 42);
-const cenaSequence = buildRecencySequence(mealBank.cena.length, ROTATION_SLOTS, 99);
+// Una secuencia por (largo del banco, semilla): el banco base de siempre cae en la misma
+// entrada que antes; un banco propio (IA) de otro largo arma la suya.
+const sequenceCache = new Map<string, number[]>();
+function rotationSequence(length: number, seed: number): number[] {
+  const key = `${length}:${seed}`;
+  let seq = sequenceCache.get(key);
+  if (!seq) {
+    seq = buildRecencySequence(length, ROTATION_SLOTS, seed);
+    sequenceCache.set(key, seq);
+  }
+  return seq;
+}
 
-function pickAlmuerzo(weekNum: number, dayIdx: number, carbLoadWeeks: number[]): Meal {
+function pickAlmuerzo(
+  mealBank: MealBank,
+  weekNum: number,
+  dayIdx: number,
+  carbLoadWeeks: number[],
+): Meal {
   const bank = mealBank.almuerzo;
+  const almuerzoSequence = rotationSequence(bank.length, 42);
   // la carga va solo jueves y viernes (dayIdx 3-4): para una carrera larga alcanzan 1-2 días
   if (dayIdx >= 3 && carbLoadWeeks.includes(weekNum)) {
     const carbArr = bank.filter((m) => m.carbLoad);
@@ -321,8 +398,9 @@ function hasIngredient(meal: Meal, id: string): boolean {
   return meal.ingredientes.some((i) => i.id === id);
 }
 
-function pickCena(weekNum: number, dayIdx: number, meriendaMeal: Meal): Meal {
+function pickCena(mealBank: MealBank, weekNum: number, dayIdx: number, meriendaMeal: Meal): Meal {
   const bank = mealBank.cena;
+  const cenaSequence = rotationSequence(bank.length, 99);
   const globalIdx = (weekNum - 1) * 5 + dayIdx;
   const seqIdx = cenaSequence[globalIdx % cenaSequence.length];
   let cena = bank[seqIdx];
@@ -354,6 +432,7 @@ function pickCena(weekNum: number, dayIdx: number, meriendaMeal: Meal): Meal {
 }
 
 function pickMeal(
+  mealBank: MealBank,
   type: "desayuno" | "media" | "merienda",
   weekNum: number,
   dayIdx: number,
@@ -390,11 +469,25 @@ function reinforceWithBatido(meal: Meal): Meal {
 }
 
 const LOW_LUNCH_PROTEIN_THRESHOLD = 55;
+// 55 g / 94.9 kg (peso inicial de Brian, brian-migration.sql) ≈ 0.58 g/kg: a ese peso da el umbral de siempre.
+const LUNCH_PROTEIN_G_PER_KG = 0.58;
+/** Objetivo diario de proteína por kg de peso actual. */
+export const PROTEINA_G_POR_KG = 1.8;
+
+/** Proteína mínima del almuerzo antes de reforzar el resto del día; escala con el peso actual. */
+export function umbralAlmuerzo(pesoKg?: number | null): number {
+  return pesoKg && pesoKg > 0
+    ? Math.round(pesoKg * LUNCH_PROTEIN_G_PER_KG)
+    : LOW_LUNCH_PROTEIN_THRESHOLD;
+}
 
 /** Si el almuerzo del día queda bajo en proteína: agranda desayuno, después batido en merienda, si no, refuerza la cena. */
-function applyProteinReinforcement(meals: DayMeal[], almuerzoProtein: number): DayMeal[] {
-  if (almuerzoProtein >= LOW_LUNCH_PROTEIN_THRESHOLD) return meals;
-
+function applyProteinReinforcement(
+  meals: DayMeal[],
+  almuerzoProtein: number,
+  threshold: number,
+): DayMeal[] {
+  if (almuerzoProtein >= threshold) return meals;
   const merienda = meals.find((m) => m.type === "merienda");
 
   return meals.map((m) => {
@@ -427,56 +520,74 @@ const MEAL_LABELS: Record<MealType, string> = {
 export interface DayPlan {
   meals: DayMeal[];
   totalProteinG: number;
+  totalKcal: number;
+  /** Factor de porción aplicado para acercarse a la meta calórica (1 = porción base). */
+  factor: number;
   /** true = lunes a viernes con estructura fija; false = fin de semana libre. */
   isWeekday: boolean;
+}
+
+export interface MealsForDayOptions {
+  /** Banco propio del usuario (plan_ia); si falta, el banco base compartido. */
+  bank?: MealBank;
+  /** Meta calórica del día: si llega, las porciones se escalan hacia ella. */
+  metaKcal?: number | null;
+  /** Peso actual: ajusta el umbral de proteína del almuerzo. */
+  pesoKg?: number | null;
 }
 
 /**
  * Comidas del día para una semana (1-indexed, igual que lib/training-plan.ts)
  * y un índice de día 0=lunes..6=domingo. Sábado/domingo no tienen estructura fija.
+ * Sin `opts` da exactamente el mismo resultado que el plan original.
  */
-export function getMealsForDay(weekNum: number, dayIdx: number, carbLoadWeeks: number[]): DayPlan {
+export function getMealsForDay(
+  weekNum: number,
+  dayIdx: number,
+  carbLoadWeeks: number[],
+  opts: MealsForDayOptions = {},
+): DayPlan {
   if (dayIdx >= 5) {
-    return { meals: [], totalProteinG: 0, isWeekday: false };
+    return { meals: [], totalProteinG: 0, totalKcal: 0, factor: 1, isWeekday: false };
   }
 
+  const bank = opts.bank ?? mealBank;
   const offsets = { desayuno: 0, media: 1, merienda: 2 } as const;
-  const meriendaMeal = pickMeal("merienda", weekNum, dayIdx, offsets.merienda);
-  const almuerzoMeal = pickAlmuerzo(weekNum, dayIdx, carbLoadWeeks);
-  const almuerzoProtein = calcMealProtein(almuerzoMeal);
+  const meriendaMeal = pickMeal(bank, "merienda", weekNum, dayIdx, offsets.merienda);
+  const picked: Record<MealType, Meal> = {
+    desayuno: pickMeal(bank, "desayuno", weekNum, dayIdx, offsets.desayuno),
+    media: pickMeal(bank, "media", weekNum, dayIdx, offsets.media),
+    almuerzo: pickAlmuerzo(bank, weekNum, dayIdx, carbLoadWeeks),
+    merienda: meriendaMeal,
+    cena: pickCena(bank, weekNum, dayIdx, meriendaMeal),
+  };
 
-  let meals: DayMeal[] = [
-    {
-      type: "desayuno",
-      label: MEAL_LABELS.desayuno,
-      meal: pickMeal("desayuno", weekNum, dayIdx, offsets.desayuno),
-      proteinG: 0,
-    },
-    {
-      type: "media",
-      label: MEAL_LABELS.media,
-      meal: pickMeal("media", weekNum, dayIdx, offsets.media),
-      proteinG: 0,
-    },
-    {
-      type: "almuerzo",
-      label: MEAL_LABELS.almuerzo,
-      meal: almuerzoMeal,
-      proteinG: almuerzoProtein,
-    },
-    { type: "merienda", label: MEAL_LABELS.merienda, meal: meriendaMeal, proteinG: 0 },
-    {
-      type: "cena",
-      label: MEAL_LABELS.cena,
-      meal: pickCena(weekNum, dayIdx, meriendaMeal),
-      proteinG: 0,
-    },
-  ];
-  meals = meals.map((m) => (m.proteinG ? m : { ...m, proteinG: calcMealProtein(m.meal) }));
-  meals = applyProteinReinforcement(meals, almuerzoProtein);
+  const types = Object.keys(MEAL_LABELS) as MealType[];
+  const threshold = umbralAlmuerzo(opts.pesoKg);
+  const kcalOf = (meals: DayMeal[]) => meals.reduce((total, m) => total + calcMealKcal(m.meal), 0);
 
+  function buildDay(factor: number): DayMeal[] {
+    const meals: DayMeal[] = types.map((type) => {
+      const meal = scaleMeal(picked[type], factor);
+      return { type, label: MEAL_LABELS[type], meal, proteinG: calcMealProtein(meal) };
+    });
+    return applyProteinReinforcement(meals, meals[types.indexOf("almuerzo")].proteinG, threshold);
+  }
+
+  let factor = 1;
+  if (opts.metaKcal) {
+    const baseKcal = types.reduce((total, t) => total + calcMealKcal(picked[t]), 0);
+    // 2 pasadas: el refuerzo de proteína (no escalable) suma kcal, así que se descuenta de la meta.
+    const first = portionFactor(opts.metaKcal, baseKcal);
+    const reinforceKcal =
+      kcalOf(buildDay(first)) -
+      types.reduce((total, t) => total + calcMealKcal(scaleMeal(picked[t], first)), 0);
+    factor = portionFactor(opts.metaKcal - reinforceKcal, baseKcal);
+  }
+
+  const meals = buildDay(factor);
   const totalProteinG = meals.reduce((total, m) => total + m.proteinG, 0);
-  return { meals, totalProteinG, isWeekday: true };
+  return { meals, totalProteinG, totalKcal: kcalOf(meals), factor, isWeekday: true };
 }
 
 /** Reglas fijas del plan de comidas, tal como en plan_vida_2026.html. */

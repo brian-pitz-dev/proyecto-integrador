@@ -41,6 +41,8 @@ export interface CalorieTarget {
   gastoCalorico: number;
   deficit: number;
   fuente: "xiaomi" | "estimado";
+  /** Último peso registrado: lo usa Nutrición para el umbral/objetivo de proteína. */
+  pesoKg: number;
 }
 
 /** Equivalente a getCalorieTarget() de plan_vida_2026.html, generalizado por usuario. */
@@ -86,5 +88,5 @@ export async function getCalorieTarget(
 
   const deficit = (phaseKey && deficitPorFase[phaseKey]) || 400;
   const meta = Math.round(gastoCalorico - deficit);
-  return { meta, gastoCalorico: Math.round(gastoCalorico), deficit, fuente };
+  return { meta, gastoCalorico: Math.round(gastoCalorico), deficit, fuente, pesoKg: pesoActual };
 }

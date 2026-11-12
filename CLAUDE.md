@@ -60,10 +60,14 @@ events, today)` maps that content onto a specific user's own event dates (see
   `specs/004-multi-user-onboarding/research.md` Decision 1 for the algorithm).
   `getPhaseKeyForDate()` and `getSessionsForDate()` now take that user's computed
   `Week[]`/events instead of operating on module-level globals.
-- `lib/meal-plan.ts` — the rotating meal bank and protein-reinforcement logic (shared
-  content; `getMealsForDay()` takes `carbLoadWeeks` from the caller's own plan).
-- `lib/gym-exercises.ts` / `lib/dumbbell-exercises.ts` — exercise catalogs keyed by
-  routine/phase (shared content, unchanged by spec 004).
+- `lib/meal-plan.ts` — the rotating meal bank and protein-reinforcement logic.
+  `getMealsForDay(week, day, carbLoadWeeks, opts?)`: `opts.bank` is the user's own
+  AI-generated bank (`plan_ia`), `opts.metaKcal` scales portions toward the day's
+  calorie target, and `opts.pesoKg` scales the lunch-protein threshold. Called with no
+  `opts`, it is byte-identical to the original plan (see `scripts/check-meal-scaling.mjs`
+  and `specs/005-coach-ia/research.md` Decision 4).
+- `lib/gym-exercises.ts` — gym/core routines keyed by `gymKey`/`coreKey` (shared default;
+  a user's AI routines from `plan_ia` override gym keys in `ExerciseBlock`).
 - `lib/calorie-target.ts` — Mifflin-St Jeor BMR, now taking a `UserProfile` (age,
   height, sex, activity factor, optional personal calibration) instead of one
   hardcoded `PERSONAL_DATA`/`INBODY_REFERENCE` pair — fixing a latent bug along the
@@ -76,10 +80,12 @@ and `lib/calorie-target.ts` no longer hold hardcoded-for-Brian constants; they t
 user's own profile/events (`lib/user-plan.ts`'s `getUserPlanContext()`) and compute
 phases relative to those events (see `specs/004-multi-user-onboarding/research.md`
 Decision 1 for how the spec's open design question was resolved). US4 (per-user
-editable meal/exercise catalogs, via AI generation) and US5 (full event CRUD UI) are
-still open — `lib/meal-plan.ts`/`lib/gym-exercises.ts`/`lib/dumbbell-exercises.ts`
-remain shared, read-only content for every user. If you're asked to work on those,
-read `specs/004-multi-user-onboarding/spec.md` and `research.md` first.
+meal/exercise catalogs via AI) is implemented by **`specs/005-coach-ia/`**: the `/coach`
+tab (chat + "generar y guardar" meal bank / gym routines into `plan_ia`), using Google
+Gemini's free tier with no billing (`lib/ai.ts`, `GEMINI_API_KEY`) and a 20/day
+per-user quota enforced in SQL (`consumir_uso_ia()`; the limit is hardcoded there on
+purpose — read `specs/005-coach-ia/research.md` before touching it). US5 (full event
+CRUD UI) is still open.
 
 Day-to-day data (weight, calories, sleep, runs/walks, completed-day checkmarks, and
 event results) lives in one flat table, `registro` (`categoria`, `fecha`, `valor`,
@@ -94,7 +100,8 @@ _configuration_ (profile and events — what used to be hardcoded constants) liv
 ### Routing and auth
 
 - `app/(app)/` is the authenticated route group: `calendario`, `nutricion`,
-  `estadisticas`, `mancuernas`, sharing `app/(app)/layout.tsx` (nav + theme toggle).
+  `estadisticas`, `coach`, sharing `app/(app)/layout.tsx` (nav + theme toggle). The
+  old `mancuernas` tab was removed in spec 005.
 - `app/login/` and `app/signup/` are public. `app/onboarding/` requires a session but
   not a completed profile. `app/page.tsx` and `proxy.ts` handle the redirect logic
   (logged-out → `/login`, logged-in without a completed profile → `/onboarding`,

@@ -1,7 +1,20 @@
-import { gymRoutines, coreRoutines } from "@/lib/gym-exercises";
+import { gymRoutines, coreRoutines, type Routine } from "@/lib/gym-exercises";
 
-export function ExerciseBlock({ gymKey, coreKey }: { gymKey?: string; coreKey?: string }) {
-  const routine = gymKey ? gymRoutines[gymKey] : coreKey ? coreRoutines[coreKey] : undefined;
+export function ExerciseBlock({
+  gymKey,
+  coreKey,
+  routines,
+}: {
+  gymKey?: string;
+  coreKey?: string;
+  /** Rutinas propias del usuario (IA); si no tiene la gymKey, cae a la compartida. */
+  routines?: Record<string, Routine>;
+}) {
+  const routine = gymKey
+    ? (routines?.[gymKey] ?? gymRoutines[gymKey])
+    : coreKey
+      ? coreRoutines[coreKey]
+      : undefined;
   if (!routine) return null;
 
   return (

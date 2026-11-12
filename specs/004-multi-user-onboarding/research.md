@@ -120,7 +120,9 @@ el mismo widget de Cloudflare (Turnstile soporta múltiples dominios por widget)
 
 ## Fases B/C/D (fuera de este corte)
 
-- **Fase B/C** (comidas/ejercicios generados por IA): requieren `ANTHROPIC_API_KEY`,
+- **Fase B/C** (comidas/ejercicios generados por IA): **implementadas en
+  `specs/005-coach-ia/`** con Google Gemini (tier gratis), no con Anthropic. Nota original:
+  requerían `ANTHROPIC_API_KEY`,
   todavía no disponible — diseño en el plan de implementación
   (`.claude/plans/enumerated-humming-iverson.md`), investigación de decisiones
   concretas (modelo, prompt, schema de tool use) queda para cuando se implementen.

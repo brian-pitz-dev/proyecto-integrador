@@ -17,6 +17,7 @@ import { toISO, fromISO, addDays, todayNormalized, formatShort, WEEKDAY_LABELS }
 import { cn } from "@/lib/utils";
 import { WeekSelector } from "@/components/week-selector/week-selector";
 import { ExerciseBlock } from "@/components/calendar-grid/exercise-block";
+import type { Routine } from "@/lib/gym-exercises";
 import { LogDialog } from "@/components/log-form/registro-category-card";
 import { SleepForm } from "@/components/log-form/sleep-form";
 import { CalorieForm } from "@/components/log-form/calorie-form";
@@ -34,14 +35,20 @@ const TAG_STRIPE: Record<SessionTag, string> = {
   rest: "border-border",
 };
 
-function SessionList({ sessions }: { sessions: Session[] }) {
+function SessionList({
+  sessions,
+  routines,
+}: {
+  sessions: Session[];
+  routines?: Record<string, Routine>;
+}) {
   return (
     <div className="grid min-w-0 flex-1 gap-3">
       {sessions.map((s, i) => (
         <div key={i} className={cn("min-w-0 border-l-[3px] pl-3", TAG_STRIPE[s.tag])}>
           <p className="font-semibold break-words text-foreground">{s.label}</p>
           {s.detail && <p className="text-sm break-words text-muted-foreground">{s.detail}</p>}
-          <ExerciseBlock gymKey={s.gymKey} coreKey={s.coreKey} />
+          <ExerciseBlock gymKey={s.gymKey} coreKey={s.coreKey} routines={routines} />
         </div>
       ))}
     </div>
@@ -80,10 +87,13 @@ export function CalendarGrid({
   completedDates,
   weeks,
   events,
+  routines,
 }: {
   completedDates: string[];
   weeks: Week[];
   events: UserEvent[];
+  /** Rutinas de gym generadas por IA (plan_ia); pisan a las compartidas por gymKey. */
+  routines?: Record<string, Routine>;
 }) {
   const todayNorm = todayNormalized();
   // el domingo ya interesa la semana que arranca
@@ -141,7 +151,7 @@ export function CalendarGrid({
         </div>
 
         <div className="flex items-start gap-4">
-          <SessionList sessions={todaySessions} />
+          <SessionList sessions={todaySessions} routines={routines} />
           {todaySessions.some((s) => s.tag !== "rest") && (
             <DoneButton
               isDone={completed.has(todayISO)}
@@ -212,7 +222,7 @@ export function CalendarGrid({
                     {date.getDate()}
                   </p>
                 </div>
-                <SessionList sessions={sessions} />
+                <SessionList sessions={sessions} routines={routines} />
                 <DoneButton
                   isDone={isDone}
                   disabled={date > todayNorm || isPending}

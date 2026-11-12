@@ -5,6 +5,9 @@ import { getAuthedUser } from "@/lib/supabase/auth";
 import { buildPlan, type Week, type UserEvent } from "@/lib/training-plan";
 import { todayNormalized } from "@/lib/date";
 import type { UserProfile } from "@/lib/calorie-target";
+import type { MealBank } from "@/lib/meal-plan";
+import type { Routine } from "@/lib/gym-exercises";
+import { mealBankSchema, routinesSchema } from "@/lib/validation/coach";
 
 export interface Perfil extends UserProfile {
   pesoInicialKg: number;
@@ -13,10 +16,19 @@ export interface Perfil extends UserProfile {
   planStart: string;
 }
 
+export interface PlanIa {
+  comidas?: MealBank;
+  ejercicios?: Record<string, Routine>;
+  /** ISO timestamps de la última generación, para avisar si los eventos/perfil cambiaron después. */
+  comidasUpdatedAt?: string;
+  ejerciciosUpdatedAt?: string;
+}
+
 export interface UserPlanContext {
   profile: Perfil;
   events: UserEvent[];
   weeks: Week[];
+  planIa: PlanIa;
 }
 
 /** null si no hay sesión o todavía no completó el onboarding (proxy.ts ya debería haber redirigido antes de llegar acá). */
@@ -25,9 +37,10 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
   if (!user) return null;
 
   const supabase = await createClient();
-  const [{ data: perfilRow }, { data: eventoRows }] = await Promise.all([
+  const [{ data: perfilRow }, { data: eventoRows }, { data: planIaRows }] = await Promise.all([
     supabase.from("perfil").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("evento").select("*").eq("user_id", user.id).order("fecha", { ascending: true }),
+    supabase.from("plan_ia").select("tipo, contenido, updated_at").eq("user_id", user.id),
   ]);
 
   if (!perfilRow) return null;
@@ -59,5 +72,23 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
 
   const weeks = buildPlan(profile.planStart, events, todayNormalized());
 
-  return { profile, events, weeks };
+  // Se re-valida al leer: si una fila no cumple el schema, se ignora y queda el plan base.
+  const planIa: PlanIa = {};
+  for (const row of planIaRows ?? []) {
+    if (row.tipo === "comidas") {
+      const parsed = mealBankSchema.safeParse(row.contenido);
+      if (parsed.success) {
+        planIa.comidas = parsed.data;
+        planIa.comidasUpdatedAt = row.updated_at;
+      }
+    } else if (row.tipo === "ejercicios") {
+      const parsed = routinesSchema.safeParse(row.contenido);
+      if (parsed.success) {
+        planIa.ejercicios = parsed.data;
+        planIa.ejerciciosUpdatedAt = row.updated_at;
+      }
+    }
+  }
+
+  return { profile, events, weeks, planIa };
 }

@@ -32,6 +32,7 @@ export default async function CalendarioPage() {
         completedDates={completedDates}
         weeks={planContext.weeks}
         events={planContext.events}
+        routines={planContext.planIa.ejercicios}
       />
 
       <div className="mx-auto grid w-full max-w-4xl gap-3">

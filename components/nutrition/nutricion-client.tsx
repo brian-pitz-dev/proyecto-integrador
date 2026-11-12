@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { addDays, fromISO, toISO, todayNormalized, WEEKDAY_LABELS } from "@/lib/date";
 import { getCurrentWeekNum, getCarbLoadWeeks, type Week } from "@/lib/training-plan";
 import { cn } from "@/lib/utils";
-import { getMealsForDay } from "@/lib/meal-plan";
+import { getMealsForDay, PROTEINA_G_POR_KG, type MealBank } from "@/lib/meal-plan";
 import { getCalorieTargetForDate } from "@/app/(app)/nutricion/actions";
 import type { CalorieTarget } from "@/lib/calorie-target";
 import { WeekSelector } from "@/components/week-selector/week-selector";
@@ -16,7 +16,7 @@ function currentDayIdx(today: Date): number {
   return jsDay === 0 ? 6 : jsDay - 1;
 }
 
-export function NutricionClient({ weeks }: { weeks: Week[] }) {
+export function NutricionClient({ weeks, mealBank }: { weeks: Week[]; mealBank?: MealBank }) {
   const today = todayNormalized();
   // el fin de semana no tiene plan: abrir directo en el lunes que viene
   const start = addDays(today, today.getDay() === 6 ? 2 : today.getDay() === 0 ? 1 : 0);
@@ -26,7 +26,11 @@ export function NutricionClient({ weeks }: { weeks: Week[] }) {
   const [calorieTarget, setCalorieTarget] = useState<CalorieTarget | null>(null);
 
   const carbLoadWeeks = getCarbLoadWeeks(weeks);
-  const dayPlan = getMealsForDay(week, day, carbLoadWeeks);
+  const dayPlan = getMealsForDay(week, day, carbLoadWeeks, {
+    bank: mealBank,
+    metaKcal: calorieTarget?.meta,
+    pesoKg: calorieTarget?.pesoKg,
+  });
   const weekObj = weeks.find((w) => w.num === week) ?? weeks[0];
   const weekStart = fromISO(weekObj.start);
 
@@ -87,14 +91,20 @@ export function NutricionClient({ weeks }: { weeks: Week[] }) {
       {dayPlan.isWeekday ? (
         <div className="grid gap-4">
           {dayPlan.meals.map((meal) => (
-            <MealCard key={meal.type} meal={meal} />
+            <MealCard key={meal.type} meal={meal} factor={dayPlan.factor} />
           ))}
           <div className="grid gap-1 rounded-lg bg-muted/50 px-4 py-3 text-sm font-medium tabular-nums">
-            <p>Total del día: {dayPlan.totalProteinG.toFixed(1)} g de proteína</p>
+            <p>
+              Total del día: {dayPlan.totalProteinG.toFixed(1)} g de proteína
+              {calorieTarget &&
+                ` · objetivo ${Math.round(calorieTarget.pesoKg * PROTEINA_G_POR_KG)} g (${PROTEINA_G_POR_KG} g/kg)`}
+            </p>
             {calorieTarget && (
               <p>
-                Meta calórica ({calorieTarget.fuente === "xiaomi" ? "BMR + activas" : "estimado"}):{" "}
+                Plan: ~{Math.round(dayPlan.totalKcal)} kcal · Meta calórica (
+                {calorieTarget.fuente === "xiaomi" ? "BMR + activas" : "estimado"}):{" "}
                 {calorieTarget.meta} kcal
+                {dayPlan.factor !== 1 && ` · porciones ×${dayPlan.factor.toFixed(2)}`}
               </p>
             )}
           </div>

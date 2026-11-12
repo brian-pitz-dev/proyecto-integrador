@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 export default async function NutricionPage() {
   const planContext = await getUserPlanContext();
   if (!planContext) return null; // proxy.ts ya redirige a /onboarding antes de esto
-  return <NutricionClient weeks={planContext.weeks} />;
+  return <NutricionClient weeks={planContext.weeks} mealBank={planContext.planIa.comidas} />;
 }
