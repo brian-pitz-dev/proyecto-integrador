@@ -28,9 +28,10 @@ export function ExerciseBlock({
       </summary>
       <ul className="mt-1.5 grid gap-1 border-l-2 border-border pl-3">
         {exercises.map((ex) => (
-          <li key={ex.name} className="flex justify-between gap-3">
-            <span>{ex.name}</span>
-            <span className="shrink-0 text-muted-foreground tabular-nums">{ex.sets}</span>
+          // flex-wrap: en pantallas angostas las series bajan a otra línea en vez de salirse
+          <li key={ex.name} className="flex flex-wrap justify-between gap-x-3">
+            <span className="min-w-0">{ex.name}</span>
+            <span className="ml-auto text-right text-muted-foreground tabular-nums">{ex.sets}</span>
           </li>
         ))}
       </ul>

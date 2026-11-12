@@ -21,6 +21,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Local Netlify CLI build/deploy artifacts — not part of the repo (gitignored).
     ".netlify/**",
+    // Capturas y scripts sueltos de Playwright MCP (gitignored).
+    ".playwright-mcp/**",
   ]),
   // Debe ir al final: desactiva reglas de estilo que pisarían a Prettier.
   prettier,

@@ -216,7 +216,7 @@ export function CalendarGrid({
               <div
                 key={iso}
                 className={cn(
-                  "flex items-start gap-4 rounded-lg border p-4",
+                  "flex items-start gap-3 rounded-lg border p-3 sm:gap-4 sm:p-4",
                   isDone ? "border-accent bg-accent/10" : "border-border",
                   iso === todayISO && !isDone && "ring-2 ring-ring/40",
                 )}
