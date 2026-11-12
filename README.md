@@ -1,5 +1,9 @@
 # Bakata
 
+[![CI](https://github.com/brian-pitz-dev/proyecto-integrador/actions/workflows/ci.yml/badge.svg)](https://github.com/brian-pitz-dev/proyecto-integrador/actions/workflows/ci.yml)
+
+**Demo:** https://bakata.netlify.app
+
 App para organizar entrenamiento, comidas y seguimiento de objetivos propios: cada
 usuario se registra, carga su perfil y sus propios eventos (carreras o caminatas), y
 a partir de eso se arma su plan de gimnasio, nutrición y calorías.
@@ -40,3 +44,32 @@ propios, que determinan qué fechas ocupa cada fase — y lo que se registra dí
 
 Stack: Next.js + React + TypeScript, con Supabase para auth y para todo lo que cada
 usuario va registrando/configurando. Desplegado en Netlify.
+
+## Correrlo localmente
+
+Requisitos: Node 20.9+ y un proyecto de [Supabase](https://supabase.com) (el plan
+gratis alcanza).
+
+1. Instalar dependencias:
+
+   ```bash
+   npm install
+   ```
+
+2. Crear el esquema: correr en orden los archivos de `supabase/migrations/` en el SQL
+   editor de Supabase, o con la CLI: `supabase link` y después `supabase db push`.
+
+3. Variables de entorno: copiar `.env.example` a `.env.local` y completarlo (Supabase,
+   Cloudflare Turnstile y Google Gemini).
+
+4. Levantar la app en http://localhost:3000:
+
+   ```bash
+   npm run dev
+   ```
+
+Otros comandos: `npm test` (tests de la lógica de `lib/`), `npm run lint`,
+`npm run build`.
+
+La historia de por qué cada parte está hecha como está vive en `specs/`: cada
+carpeta tiene su `spec.md`, `plan.md` y `research.md`.
