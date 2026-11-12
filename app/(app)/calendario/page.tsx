@@ -3,7 +3,9 @@ import { CalendarGrid } from "@/components/calendar-grid/calendar-grid";
 import { createClient } from "@/lib/supabase/server";
 import { getUserPlanContext } from "@/lib/user-plan";
 import { getAuthedUser } from "@/lib/supabase/auth";
-import { EVENT_CARDS, RULE_CARDS } from "@/lib/plan-content";
+import { guiaEvento, RULE_CARDS } from "@/lib/plan-content";
+import { EventosResumen } from "@/components/eventos-resumen";
+import { toISO, todayNormalized } from "@/lib/date";
 
 export const metadata: Metadata = {
   title: "Calendario · Bakata",
@@ -27,12 +29,18 @@ export default async function CalendarioPage() {
 
   if (!planContext) return null; // proxy.ts ya redirige a /onboarding antes de esto
 
+  // La guía es del próximo evento del usuario (los eventos ya vienen ordenados por fecha).
+  const hoy = toISO(todayNormalized());
+  const proximo = planContext.events.find((e) => e.fecha >= hoy);
+  const guia = proximo ? guiaEvento(proximo) : null;
+
   return (
     <div className="grid gap-8">
       <div className="mx-auto w-full max-w-4xl">
         {user?.nombre && <p className="text-muted-foreground">Hola, {user.nombre}</p>}
         <h1 className="text-4xl font-bold">Calendario</h1>
       </div>
+      <EventosResumen events={planContext.events} />
       <CalendarGrid
         completedDates={completedDates}
         weeks={planContext.weeks}
@@ -41,21 +49,21 @@ export default async function CalendarioPage() {
       />
 
       <div className="mx-auto grid w-full max-w-4xl gap-3">
-        {EVENT_CARDS.map((event) => (
-          <details key={event.title} className="rounded-xl p-4 ring-1 ring-foreground/10">
+        {guia && (
+          <details className="rounded-xl p-4 ring-1 ring-foreground/10">
             <summary className="cursor-pointer font-heading text-lg font-semibold">
-              Guía: {event.title}
+              Guía para el día: {guia.title}
             </summary>
-            <p className="mt-1 text-sm text-muted-foreground">{event.dateLabel}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{guia.dateLabel}</p>
             <div className="mt-3 grid max-w-prose gap-2 text-sm">
-              {event.paragraphs.map((p) => (
+              {guia.paragraphs.map((p) => (
                 <p key={p.label}>
                   <strong>{p.label}:</strong> {p.text}
                 </p>
               ))}
             </div>
           </details>
-        ))}
+        )}
 
         <details className="rounded-xl p-4 ring-1 ring-foreground/10">
           <summary className="cursor-pointer font-heading text-lg font-semibold">

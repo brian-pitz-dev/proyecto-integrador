@@ -65,6 +65,13 @@ export const eventoSchema = z.object({
     "La fecha del evento tiene que ser futura",
   ),
   distanciaKm: numero("la distancia", 0.1, 1000),
+  /** Opcional, solo carreras. El cliente convierte "6:30" a segundos (NaN si el formato no sirve). */
+  ritmoObjetivoSeg: z
+    .number({ error: "Ritmo: usá el formato m:ss, ej. 6:30" })
+    .int()
+    .min(150, "Ritmo: entre 2:30 y 15:00 min/km")
+    .max(900, "Ritmo: entre 2:30 y 15:00 min/km")
+    .nullish(),
 });
 
 /** Paso 3: eventos. */

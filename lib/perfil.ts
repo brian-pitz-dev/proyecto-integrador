@@ -50,6 +50,7 @@ export async function guardarPerfilYEventos(
       nombre: e.nombre,
       fecha: e.fecha,
       distancia_km: e.distanciaKm,
+      ritmo_objetivo_seg: e.tipo === "carrera" ? (e.ritmoObjetivoSeg ?? null) : null,
     })),
   );
   if (eventosError) return "No se pudieron guardar los eventos: " + eventosError.message;

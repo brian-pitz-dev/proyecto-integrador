@@ -111,8 +111,8 @@ export function NutricionClient({ weeks, mealBank }: { weeks: Week[]; mealBank?:
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-          El fin de semana no tiene menú fijo. Antes del 21K, seguí la guía de carga de
-          carbohidratos del Calendario.
+          El fin de semana no tiene menú fijo. Antes de una carrera larga o una caminata, seguí la
+          guía de carga de carbohidratos del Calendario.
         </div>
       )}
 

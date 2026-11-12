@@ -67,6 +67,7 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
     nombre: e.nombre,
     fecha: e.fecha,
     distanciaKm: Number(e.distancia_km),
+    ritmoObjetivoSeg: e.ritmo_objetivo_seg ?? null,
     etiqueta: e.etiqueta,
     detalle: e.detalle,
   }));

@@ -65,6 +65,8 @@ interface EventoDraft {
   nombre: string;
   fecha: string;
   distanciaKm: string;
+  /** "m:ss" por km, opcional (solo carreras) */
+  ritmo: string;
 }
 
 type Errors = Record<string, string>;
@@ -74,7 +76,14 @@ const emptyEvento = (): EventoDraft => ({
   nombre: "",
   fecha: "",
   distanciaKm: "",
+  ritmo: "",
 });
+
+/** "6:30" → 390 segundos; NaN si el formato no sirve (zod muestra el error). */
+function ritmoASegundos(ritmo: string): number {
+  const m = /^(\d{1,2}):([0-5]\d)$/.exec(ritmo.trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
+}
 const num = (s: string) => (s.trim() === "" ? undefined : Number(s));
 
 function toPerfil(p: Perfil) {
@@ -97,6 +106,7 @@ function toEventos(eventos: EventoDraft[]) {
     nombre: e.nombre.trim(),
     fecha: e.fecha,
     distanciaKm: num(e.distanciaKm),
+    ritmoObjetivoSeg: e.tipo === "carrera" && e.ritmo.trim() ? ritmoASegundos(e.ritmo) : null,
   }));
 }
 
@@ -631,7 +641,7 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
                       id={`fecha-${i}`}
                       label="Fecha"
                       error={errors[k("fecha")]}
-                      className="sm:col-span-3"
+                      className="sm:col-span-2"
                     >
                       <Input
                         id={`fecha-${i}`}
@@ -642,7 +652,7 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
                         {...invalid(errors, k("fecha"), `fecha-${i}`)}
                       />
                     </Field>
-                    <div className="flex items-start gap-2 sm:col-span-3">
+                    <div className="flex items-start gap-2 sm:col-span-4">
                       <Field
                         id={`km-${i}`}
                         label="Distancia (km)"
@@ -660,6 +670,23 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
                           {...invalid(errors, k("distanciaKm"), `km-${i}`)}
                         />
                       </Field>
+                      {ev.tipo === "carrera" && (
+                        <Field
+                          id={`ritmo-${i}`}
+                          label="Ritmo objetivo (opcional)"
+                          error={errors[k("ritmoObjetivoSeg")]}
+                          className="flex-1"
+                        >
+                          <Input
+                            id={`ritmo-${i}`}
+                            inputMode="numeric"
+                            placeholder="min/km, ej. 6:30"
+                            value={ev.ritmo}
+                            onChange={(e) => set({ ritmo: e.target.value })}
+                            {...invalid(errors, k("ritmoObjetivoSeg"), `ritmo-${i}`)}
+                          />
+                        </Field>
+                      )}
                       {eventos.length > 1 && (
                         <Button
                           type="button"

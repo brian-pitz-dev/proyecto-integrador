@@ -7,6 +7,7 @@
  */
 
 import { toISO, fromISO, addDays, isSameDay } from "@/lib/date";
+import { formatPace } from "@/lib/pace";
 
 export type SessionTag = "core" | "run" | "gym" | "long" | "walk" | "rest" | "event" | "luj";
 
@@ -27,13 +28,31 @@ export interface UserEvent {
   nombre: string;
   fecha: string; // ISO YYYY-MM-DD
   distanciaKm: number;
+  /** Ritmo objetivo de carrera en segundos por km (opcional, lo carga el usuario). */
+  ritmoObjetivoSeg?: number | null;
   etiqueta?: string | null;
   detalle?: string | null;
 }
 
-// Ritmos del 21K para el objetivo de 2h20m: ajustar después del test 5K del 15/10
-const RC = "6:38/km";
-const SERIES = "6:00/km";
+interface Ritmos {
+  /** Ritmo de carrera, para "a ${rc}". */
+  rc: string;
+  /** Ritmo de series (~10% más rápido que el de carrera). */
+  series: string;
+}
+
+/** Ritmos de las sesiones previas a una carrera larga: del ritmo objetivo del evento, o en texto si no lo cargó. */
+function ritmosDe(ev: UserEvent): Ritmos {
+  const seg = ev.ritmoObjetivoSeg;
+  if (!seg) {
+    return {
+      rc: "ritmo de carrera",
+      series: "ritmo de series (algo más rápido que el de carrera)",
+    };
+  }
+  // 0.905: con el 6:38 de Brian da exactamente sus 6:00 de series de siempre
+  return { rc: formatPace(seg), series: formatPace(Math.round(seg * 0.905)) }; // "6:38/km"
+}
 
 function core(short: boolean): Session {
   return {
@@ -121,7 +140,7 @@ function phase3Week(): WeekConfig {
   };
 }
 
-function phase4Week(n: number): WeekConfig {
+function phase4Week(n: number, { rc: RC, series: SERIES }: Ritmos): WeekConfig {
   const piernas = [
     { gymKey: "inferiorRun", detail: "10' de cinta + piernas · esta semana 2×8, moderado" },
     { gymKey: "inferiorRun", detail: "10' de cinta + piernas pesadas" },
@@ -163,7 +182,7 @@ function phase4Week(n: number): WeekConfig {
   };
 }
 
-function phase5Week(): WeekConfig {
+function phase5Week({ rc: RC }: Ritmos): WeekConfig {
   return {
     mon: [cardioSession("Caminata suave 30' · 5 km/h · 3-5% · sin pesas"), core(true)],
     tue: [cardioSession(`10' suave + 3×1 km a ${RC} (2' trote) + 10' suave`, "Correr afuera")],
@@ -350,7 +369,7 @@ export function buildPlan(planStartISO: string, events: UserEvent[], today: Date
           cursor,
           wnum,
           1,
-          phase5Week,
+          () => phase5Week(ritmosDe(ev)),
           1,
           "p5",
           `FASE — Tapering · última semana antes de ${ev.nombre}`,
@@ -362,7 +381,7 @@ export function buildPlan(planStartISO: string, events: UserEvent[], today: Date
           wnum,
           weeksAvailable - 1,
           3,
-          phase4Week,
+          (n) => phase4Week(n, ritmosDe(ev)),
           "p4",
           `FASE — Construcción · ${eventLabel}`,
         );
@@ -371,7 +390,7 @@ export function buildPlan(planStartISO: string, events: UserEvent[], today: Date
           cursor,
           wnum,
           1,
-          phase5Week,
+          () => phase5Week(ritmosDe(ev)),
           1,
           "p5",
           `FASE — Tapering · última semana antes de ${ev.nombre}`,
