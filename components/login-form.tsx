@@ -1,60 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Script from "next/script";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTurnstile } from "@/components/turnstile";
 import { login } from "@/app/login/actions";
-
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (
-        container: HTMLElement,
-        options: {
-          sitekey: string;
-          action: string;
-          callback: (token: string) => void;
-        },
-      ) => string;
-      reset: (widgetId: string) => void;
-    };
-  }
-}
-
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export function LoginForm() {
   const [pending, setPending] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
-
-  function renderWidget() {
-    if (!TURNSTILE_SITE_KEY || !containerRef.current || !window.turnstile) return;
-    widgetIdRef.current = window.turnstile.render(containerRef.current, {
-      sitekey: TURNSTILE_SITE_KEY,
-      action: "login",
-      callback: setTurnstileToken,
-    });
-  }
-
-  // Poll instead of relying solely on <Script onLoad> — the callback's
-  // firing relative to containerRef being attached isn't guaranteed across
-  // Next.js's afterInteractive loading strategy and React's mount order.
-  useEffect(() => {
-    if (!TURNSTILE_SITE_KEY) return;
-    const interval = setInterval(() => {
-      if (window.turnstile && containerRef.current && !widgetIdRef.current) {
-        renderWidget();
-        clearInterval(interval);
-      }
-    }, 150);
-    return () => clearInterval(interval);
-  }, []);
+  const turnstile = useTurnstile("login");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,22 +21,19 @@ export function LoginForm() {
     const result = await login({
       email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
-      turnstileToken,
+      turnstileToken: turnstile.token,
     });
 
     // Si salió bien, la acción ya redirigió (sin resultado): solo se maneja el error.
     if (result && !result.ok) {
       setPending(false);
       toast.error(result.message ?? "No se pudo iniciar sesión.");
-      // Turnstile tokens are single-use — get a fresh one before retrying.
-      setTurnstileToken("");
-      if (widgetIdRef.current) window.turnstile?.reset(widgetIdRef.current);
+      turnstile.reset();
     }
   }
 
   return (
     <Card className="mx-auto w-full max-w-sm">
-      {TURNSTILE_SITE_KEY && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" />}
       <CardHeader>
         <CardTitle>Iniciar sesión</CardTitle>
       </CardHeader>
@@ -99,9 +53,9 @@ export function LoginForm() {
               required
             />
           </div>
-          {TURNSTILE_SITE_KEY && <div ref={containerRef} />}
-          <Button type="submit" disabled={pending} className="mt-1">
-            {pending ? "Ingresando…" : "Ingresar"}
+          {turnstile.widget}
+          <Button type="submit" disabled={pending || turnstile.verifying} className="mt-1">
+            {pending ? "Ingresando…" : turnstile.verifying ? "Verificando…" : "Ingresar"}
           </Button>
         </form>
       </CardContent>

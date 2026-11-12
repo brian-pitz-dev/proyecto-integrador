@@ -12,6 +12,15 @@ export function fromISO(iso: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/** Años cumplidos a `hoy` para una fecha de nacimiento YYYY-MM-DD. */
+export function edadDesde(fechaNacimiento: string, hoy: Date = todayNormalized()): number {
+  const n = fromISO(fechaNacimiento);
+  const cumplioEsteAnio =
+    hoy.getMonth() > n.getMonth() ||
+    (hoy.getMonth() === n.getMonth() && hoy.getDate() >= n.getDate());
+  return hoy.getFullYear() - n.getFullYear() - (cumplioEsteAnio ? 0 : 1);
+}
+
 export function addDays(d: Date, n: number): Date {
   const r = new Date(d);
   r.setDate(r.getDate() + n);

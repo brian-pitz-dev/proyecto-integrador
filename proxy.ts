@@ -14,9 +14,15 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isPublicPath =
     ["/", "/robots.txt", "/sitemap.xml", "/manifest.webmanifest"].includes(path) ||
-    ["/login", "/signup", "/opengraph-image", "/twitter-image", "/icon", "/apple-icon"].some((p) =>
-      path.startsWith(p),
-    );
+    [
+      "/login",
+      "/signup",
+      "/privacidad",
+      "/opengraph-image",
+      "/twitter-image",
+      "/icon",
+      "/apple-icon",
+    ].some((p) => path.startsWith(p));
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();

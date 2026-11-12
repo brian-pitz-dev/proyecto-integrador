@@ -12,9 +12,11 @@ import { createClient } from "@/lib/supabase/server";
  * revoked server-side stays valid here until the JWT expires (≤1 h); proxy.ts still
  * calls getUser() on every navigation. See specs/005-coach-ia/research.md Decision 5.
  */
-export async function getAuthedUser(): Promise<{ id: string } | null> {
+export async function getAuthedUser(): Promise<{ id: string; nombre: string | null } | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims.sub) return null;
-  return { id: data.claims.sub };
+  // nombre: lo guarda el registro en user_metadata (solo para mostrar, nunca para autorizar)
+  const nombre = data.claims.user_metadata?.nombre;
+  return { id: data.claims.sub, nombre: typeof nombre === "string" ? nombre : null };
 }

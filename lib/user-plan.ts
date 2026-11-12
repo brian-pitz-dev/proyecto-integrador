@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { buildPlan, type Week, type UserEvent } from "@/lib/training-plan";
-import { todayNormalized } from "@/lib/date";
+import { edadDesde, todayNormalized } from "@/lib/date";
 import type { UserProfile } from "@/lib/calorie-target";
 import type { MealBank } from "@/lib/meal-plan";
 import type { Routine } from "@/lib/gym-exercises";
@@ -46,7 +46,8 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
   if (!perfilRow) return null;
 
   const profile: Perfil = {
-    edad: perfilRow.edad,
+    // con fecha de nacimiento la edad se mantiene al día; las cuentas previas guardaban solo la edad
+    edad: perfilRow.fecha_nacimiento ? edadDesde(perfilRow.fecha_nacimiento) : perfilRow.edad,
     alturaCm: Number(perfilRow.altura_cm),
     sexo: perfilRow.sexo,
     factorActividad: Number(perfilRow.factor_actividad),
