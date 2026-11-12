@@ -93,3 +93,41 @@ plato ni código de mapeo.
   peso inicial de Brian) dé los mismos 55 g de siempre a ese peso. El objetivo diario
   mostrado es 1.8 g/kg.
 - Self-check: `node scripts/check-meal-scaling.mjs` (Node ≥ 23 importa `.ts` directo).
+
+## Decisión 5: latencia (cada ingreso o salida tardaba ~6 s)
+
+**Medición** (2026-11-12): las funciones de Netlify corren en `us-east-2` (Ohio) y Supabase
+en `sa-east-1` (San Pablo), y el usuario está en Buenos Aires. El proxy corre como edge
+function, cerca del usuario, así que es barato. Las páginas y las Server Actions corren en
+Ohio y cada consulta a Supabase cruza el continente.
+
+En el plan Free no se puede cambiar la región de las funciones (es una opción de Pro y
+Enterprise).
+
+Antes, el login hacía 3 viajes:
+
+1. la acción;
+2. `router.push`, con un render completo;
+3. `router.refresh`, con otro render completo de la misma página.
+
+Además, cada render volvía a validar la sesión contra Supabase Auth con `getUser()`.
+Sumado al cold start de una función con poco tráfico, daba ~6 s.
+
+**Cambios:**
+
+- **Login, logout, signup y onboarding**: hacen `redirect()` desde la Server Action. La
+  acción y la página destino viajan en una sola respuesta. Ese render no pasa por
+  `proxy.ts`, así que `login` decide `/calendario` u `/onboarding` según
+  `user_metadata.onboarding_completed`.
+- **`getAuthedUser()`** (Server Actions y páginas) usa `getClaims()`. El proyecto tiene
+  claves asimétricas ES256 (`/auth/v1/.well-known/jwks.json`), así que la firma del JWT se
+  verifica localmente con el JWKS cacheado, sin ir a Supabase Auth.
+  - Lo que se acepta a cambio: una sesión revocada del lado de Auth sigue valiendo hasta que
+    vence el JWT (1 h como máximo).
+  - Se mantiene igual: el control de dos capas de spec 003 (proxy más un chequeo en cada
+    acción), el uso de `getUser()` en `proxy.ts` (fresco, porque lee `onboarding_completed`)
+    y RLS en todas las tablas.
+
+**Pendiente si sigue lento**: el cold start de la función de Next en Netlify Free no se
+puede evitar. Si molesta, las opciones son pasar las funciones a `sa-east-1` (Netlify Pro)
+o desplegar en un proveedor que permita elegir región en el plan gratis.

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +28,6 @@ declare global {
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export function LoginForm() {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,12 +67,9 @@ export function LoginForm() {
       turnstileToken,
     });
 
-    setPending(false);
-
-    if (result.ok) {
-      router.push("/calendario");
-      router.refresh();
-    } else {
+    // Si salió bien, la acción ya redirigió (sin resultado): solo se maneja el error.
+    if (result && !result.ok) {
+      setPending(false);
       toast.error(result.message ?? "No se pudo iniciar sesión.");
       // Turnstile tokens are single-use — get a fresh one before retrying.
       setTurnstileToken("");

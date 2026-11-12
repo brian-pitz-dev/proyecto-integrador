@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSignupRateLimited, recordSignupAttempt } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
@@ -43,5 +44,5 @@ export async function signup(input: {
     return { ok: false, message: "No se pudo crear la cuenta: " + error.message };
   }
 
-  return { ok: true };
+  redirect("/onboarding");
 }

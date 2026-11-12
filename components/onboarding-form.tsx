@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ function emptyEvento(): EventoDraft {
 const minEventoFecha = toISO(addDays(todayNormalized(), 1));
 
 export function OnboardingForm() {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [eventos, setEventos] = useState<EventoDraft[]>([emptyEvento()]);
 
@@ -72,13 +70,9 @@ export function OnboardingForm() {
       calibracionBmrKcal: num("calibracionBmrKcal") ?? null,
       eventos: eventosPayload,
     });
-    setPending(false);
-
-    if (result.ok) {
-      toast.success("¡Listo! Armamos tu plan.");
-      router.push("/calendario");
-      router.refresh();
-    } else {
+    // Si salió bien, la acción ya redirigió a /calendario (sin resultado): solo se maneja el error.
+    if (result && !result.ok) {
+      setPending(false);
       toast.error(result.message ?? "No se pudo completar el registro.");
     }
   }

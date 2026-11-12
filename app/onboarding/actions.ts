@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { onboardingSchema } from "@/lib/validation/onboarding";
@@ -70,5 +71,5 @@ export async function completeOnboarding(input: OnboardingInput): Promise<Action
   revalidatePath("/calendario");
   revalidatePath("/nutricion");
   revalidatePath("/estadisticas");
-  return { ok: true };
+  redirect("/calendario");
 }

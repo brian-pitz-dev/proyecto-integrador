@@ -118,7 +118,8 @@ _configuration_ (profile and events — what used to be hardcoded constants) liv
   `research.md`/`plan.md` for spec 003 are explicit that the proxy is _not_
   sufficient alone (a matcher change or route refactor can silently drop
   coverage). Every data-mutating Server Action must independently call
-  `getAuthedUser()` from `lib/supabase/auth.ts` and bail if there's no user —
+  `getAuthedUser()` from `lib/supabase/auth.ts` (local JWT verification via
+  `getClaims()` — see `specs/005-coach-ia/research.md` Decision 5) and bail if there's no user —
   see `app/registro/actions.ts` and `app/(app)/nutricion/actions.ts` for the
   pattern. `registro` rows are also scoped by `user_id` + RLS policies
   (`specs/003-security-hardening/contracts/rls-migration.sql`) as defense in depth.

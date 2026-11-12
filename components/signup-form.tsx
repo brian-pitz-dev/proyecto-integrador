@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +28,6 @@ declare global {
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export function SignupForm() {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -68,12 +66,9 @@ export function SignupForm() {
       turnstileToken,
     });
 
-    setPending(false);
-
-    if (result.ok) {
-      router.push("/onboarding");
-      router.refresh();
-    } else {
+    // Si salió bien, la acción ya redirigió (sin resultado): solo se maneja el error.
+    if (result && !result.ok) {
+      setPending(false);
       toast.error(result.message ?? "No se pudo crear la cuenta.");
       setTurnstileToken("");
       if (widgetIdRef.current) window.turnstile?.reset(widgetIdRef.current);

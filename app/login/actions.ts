@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isRateLimited, recordFailedAttempt, clearAttempts } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
@@ -39,7 +40,7 @@ export async function login(input: {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   });
@@ -50,11 +51,13 @@ export async function login(input: {
   }
 
   clearAttempts(clientKey);
-  return { ok: true };
+  // Redirect en el server: la acción y la página destino viajan en una sola respuesta.
+  // Ese render no pasa por proxy.ts, así que acá se decide si falta el onboarding.
+  redirect(data.user?.user_metadata?.onboarding_completed ? "/calendario" : "/onboarding");
 }
 
 export async function logout(): Promise<ActionResult> {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  return { ok: true };
+  redirect("/login");
 }
