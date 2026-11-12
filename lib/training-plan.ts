@@ -435,7 +435,8 @@ export function buildPlan(
   // elige el usuario son días reales de la semana. Antes arrancaban el día del registro y, si no
   // era lunes, "Lun" caía otro día.
   const inicio = fromISO(planStartISO);
-  const cursor = { d: addDays(inicio, -((inicio.getDay() + 6) % 7)) };
+  const diasPrevios = (inicio.getDay() + 6) % 7; // días de la semana 1 anteriores al registro
+  const cursor = { d: addDays(inicio, -diasPrevios) };
   const wnum = { n: 1 };
 
   for (let i = 0; i < sorted.length; i++) {
@@ -536,11 +537,16 @@ export function buildPlan(
     "FASE — Mantenimiento",
   );
 
-  const isoWeeks = out.map((w) => ({
-    ...w,
-    start: toISO(w.start),
-    cfg: disp ? adaptWeek(w.cfg, w.phaseKey, w.num, disp) : w.cfg,
-  }));
+  const isoWeeks = out.map((w, i) => {
+    const cfg = disp ? adaptWeek(w.cfg, w.phaseKey, w.num, disp) : w.cfg;
+    // Antes del registro no hay sesiones: si no, la alerta de gym (lib/streaks.ts) las cuenta
+    // como salteadas y el calendario deja tildar días que Estadísticas no cuenta.
+    const sinPrevios =
+      i === 0 && diasPrevios > 0
+        ? { ...cfg, ...Object.fromEntries(dowKeys.slice(0, diasPrevios).map((dk) => [dk, null])) }
+        : cfg;
+    return { ...w, start: toISO(w.start), cfg: sinPrevios };
+  });
 
   function containsEvent(weekStartISO: string): boolean {
     const start = fromISO(weekStartISO);

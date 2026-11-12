@@ -36,6 +36,11 @@ const deficitPorFase: Record<string, number> = {
   p6: 550,
 };
 
+/** Déficit del día según la fase del plan; 400 si la fecha cae fuera del plan. */
+export function deficitDeFase(phaseKey: string | null): number {
+  return (phaseKey && deficitPorFase[phaseKey]) || 400;
+}
+
 export interface CalorieTarget {
   meta: number;
   gastoCalorico: number;
@@ -86,7 +91,7 @@ export async function getCalorieTarget(
     fuente = "estimado";
   }
 
-  const deficit = (phaseKey && deficitPorFase[phaseKey]) || 400;
+  const deficit = deficitDeFase(phaseKey);
   const meta = Math.round(gastoCalorico - deficit);
   return { meta, gastoCalorico: Math.round(gastoCalorico), deficit, fuente, pesoKg: pesoActual };
 }

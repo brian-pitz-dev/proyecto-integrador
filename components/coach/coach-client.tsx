@@ -50,7 +50,7 @@ export function CoachClient({
   const restantes = Math.max(0, limite - usados);
   const sinCuota = restantes === 0;
 
-  async function run<T extends { ok: boolean; message?: string }>(
+  async function run<T extends { ok: boolean; message?: string; cobrado?: boolean }>(
     kind: Exclude<Busy, null>,
     action: () => Promise<T>,
   ): Promise<T | null> {
@@ -58,7 +58,8 @@ export function CoachClient({
     try {
       const result = await action();
       if (!result.ok) toast.error(result.message ?? "Algo salió mal.");
-      else if (kind !== "borrar") setUsados((u) => u + 1);
+      // la cuota se descuenta antes de la IA: un intento fallido también cuenta
+      if (result.cobrado) setUsados((u) => u + 1);
       return result.ok ? result : null;
     } catch {
       toast.error("No se pudo conectar, probá de nuevo.");

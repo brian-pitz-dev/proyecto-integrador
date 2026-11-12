@@ -1,7 +1,7 @@
 /** Resumen de logros (Stats) — portado de plan_vida_2026.html: countTrainableVsCompleted, buildMonthHistory, weight progress. */
 
 import { getSessionsForDate, getNextEvent, type Week, type UserEvent } from "@/lib/training-plan";
-import { addDays, toISO, fromISO, MONTHS_ES } from "@/lib/date";
+import { addDays, toISO, fromISO, todayNormalized, MONTHS_ES } from "@/lib/date";
 import type { Registro } from "@/lib/types";
 
 export function isTrainableDate(weeks: Week[], events: UserEvent[], date: Date): boolean {
@@ -42,7 +42,9 @@ export function buildMonthHistory(
   completedDates: Set<string>,
 ): MonthHistoryRow[] {
   const rows: MonthHistoryRow[] = [];
-  const now = new Date();
+  // fecha de Buenos Aires: con new Date() (UTC en el server), el último día del mes después de
+  // las 21 h el mes actual aparecía como terminado
+  const now = todayNormalized();
   const curMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   let cursor = new Date(planStart.getFullYear(), planStart.getMonth(), 1);
 

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isSignupRateLimited, recordSignupAttempt } from "@/lib/rate-limit";
+import { getClientKey, signupLimiter } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { registroSchema } from "@/lib/validation/onboarding";
 import { guardarPerfilYEventos } from "@/lib/perfil";
@@ -17,11 +17,6 @@ import type { ActionResult } from "@/lib/types";
 export type RegistroResult = ActionResult & { paso?: number; confirmar?: string };
 
 const PASO_POR_CAMPO: Record<string, number> = { cuenta: 0, perfil: 1, eventos: 2 };
-
-async function getClientKey(): Promise<string> {
-  const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-}
 
 /** Registro en pasos: crea la cuenta, guarda perfil + eventos y entra a la app, en un solo envío. */
 // input: unknown — viene del navegador; zod valida todo (los pasos ya se validaron en el cliente).
@@ -37,10 +32,10 @@ export async function registrar(input: unknown): Promise<RegistroResult> {
   }
 
   const clientKey = await getClientKey();
-  if (isSignupRateLimited(clientKey)) {
+  if (signupLimiter.isLimited(clientKey)) {
     return { ok: false, message: "Demasiados intentos. Probá de nuevo en unos minutos." };
   }
-  recordSignupAttempt(clientKey);
+  signupLimiter.record(clientKey);
 
   const humanVerified = await verifyTurnstileToken(parsed.data.turnstileToken, clientKey, "signup");
   if (!humanVerified) {
@@ -68,6 +63,7 @@ export async function registrar(input: unknown): Promise<RegistroResult> {
   });
 
   if (error) {
+    console.error("signUp", error);
     const yaExiste =
       error.code === "user_already_exists" || /already registered/i.test(error.message);
     return {
@@ -75,7 +71,7 @@ export async function registrar(input: unknown): Promise<RegistroResult> {
       paso: 0,
       message: yaExiste
         ? "Ya existe una cuenta con ese email. Iniciá sesión o usá otro email."
-        : "No se pudo crear la cuenta: " + error.message,
+        : "No se pudo crear la cuenta, probá de nuevo en unos minutos.",
     };
   }
 

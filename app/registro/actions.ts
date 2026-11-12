@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { saveLogSchema, toggleDayDoneSchema } from "@/lib/validation/registro";
-import { isSaveLogRateLimited, recordSaveLogAttempt } from "@/lib/rate-limit";
+import { saveLogLimiter } from "@/lib/rate-limit";
 import type { Categoria, ActionResult } from "@/lib/types";
 
 function revalidateAffectedRoutes() {
@@ -24,10 +24,10 @@ export async function saveLog(input: {
     return { ok: false, message: "No autenticado." };
   }
 
-  if (isSaveLogRateLimited(user.id)) {
+  if (saveLogLimiter.isLimited(user.id)) {
     return { ok: false, message: "Demasiados registros en poco tiempo, esperá un momento." };
   }
-  recordSaveLogAttempt(user.id);
+  saveLogLimiter.record(user.id);
 
   const parsed = saveLogSchema.safeParse(input);
   if (!parsed.success) {
@@ -46,7 +46,9 @@ export async function saveLog(input: {
   ]);
 
   if (error) {
-    return { ok: false, message: `No se pudo guardar: ${error.message}` };
+    // el detalle va al log: el texto de Postgres expone nombres internos y no le sirve al usuario
+    console.error("saveLog", error);
+    return { ok: false, message: "No se pudo guardar, probá de nuevo." };
   }
 
   revalidateAffectedRoutes();

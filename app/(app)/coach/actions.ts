@@ -5,7 +5,7 @@ import type { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { getUserPlanContext, type UserPlanContext } from "@/lib/user-plan";
-import { isCoachRateLimited, recordCoachAttempt } from "@/lib/rate-limit";
+import { coachLimiter } from "@/lib/rate-limit";
 import { generate } from "@/lib/ai";
 import { getCalorieTarget } from "@/lib/calorie-target";
 import { mealBank, PROTEINA_G_POR_KG, type MealBank, type MealType } from "@/lib/meal-plan";
@@ -39,25 +39,17 @@ const MEAL_TYPES: MealType[] = ["desayuno", "media", "almuerzo", "merienda", "ce
 const MAX_PER_TYPE = 15;
 const MIN_PER_TYPE = 3;
 
-/** Sesión + rate limit por minuto + cuota diaria disponible. La cuota se consume recién si la IA respondió bien. */
+/** Sesión + rate limit por minuto. La cuota diaria la descuenta `cobrar`, justo antes de la IA. */
 async function prepare(): Promise<Ready | { ok: false; message: string }> {
   const user = await getAuthedUser();
   if (!user) return { ok: false, message: "No autenticado." };
 
-  if (isCoachRateLimited(user.id)) {
+  if (coachLimiter.isLimited(user.id)) {
     return { ok: false, message: "Vas muy rápido, esperá un minuto." };
   }
-  recordCoachAttempt(user.id);
+  coachLimiter.record(user.id);
 
   const supabase = await createClient();
-  const { data: uso } = await supabase
-    .from("uso_ia")
-    .select("usos")
-    .eq("user_id", user.id)
-    .eq("fecha", toISO(todayNormalized()))
-    .maybeSingle();
-  if ((uso?.usos ?? 0) >= AI_DAILY_LIMIT) return { ok: false, message: LIMIT_MESSAGE };
-
   const ctx = await getUserPlanContext();
   if (!ctx) return { ok: false, message: "Completá el onboarding primero." };
 
@@ -68,6 +60,20 @@ async function prepare(): Promise<Ready | { ok: false; message: string }> {
 async function consume(supabase: Supabase): Promise<boolean> {
   const { data, error } = await supabase.rpc("consumir_uso_ia");
   return !error && data === true;
+}
+
+/**
+ * Descuenta 1 uso ANTES de llamar a la IA: así N pedidos en paralelo no pasan todos el chequeo
+ * (el límite por minuto es por instancia) y no gastan la cuota gratis de Gemini que comparten
+ * todos los usuarios. Si la IA falla, el uso ya se gastó: `cobrado` le avisa al cliente.
+ * Ver specs/005-coach-ia/research.md, Decisión 2.
+ */
+async function cobrar<T extends { ok: boolean }>(
+  supabase: Supabase,
+  run: () => Promise<T>,
+): Promise<(T & { cobrado: true }) | { ok: false; message: string }> {
+  if (!(await consume(supabase))) return { ok: false, message: LIMIT_MESSAGE };
+  return { ...(await run()), cobrado: true };
 }
 
 async function latestPeso(supabase: Supabase, userId: string): Promise<number | null> {
@@ -124,7 +130,7 @@ async function savePlan(
 
 export async function chatCoach(
   messages: { role: "user" | "model"; text: string }[],
-): Promise<ActionResult & { reply?: string }> {
+): Promise<ActionResult & { reply?: string; cobrado?: boolean }> {
   const ready = await prepare();
   if (!ready.ok) return ready;
   const parsed = chatSchema.safeParse(messages);
@@ -148,19 +154,19 @@ export async function chatCoach(
     .map((m) => `${m.role === "user" ? "Usuario" : "Coach"}: ${m.text}`)
     .join("\n\n");
 
-  const result = await generate({
-    system: `${COACH_SYSTEM}\n\nContexto del usuario:\n${describeUser(ctx, peso)}\n\nRegistros de los últimos 14 días:\n${registros || "- sin registros"}`,
-    input: `${transcript}\n\nCoach:`,
+  return cobrar(supabase, async () => {
+    const result = await generate({
+      system: `${COACH_SYSTEM}\n\nContexto del usuario:\n${describeUser(ctx, peso)}\n\nRegistros de los últimos 14 días:\n${registros || "- sin registros"}`,
+      input: `${transcript}\n\nCoach:`,
+    });
+    return result.ok ? { ok: true, reply: result.text.trim() } : result;
   });
-  if (!result.ok) return result;
-  if (!(await consume(supabase))) return { ok: false, message: LIMIT_MESSAGE };
-  return { ok: true, reply: result.text.trim() };
 }
 
 export async function generarPlanComidas(input: {
   texto: string;
   modo: "agregar" | "reemplazar";
-}): Promise<ActionResult & { agregados?: number }> {
+}): Promise<ActionResult & { agregados?: number; cobrado?: boolean }> {
   const ready = await prepare();
   if (!ready.ok) return ready;
   const parsed = planComidasInputSchema.safeParse(input);
@@ -186,11 +192,14 @@ export async function generarPlanComidas(input: {
       : "Armá un banco COMPLETO nuevo de 3 a 5 platos por cada tipo (desayuno, media, almuerzo, merienda, cena) usando eso como base, con al menos un almuerzo carbLoad.",
   ].join("\n\n");
 
-  const gen =
+  const gen = await cobrar(supabase, () =>
     modo === "agregar"
-      ? await generateJson(MEALS_SYSTEM, prompt, aiMealsAgregarSchema, aiMealsAgregarSchema)
-      : await generateJson(MEALS_SYSTEM, prompt, aiMealsReemplazarSchema, aiMealsReemplazarSchema);
+      ? generateJson(MEALS_SYSTEM, prompt, aiMealsAgregarSchema, aiMealsAgregarSchema)
+      : generateJson(MEALS_SYSTEM, prompt, aiMealsReemplazarSchema, aiMealsReemplazarSchema),
+  );
   if (!gen.ok) return gen;
+  // desde acá el uso ya se descontó: toda respuesta lleva cobrado
+  const cobrado = true;
 
   let bank: MealBank;
   let agregados = 0;
@@ -208,6 +217,7 @@ export async function generarPlanComidas(input: {
       return {
         ok: false,
         message: "No salieron platos nuevos para agregar (¿ya estaban o el banco está lleno?).",
+        cobrado,
       };
     }
   } else {
@@ -225,23 +235,22 @@ export async function generarPlanComidas(input: {
       if (carb) bank.almuerzo = [...bank.almuerzo, carb];
     }
     if (MEAL_TYPES.every((t) => gen.data[t].length === 0)) {
-      return { ok: false, message: "La IA no armó ningún plato, probá de nuevo." };
+      return { ok: false, message: "La IA no armó ningún plato, probá de nuevo.", cobrado };
     }
   }
 
   // Doble chequeo contra el mismo schema con el que se lee (lib/user-plan.ts).
   if (!mealBankSchema.safeParse(bank).success) {
-    return { ok: false, message: "La IA armó un plan inválido, probá de nuevo." };
+    return { ok: false, message: "La IA armó un plan inválido, probá de nuevo.", cobrado };
   }
-  if (!(await consume(supabase))) return { ok: false, message: LIMIT_MESSAGE };
   const saved = await savePlan(supabase, userId, "comidas", bank);
-  return saved.ok ? { ok: true, agregados } : saved;
+  return { ...saved, agregados, cobrado };
 }
 
 export async function generarRutinas(input: {
   equipo: string;
   zonas: string[];
-}): Promise<ActionResult> {
+}): Promise<ActionResult & { cobrado?: boolean }> {
   const ready = await prepare();
   if (!ready.ok) return ready;
   const parsed = rutinasInputSchema.safeParse(input);
@@ -257,10 +266,11 @@ export async function generarRutinas(input: {
     "Armá las 7 rutinas.",
   ].join("\n\n");
 
-  const gen = await generateJson(ROUTINES_SYSTEM, prompt, routinesSchema, routinesSchema);
+  const gen = await cobrar(supabase, () =>
+    generateJson(ROUTINES_SYSTEM, prompt, routinesSchema, routinesSchema),
+  );
   if (!gen.ok) return gen;
-  if (!(await consume(supabase))) return { ok: false, message: LIMIT_MESSAGE };
-  return savePlan(supabase, userId, "ejercicios", gen.data);
+  return { ...(await savePlan(supabase, userId, "ejercicios", gen.data)), cobrado: true };
 }
 
 /** Vuelve al plan base compartido (no consume cuota). */

@@ -74,8 +74,6 @@ export const WEEKDAY_LABELS = [
   "Domingo",
 ];
 
-export const DAYS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-
 export function formatShort(d: Date): string {
   return `${d.getDate()} ${MONTHS_ES[d.getMonth()]}`;
 }

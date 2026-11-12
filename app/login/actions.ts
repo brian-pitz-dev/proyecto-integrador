@@ -1,10 +1,9 @@
 "use server";
 
 import { z } from "zod";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isRateLimited, recordFailedAttempt, clearAttempts } from "@/lib/rate-limit";
+import { getClientKey, loginLimiter } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { completarRegistroPendiente } from "@/lib/perfil";
 import type { ActionResult } from "@/lib/types";
@@ -14,11 +13,6 @@ const loginSchema = z.object({
   password: z.string().min(1),
   turnstileToken: z.string().min(1),
 });
-
-async function getClientKey(): Promise<string> {
-  const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-}
 
 export async function login(input: {
   email: string;
@@ -31,7 +25,7 @@ export async function login(input: {
   }
 
   const clientKey = await getClientKey();
-  if (isRateLimited(clientKey)) {
+  if (loginLimiter.isLimited(clientKey)) {
     return { ok: false, message: "Demasiados intentos. Probá de nuevo en unos minutos." };
   }
 
@@ -53,11 +47,11 @@ export async function login(input: {
         message: "Confirmá tu email con el link que te mandamos antes de ingresar.",
       };
     }
-    recordFailedAttempt(clientKey);
+    loginLimiter.record(clientKey);
     return { ok: false, message: "Email o contraseña incorrectos." };
   }
 
-  clearAttempts(clientKey);
+  loginLimiter.clear(clientKey);
   // Redirect en el server: la acción y la página destino viajan en una sola respuesta.
   // Ese render no pasa por proxy.ts, así que acá se decide si falta el onboarding
   // (y, si el registro quedó pendiente de confirmar el email, se completa ahora).

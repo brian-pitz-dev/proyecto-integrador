@@ -41,19 +41,30 @@ export const metadata: Metadata = {
 
 async function fetchData() {
   const supabase = await createClient();
-  // ponytail: una sola query, PostgREST corta en 1000 filas; con un usuario y el plan hasta dic no se llega, si no volver a una query por categoría
-  const { data } = await supabase.from("registro").select("*").order("fecha", { ascending: false });
-  const rows = (data as Registro[] | null) ?? [];
-  const of = (categoria: Categoria) => rows.filter((r) => r.categoria === categoria);
+  // Una query por categoría: PostgREST corta cada respuesta en 1000 filas, y todas juntas se
+  // pasaban en ~8 meses de uso diario (el peso "inicial" y el historial salían mal).
+  // shortcut: cada categoría sigue topada en 1000 filas (~2.7 años de un registro por día);
+  // si alguien llega, paginar con .range() o agregar en SQL.
+  const of = async (categoria: Categoria) => {
+    const { data } = await supabase
+      .from("registro")
+      .select("*")
+      .eq("categoria", categoria)
+      .order("fecha", { ascending: false });
+    return (data as Registro[] | null) ?? [];
+  };
+  const [completado, peso, sueno, calorias, caminata, tirada, evento] = await Promise.all(
+    (["completado", "peso", "sueno", "calorias", "caminata", "tirada", "evento"] as const).map(of),
+  );
 
   return {
-    completedDates: new Set(of("completado").map((r) => r.fecha)),
-    peso: of("peso"),
-    sueno: of("sueno"),
-    calorias: of("calorias"),
-    caminata: of("caminata"),
-    tirada: of("tirada"),
-    evento: of("evento"),
+    completedDates: new Set(completado.map((r) => r.fecha)),
+    peso,
+    sueno,
+    calorias,
+    caminata,
+    tirada,
+    evento,
   };
 }
 

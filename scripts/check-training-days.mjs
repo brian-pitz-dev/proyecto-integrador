@@ -1,8 +1,8 @@
 // Self-check de la adaptación del plan a días/minutos del usuario (spec 006; no hay test suite).
 // Correr con: npx tsx scripts/check-training-days.mjs   (tsx resuelve los alias "@/" de tsconfig)
 import assert from "node:assert/strict";
-import { buildPlan } from "../lib/training-plan.ts";
-import { fromISO } from "../lib/date.ts";
+import { buildPlan, getSessionsForDate } from "../lib/training-plan.ts";
+import { addDays, fromISO } from "../lib/date.ts";
 
 const today = fromISO("2026-11-12");
 const events = [
@@ -69,5 +69,17 @@ for (const [minutos, tope] of [
 const jueves = buildPlan("2026-11-12", events, today, { dias: [1, 3, 5], minutos: 30 });
 assert.equal(jueves[0].start, "2026-11-09");
 assert.equal(fromISO(jueves[0].start).getDay(), 1);
+
+// 8. Registro un sábado: de lunes a viernes de esa semana no hay sesiones (no son "gym salteado"),
+// y desde el registro sí.
+const sabado = buildPlan("2026-11-14", events, fromISO("2026-11-14"));
+for (let d = 0; d < 5; d++) {
+  const ss = getSessionsForDate(sabado, events, addDays(fromISO("2026-11-09"), d));
+  assert.ok(
+    ss.every((s) => s.tag === "rest"),
+    `día ${d} antes del registro`,
+  );
+}
+assert.ok(getSessionsForDate(sabado, events, fromISO("2026-11-14")).some((s) => s.tag !== "rest"));
 
 console.log("check-training-days: OK");

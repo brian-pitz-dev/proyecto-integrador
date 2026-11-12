@@ -46,6 +46,11 @@ export function filaEvento(e: EventoInput) {
   };
 }
 
+function falla(donde: string, error: unknown, mensaje: string): string {
+  console.error("guardarPerfilYEventos", donde, error);
+  return mensaje;
+}
+
 /** null si salió bien; si no, el mensaje de error para mostrar. */
 export async function guardarPerfilYEventos(
   supabase: Supabase,
@@ -58,22 +63,23 @@ export async function guardarPerfilYEventos(
     ...filaPerfil(perfil),
     plan_start: toISO(todayNormalized()),
   });
-  if (perfilError) return "No se pudo guardar el perfil: " + perfilError.message;
+  // el detalle de cada error va al log (lo de Postgres no le sirve al usuario y expone nombres internos)
+  if (perfilError) return falla("perfil", perfilError, "No se pudo guardar el perfil.");
 
   // Por si es un reintento tras un fallo parcial: evita duplicar eventos.
   const { error: deleteError } = await supabase.from("evento").delete().eq("user_id", userId);
-  if (deleteError) return "No se pudieron guardar los eventos: " + deleteError.message;
+  if (deleteError) return falla("evento", deleteError, "No se pudieron guardar los eventos.");
 
   const { error: eventosError } = await supabase
     .from("evento")
     .insert(eventos.map((e) => ({ user_id: userId, ...filaEvento(e) })));
-  if (eventosError) return "No se pudieron guardar los eventos: " + eventosError.message;
+  if (eventosError) return falla("evento", eventosError, "No se pudieron guardar los eventos.");
 
   const { error: metaError } = await supabase.auth.updateUser({
     // registro_pendiente: null → se borra la copia que viajó en el registro (ver completarRegistroPendiente)
     data: { onboarding_completed: true, registro_pendiente: null },
   });
-  if (metaError) return "No se pudo completar el registro: " + metaError.message;
+  if (metaError) return falla("metadata", metaError, "No se pudo completar el registro.");
 
   return null;
 }

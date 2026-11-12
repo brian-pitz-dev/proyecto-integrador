@@ -60,9 +60,15 @@ atómico con `where usos < 20`).
 El límite va **dentro** de la función: `supabase.rpc()` se puede llamar desde el
 navegador con la anon key, así que un parámetro `limite` se podría falsear.
 
-El orden es: primero se chequea si queda cuota, después se llama a la IA, y recién si
-respondió bien se consume el uso. Una carrera entre requests paralelas queda acotada por
-el límite de 5 por minuto.
+El orden es: primero se consume el uso (atómico) y recién después se llama a la IA
+(`cobrar` en `app/(app)/coach/actions.ts`). Al principio era al revés: se chequeaba si
+quedaba cuota, se llamaba a la IA y solo si respondía bien se consumía, suponiendo que el
+límite de 5 por minuto acotaba la carrera entre requests paralelas. Pero ese límite vive
+en memoria de cada instancia de Netlify: 30 pedidos en paralelo se repartían entre
+instancias, pasaban todos el chequeo y gastaban la cuota gratis por minuto de Gemini, que
+comparten todos los usuarios (auditoría del 2026-11-12). Costo aceptado: si la IA falla,
+el usuario igual pierde esa consulta. Las respuestas llevan `cobrado: true` para que el
+contador de la pantalla lo refleje.
 
 ## Decisión 3 — Banco IA como jsonb, con la misma forma que las constantes
 

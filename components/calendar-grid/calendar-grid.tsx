@@ -7,7 +7,6 @@ import { toggleDayDone } from "@/app/registro/actions";
 import {
   getSessionsForDate,
   getCurrentWeekNum,
-  getNextEvent,
   type Week,
   type UserEvent,
   type Session,
@@ -114,10 +113,6 @@ export function CalendarGrid({
 
   const todayISO = toISO(todayNorm);
   const todaySessions = getSessionsForDate(weeks, events, todayNorm);
-  const nextEvent = getNextEvent(events, todayNorm);
-  const daysToEvent = nextEvent
-    ? Math.round((fromISO(nextEvent.fecha).getTime() - todayNorm.getTime()) / 86_400_000)
-    : null;
 
   function handleToggle(date: Date) {
     if (date > todayNorm) return; // no se puede marcar un día futuro
@@ -141,19 +136,10 @@ export function CalendarGrid({
   return (
     <div className="mx-auto grid w-full max-w-4xl gap-8">
       <section className="grid gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h2 className="text-2xl font-semibold">
-            Hoy, {WEEKDAY_LABELS[(todayNorm.getDay() + 6) % 7].toLowerCase()}{" "}
-            {formatShort(todayNorm)}
-          </h2>
-          {nextEvent && daysToEvent !== null && (
-            <p className="text-sm text-muted-foreground">
-              {daysToEvent === 0
-                ? `Hoy es el ${nextEvent.nombre}`
-                : `${nextEvent.nombre} en ${daysToEvent} día${daysToEvent === 1 ? "" : "s"}`}
-            </p>
-          )}
-        </div>
+        {/* cuánto falta para el próximo evento ya lo muestra EventosResumen arriba */}
+        <h2 className="text-2xl font-semibold">
+          Hoy, {WEEKDAY_LABELS[(todayNorm.getDay() + 6) % 7].toLowerCase()} {formatShort(todayNorm)}
+        </h2>
 
         <div className="flex items-start gap-4">
           <SessionList sessions={todaySessions} routines={routines} />
