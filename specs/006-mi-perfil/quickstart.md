@@ -1,7 +1,7 @@
 # Quickstart: validar Mi perfil
 
 0. Aplicar `supabase/migrations/20261112200000_perfil_disponibilidad.sql` (`supabase db push`).
-1. `npx tsx scripts/check-training-days.mjs` → `check-training-days: OK`.
+1. `npm test` → pasa `lib/training-plan.test.ts` (antes `scripts/check-training-days.mjs`).
 2. Con una cuenta existente, el Calendario se ve igual que antes de la migración.
 3. Header → ícono de usuario → `/perfil`. Elegir Mar, Jue y Sáb y guardar la semana. En el
    Calendario solo hay sesiones esos días, y la salida larga cae el sábado.

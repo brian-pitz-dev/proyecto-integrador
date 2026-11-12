@@ -26,6 +26,14 @@ export const passwordSchema = z
   .regex(/[A-Za-z]/, "La contraseña tiene que tener al menos una letra")
   .regex(/\d/, "La contraseña tiene que tener al menos un número");
 
+/** Contraseña nueva (recuperación): mismas reglas que el registro. */
+export const nuevaClaveSchema = z
+  .object({ password: passwordSchema, passwordConfirm: z.string() })
+  .refine((d) => d.password === d.passwordConfirm, {
+    message: "Las contraseñas no coinciden",
+    path: ["passwordConfirm"],
+  });
+
 /** Paso 1: cuenta. */
 export const cuentaSchema = z
   .object({

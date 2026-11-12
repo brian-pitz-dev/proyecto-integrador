@@ -9,7 +9,7 @@ Validación manual (no hay test suite).
 2. Cargar `GEMINI_API_KEY=...` en `.env.local` y en Netlify
    (`netlify env:set GEMINI_API_KEY ...`). No se commitea.
 3. Aplicar `supabase/migrations/20261112120000_coach_ia.sql` en Supabase.
-4. Correr `node scripts/check-meal-scaling.mjs`. Tiene que imprimir `OK`.
+4. Correr `npm test` (antes `scripts/check-meal-scaling.mjs`, hoy `lib/meal-plan.test.ts`). Tiene que pasar.
 5. Correr `npm run dev`.
 
 ## 2. Nutrición (porciones y proteína)

@@ -31,9 +31,13 @@ npm run dev      # next dev (also regenerates AGENTS.md's Next.js-version banner
 npm run build    # next build
 npm run lint     # eslint
 npm run format   # prettier --write .
+npm test         # vitest run (lib/**/*.test.ts)
 ```
 
-There is no test suite in this repo (validation is manual, per `specs/*/quickstart.md`).
+Tests cover only the pure logic in `lib/` (plan engine, calories, meals, dates, stats) —
+`lib/*.test.ts`, run with Vitest. UI, Server Actions and Supabase are validated manually,
+per `specs/*/quickstart.md`. The old `scripts/check-*.mjs` self-checks were ported into
+those test files.
 There's no `node_modules/` checked in or installed by default — run `npm install`
 before anything that needs the Next.js docs mentioned in `AGENTS.md`, or before running
 dev/build/lint.
@@ -64,7 +68,7 @@ events, today)` maps that content onto a specific user's own event dates (see
   `getMealsForDay(week, day, carbLoadWeeks, opts?)`: `opts.bank` is the user's own
   AI-generated bank (`plan_ia`), `opts.metaKcal` scales portions toward the day's
   calorie target, and `opts.pesoKg` scales the lunch-protein threshold. Called with no
-  `opts`, it is byte-identical to the original plan (see `scripts/check-meal-scaling.mjs`
+  `opts`, it is byte-identical to the original plan (see `lib/meal-plan.test.ts`
   and `specs/005-coach-ia/research.md` Decision 4).
 - `lib/gym-exercises.ts` — gym/core routines keyed by `gymKey`/`coreKey` (shared default;
   a user's AI routines from `plan_ia` override gym keys in `ExerciseBlock`).
@@ -106,6 +110,15 @@ _configuration_ (profile and events — what used to be hardcoded constants) liv
   not a completed profile. `app/page.tsx` and `proxy.ts` handle the redirect logic
   (logged-out → `/login`, logged-in without a completed profile → `/onboarding`,
   logged-in at `/` → `/calendario`).
+- Password recovery: `app/recuperar/` (public, Turnstile + rate limit) sends Supabase's
+  reset mail with `redirectTo=/auth/confirm?type=recovery`; `/auth/confirm` routes
+  `type=recovery` to `app/nueva-clave/` (session required, profile not — exempted in
+  `proxy.ts` like `/onboarding`).
+- Account export/deletion live in `/perfil` (`components/perfil/cuenta-card.tsx`):
+  `app/(app)/perfil/exportar/route.ts` returns all the user's rows as JSON (paginated past
+  PostgREST's 1000-row cap); `borrarCuenta` re-checks the password and calls the
+  `borrar_mi_cuenta()` SQL function (security definer, deletes `auth.users` row; every
+  table cascades) — no service-role key in the app.
 - **Next.js 16 renamed `middleware.ts` to `proxy.ts`** — this is not a typo or a
   custom convention, it's current upstream Next.js. `proxy.ts` is regenerated/kept
   in sync by `next dev`; see `node_modules/next/dist/server/lib/generate-agent-files.js`.

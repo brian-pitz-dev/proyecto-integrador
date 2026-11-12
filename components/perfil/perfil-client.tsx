@@ -13,6 +13,7 @@ import { eventoSchema, perfilSchema } from "@/lib/validation/onboarding";
 import type { UserEvent } from "@/lib/training-plan";
 import type { Perfil } from "@/lib/user-plan";
 import { actualizarPerfil, borrarEvento, guardarEvento } from "@/app/(app)/perfil/actions";
+import { CuentaCard } from "@/components/perfil/cuenta-card";
 import {
   CamposDisponibilidad,
   CamposEvento,
@@ -138,6 +139,8 @@ export function PerfilClient({
           </Button>
         </CardContent>
       </Card>
+
+      <CuentaCard email={email} />
     </div>
   );
 }

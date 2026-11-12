@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
+import { getClientKey, loginLimiter } from "@/lib/rate-limit";
 import { eventoSchema, perfilSchema } from "@/lib/validation/onboarding";
 import { filaEvento, filaPerfil } from "@/lib/perfil";
 import type { ActionResult } from "@/lib/types";
@@ -74,6 +76,43 @@ export async function guardarEvento(input: unknown): Promise<ActionResult> {
 
   recalcular();
   return { ok: true };
+}
+
+/**
+ * Baja de la cuenta con todos sus datos (supabase/migrations/..._borrar_cuenta.sql). Pide la
+ * contraseña: una sesión abierta en otra compu no alcanza para borrar todo.
+ */
+export async function borrarCuenta(password: unknown): Promise<ActionResult> {
+  const user = await getAuthedUser();
+  if (!user?.email) return { ok: false, message: "No autenticado." };
+
+  const parsed = z.string().min(1).max(200).safeParse(password);
+  if (!parsed.success) return { ok: false, message: "Escribí tu contraseña." };
+
+  const clientKey = await getClientKey();
+  if (loginLimiter.isLimited(clientKey)) {
+    return { ok: false, message: "Demasiados intentos. Probá de nuevo en unos minutos." };
+  }
+
+  const supabase = await createClient();
+  const { error: authError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: parsed.data,
+  });
+  if (authError) {
+    loginLimiter.record(clientKey);
+    return { ok: false, message: "Contraseña incorrecta." };
+  }
+
+  const { error } = await supabase.rpc("borrar_mi_cuenta");
+  if (error) {
+    console.error("borrar_mi_cuenta", error);
+    return { ok: false, message: "No se pudo borrar la cuenta. Probá de nuevo." };
+  }
+
+  // El usuario ya no existe: solo se limpian las cookies de la sesión.
+  await supabase.auth.signOut({ scope: "local" });
+  redirect("/login?borrada=1");
 }
 
 export async function borrarEvento(id: unknown): Promise<ActionResult> {

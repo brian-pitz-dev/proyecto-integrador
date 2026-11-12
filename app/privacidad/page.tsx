@@ -41,7 +41,7 @@ const SECCIONES = [
   {
     titulo: "Tus derechos",
     texto: [
-      "Podés pedir ver, corregir o borrar tus datos, y dar de baja tu cuenta, contactando al responsable del proyecto. Al borrar la cuenta se eliminan tu perfil, tus eventos, tus registros y tus planes.",
+      "Desde Mi perfil podés corregir tus datos, descargar una copia de todo lo que guardamos y borrar tu cuenta. Al borrar la cuenta se eliminan tu perfil, tus eventos, tus registros y tus planes, y no se puede deshacer.",
     ],
   },
   {

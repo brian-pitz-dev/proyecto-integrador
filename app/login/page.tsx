@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; confirmada?: string }>;
+  searchParams: Promise<{ error?: string; confirmada?: string; borrada?: string }>;
 }) {
-  const { error, confirmada } = await searchParams;
+  const { error, confirmada, borrada } = await searchParams;
 
   return (
     <div className="relative grid min-h-dvh place-items-center">
@@ -42,13 +42,28 @@ export default async function LoginPage({
             Tu email quedó confirmado. Iniciá sesión para entrar a tu plan.
           </p>
         )}
+        {borrada && (
+          <p
+            role="status"
+            className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm"
+          >
+            Tu cuenta y todos tus datos se borraron.
+          </p>
+        )}
         <LoginForm />
-        <p className="text-center text-sm text-muted-foreground">
-          ¿No tenés cuenta?{" "}
-          <Link href="/signup" className="font-semibold underline underline-offset-2">
-            Crear cuenta
-          </Link>
-        </p>
+        <div className="grid gap-2 text-center text-sm text-muted-foreground">
+          <p>
+            <Link href="/recuperar" className="underline underline-offset-2">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
+          <p>
+            ¿No tenés cuenta?{" "}
+            <Link href="/signup" className="font-semibold underline underline-offset-2">
+              Crear cuenta
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

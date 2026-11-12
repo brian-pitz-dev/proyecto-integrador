@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import type { EmailOtpType, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { completarRegistroPendiente } from "@/lib/perfil";
 
-const TIPOS: EmailOtpType[] = ["email", "signup"];
+const TIPOS: EmailOtpType[] = ["email", "signup", "recovery"];
 
 /**
  * Destino del link de confirmación del mail (emailRedirectTo del registro). Deja la sesión
@@ -13,22 +13,29 @@ const TIPOS: EmailOtpType[] = ["email", "signup"];
  * - `?code=` (plantilla por defecto): Supabase ya confirmó el email y manda un código PKCE. Solo
  *   se canjea en el navegador donde se hizo el registro (ahí está la cookie code-verifier).
  * - `?token_hash=&type=` (plantilla propia, requiere SMTP propio): funciona en cualquier dispositivo.
+ * Con `type=recovery` (link de "recuperar contraseña", app/recuperar/actions.ts) manda a /nueva-clave.
  */
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const supabase = await createClient();
+  const recuperacion = params.get("type") === "recovery";
+  const fallo = recuperacion ? "/recuperar?error=link" : "/login?error=confirmacion";
+  const destino = async (user: User) =>
+    recuperacion ? "/nueva-clave" : await completarRegistroPendiente(supabase, user);
 
   // Supabase manda los errores en la URL (ej. otp_expired: link vencido o ya usado).
   if (params.get("error_code") || params.get("error")) {
-    redirect("/login?error=confirmacion");
+    redirect(fallo);
   }
 
   const code = params.get("code");
   if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data.user) {
-      redirect(await completarRegistroPendiente(supabase, data.user));
+      redirect(await destino(data.user));
     }
+    // Recuperación sin la cookie: hay que pedir otro link desde este navegador.
+    if (recuperacion) redirect(fallo);
     // El email ya quedó confirmado; sin la cookie (otro navegador o dispositivo) no hay sesión:
     // al iniciar sesión, el login completa el registro pendiente.
     redirect("/login?confirmada=1");
@@ -39,9 +46,9 @@ export async function GET(request: NextRequest) {
   if (tokenHash && type && TIPOS.includes(type)) {
     const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     if (!error && data.user) {
-      redirect(await completarRegistroPendiente(supabase, data.user));
+      redirect(await destino(data.user));
     }
   }
 
-  redirect("/login?error=confirmacion");
+  redirect(fallo);
 }

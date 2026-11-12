@@ -30,7 +30,7 @@ entrenamiento.
 
 **Invariante:** lunes a sábado (o los 7 días) con 60 minutos o más devuelve la semana sin
 tocar. El default de la columna es ese, así que las cuentas existentes (Brian incluido) no
-ven cambios. Lo comprueba `scripts/check-training-days.mjs`.
+ven cambios. Lo comprueba `lib/training-plan.test.ts` (antes `scripts/check-training-days.mjs`).
 
 ## Decisión 3 — El tiempo no reescribe los textos de cardio
 
@@ -54,4 +54,4 @@ día no era lunes, la clave `mon` de la plantilla caía otro día, aunque el cal
 mostraba como "Lun" (por ejemplo, un registro de jueves 12 mostraba "Lun 12"). Con días
 elegidos por el usuario el error se volvía visible: el "martes" caía viernes. Ahora la
 semana 1 arranca el lunes de la semana de `plan_start`. La cuenta de Brian arranca un lunes
-(2026-08-17), así que no cambia. Lo comprueba el chequeo 7 de `scripts/check-training-days.mjs`.
+(2026-08-17), así que no cambia. Lo comprueba `lib/training-plan.test.ts` ("arranca un jueves").

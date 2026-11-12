@@ -17,6 +17,7 @@ export async function proxy(request: NextRequest) {
     [
       "/login",
       "/signup",
+      "/recuperar",
       "/privacidad",
       "/auth/confirm",
       "/opengraph-image",
@@ -32,9 +33,11 @@ export async function proxy(request: NextRequest) {
   }
 
   const isOnboardingPath = path === "/onboarding";
+  // Requiere sesión, pero no perfil: el link de recuperación puede llegar antes del onboarding.
+  const isNuevaClavePath = path === "/nueva-clave";
   const needsOnboarding = !!user && !user.user_metadata?.onboarding_completed;
 
-  if (needsOnboarding && !isOnboardingPath && !isPublicPath) {
+  if (needsOnboarding && !isOnboardingPath && !isNuevaClavePath && !isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);

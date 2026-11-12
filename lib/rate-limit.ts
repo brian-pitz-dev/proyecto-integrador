@@ -37,6 +37,8 @@ function limiter(windowMs: number, max: number) {
 export const loginLimiter = limiter(5 * 60 * 1000, 5);
 /** Registro: 5 intentos cada 5 minutos, por IP. */
 export const signupLimiter = limiter(5 * 60 * 1000, 5);
+/** Recuperar contraseña: 5 pedidos cada 15 minutos, por IP (cada uno manda un mail). */
+export const recuperarLimiter = limiter(15 * 60 * 1000, 5);
 /** saveLog: 20 registros por minuto, por usuario. */
 export const saveLogLimiter = limiter(60 * 1000, 20);
 /** Coach: 5 llamadas por minuto, por usuario (protege el límite por minuto del tier gratis de Gemini). */
