@@ -3,8 +3,8 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-    # Un solo PR por semana con las actualizaciones menores, en vez de uno por paquete.
+      interval: monthly
+    # Un solo PR por mes con las actualizaciones menores, en vez de uno por paquete.
     groups:
       menores:
         update-types: [minor, patch]
@@ -16,3 +16,6 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
