@@ -8,13 +8,7 @@ import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Opciones } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useTurnstile } from "@/components/turnstile";
@@ -148,39 +142,6 @@ function Field({
         hint && <p className="text-xs text-muted-foreground">{hint}</p>
       )}
     </div>
-  );
-}
-
-/** Desplegable que se abre debajo de su caja (el <select> nativo de macOS se abre encima). */
-function Opciones({
-  id,
-  value,
-  onChange,
-  items,
-  placeholder,
-  ...rest
-}: {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
-  items: { value: string; label: string }[];
-  placeholder?: string;
-  "aria-invalid"?: boolean;
-  "aria-describedby"?: string;
-}) {
-  return (
-    <Select items={items} value={value || null} onValueChange={(v) => onChange(String(v ?? ""))}>
-      <SelectTrigger id={id} className="w-full" {...rest}>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {items.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
-            {item.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
   );
 }
 

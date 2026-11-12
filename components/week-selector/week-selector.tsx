@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Opciones } from "@/components/ui/select";
 import type { Week } from "@/lib/training-plan";
 
 /** `w.start` es ISO YYYY-MM-DD: se parsea el string directo, sin pasar por `Date`, para no arrastrar el desfase de timezone (ver lib/date.ts fromISO). */
@@ -23,7 +24,8 @@ export function WeekSelector({ weeks, selectedWeek, onSelectWeek }: WeekSelector
 
   const monthsInPlan = Array.from(new Set(weeks.map((w) => monthKey(w.start)))).map((key) => {
     const [year, month] = key.split("-").map(Number);
-    return { key, label: new Date(year, month, 1).toLocaleDateString("es-AR", { month: "long" }) };
+    const label = new Date(year, month, 1).toLocaleDateString("es-AR", { month: "long" });
+    return { value: key, label: label[0].toUpperCase() + label.slice(1) };
   });
 
   const weeksOfMonth = weeks.filter((w) => monthKey(w.start) === selectedMonth);
@@ -31,18 +33,13 @@ export function WeekSelector({ weeks, selectedWeek, onSelectWeek }: WeekSelector
   return (
     <div className="grid gap-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <select
+        <Opciones
           aria-label="Mes"
           value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-          className="w-fit rounded-md border border-border bg-background px-2.5 py-2 text-sm font-medium text-foreground capitalize"
-        >
-          {monthsInPlan.map(({ key, label }) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
+          onChange={setSelectedMonth}
+          items={monthsInPlan}
+          className="h-9 w-fit min-w-36 font-medium"
+        />
 
         <div className="flex flex-wrap gap-1.5">
           {weeksOfMonth.map((w) => (

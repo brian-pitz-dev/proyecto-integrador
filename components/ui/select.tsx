@@ -175,7 +175,44 @@ function SelectScrollDownButton({
   );
 }
 
+/** Desplegable que se abre debajo de su caja (el <select> nativo de macOS se abre encima). */
+function Opciones({
+  id,
+  value,
+  onChange,
+  items,
+  placeholder,
+  className,
+  ...rest
+}: {
+  id?: string;
+  value: string;
+  onChange: (value: string) => void;
+  items: { value: string; label: string }[];
+  placeholder?: string;
+  className?: string;
+  "aria-label"?: string;
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string;
+}) {
+  return (
+    <Select items={items} value={value || null} onValueChange={(v) => onChange(String(v ?? ""))}>
+      <SelectTrigger id={id} className={cn("w-full", className)} {...rest}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {items.map((item) => (
+          <SelectItem key={item.value} value={item.value}>
+            {item.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export {
+  Opciones,
   Select,
   SelectContent,
   SelectGroup,

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Opciones } from "@/components/ui/select";
 import { useLogSubmit } from "@/components/log-form/registro-category-card";
 import { formatPace } from "@/lib/pace";
 import { toISO, todayNormalized } from "@/lib/date";
@@ -42,18 +43,12 @@ export function EventForm({ events }: { events: UserEvent[] }) {
     <form ref={formRef} action={handleSubmit} className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor="event-name">Evento</Label>
-        <select
+        <Opciones
           id="event-name"
           value={eventName}
-          onChange={(e) => setEventName(e.target.value)}
-          className="rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-foreground"
-        >
-          {events.map((e) => (
-            <option key={e.id} value={e.nombre}>
-              {e.nombre}
-            </option>
-          ))}
-        </select>
+          onChange={setEventName}
+          items={events.map((e) => ({ value: e.nombre, label: e.nombre }))}
+        />
       </div>
 
       <div className="grid gap-2">
