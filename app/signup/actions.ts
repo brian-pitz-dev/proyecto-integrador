@@ -10,8 +10,11 @@ import { registroSchema } from "@/lib/validation/onboarding";
 import { guardarPerfilYEventos } from "@/lib/perfil";
 import type { ActionResult } from "@/lib/types";
 
-/** `paso`: a qué paso del registro volver para corregir (0 cuenta, 1 perfil, 2 eventos). */
-export type RegistroResult = ActionResult & { paso?: number };
+/**
+ * `paso`: a qué paso del registro volver para corregir (0 cuenta, 1 perfil, 2 eventos).
+ * `confirmar`: el email al que se mandó el link de confirmación (la cuenta todavía no tiene sesión).
+ */
+export type RegistroResult = ActionResult & { paso?: number; confirmar?: string };
 
 const PASO_POR_CAMPO: Record<string, number> = { cuenta: 0, perfil: 1, eventos: 2 };
 
@@ -45,13 +48,22 @@ export async function registrar(input: unknown): Promise<RegistroResult> {
   }
 
   const { cuenta, perfil, eventos } = parsed.data;
+  const h = await headers();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email: cuenta.email,
     password: cuenta.password,
     options: {
-      // Nombre y aceptación de términos viven en user_metadata: sobreviven aunque falle el perfil.
-      data: { nombre: cuenta.nombre, terminos_aceptados_at: new Date().toISOString() },
+      // El link del mail vuelve al mismo sitio desde el que se registró (prod o localhost); Supabase
+      // solo lo acepta si está en Redirect URLs, si no usa el Site URL. Ver /auth/confirm.
+      emailRedirectTo: h.get("origin") ?? undefined,
+      data: {
+        nombre: cuenta.nombre,
+        terminos_aceptados_at: new Date().toISOString(),
+        // Sin sesión hasta confirmar el email no se puede guardar el perfil (RLS): viaja acá y
+        // lo crea completarRegistroPendiente (lib/perfil.ts) al confirmar o al iniciar sesión.
+        registro_pendiente: { perfil, eventos },
+      },
     },
   });
 
@@ -67,13 +79,9 @@ export async function registrar(input: unknown): Promise<RegistroResult> {
     };
   }
 
-  // Si el proyecto exigiera confirmar el email no habría sesión: no se puede guardar el perfil (RLS).
+  // El proyecto exige confirmar el email: sin sesión todavía. El perfil se crea al confirmar.
   if (!data.session || !data.user) {
-    return {
-      ok: true,
-      message:
-        "Te mandamos un email para confirmar la cuenta. Confirmala, iniciá sesión y completá tu perfil.",
-    };
+    return { ok: true, confirmar: cuenta.email };
   }
 
   const perfilError = await guardarPerfilYEventos(supabase, data.user.id, perfil, eventos);

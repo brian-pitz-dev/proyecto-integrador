@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isRateLimited, recordFailedAttempt, clearAttempts } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { completarRegistroPendiente } from "@/lib/perfil";
 import type { ActionResult } from "@/lib/types";
 
 const loginSchema = z.object({
@@ -46,14 +47,21 @@ export async function login(input: {
   });
 
   if (error) {
+    if (error.code === "email_not_confirmed") {
+      return {
+        ok: false,
+        message: "Confirmá tu email con el link que te mandamos antes de ingresar.",
+      };
+    }
     recordFailedAttempt(clientKey);
     return { ok: false, message: "Email o contraseña incorrectos." };
   }
 
   clearAttempts(clientKey);
   // Redirect en el server: la acción y la página destino viajan en una sola respuesta.
-  // Ese render no pasa por proxy.ts, así que acá se decide si falta el onboarding.
-  redirect(data.user?.user_metadata?.onboarding_completed ? "/calendario" : "/onboarding");
+  // Ese render no pasa por proxy.ts, así que acá se decide si falta el onboarding
+  // (y, si el registro quedó pendiente de confirmar el email, se completa ahora).
+  redirect(await completarRegistroPendiente(supabase, data.user));
 }
 
 export async function logout(): Promise<ActionResult> {

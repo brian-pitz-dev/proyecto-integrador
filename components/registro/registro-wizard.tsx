@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Check, Plus, Trash2 } from "lucide-react";
+import { Check, MailCheck, Plus, Trash2 } from "lucide-react";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -238,6 +238,8 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
   const [eventos, setEventos] = useState<EventoDraft[]>([emptyEvento()]);
   const [errors, setErrors] = useState<Errors>({});
   const [pending, setPending] = useState(false);
+  // email al que se mandó el link de confirmación: reemplaza el formulario por el aviso
+  const [enviadoA, setEnviadoA] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Turnstile solo se monta en el último paso: el token vence a los 5 min y completar todo puede tardar más.
@@ -297,7 +299,8 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
     if (!result) return;
     setPending(false);
     if (result.ok) {
-      if (result.message) toast.success(result.message);
+      if ("confirmar" in result && typeof result.confirmar === "string")
+        setEnviadoA(result.confirmar);
       return;
     }
     toast.error(result.message ?? "No se pudo completar el registro.");
@@ -313,6 +316,27 @@ export function RegistroWizard({ mode }: { mode: "signup" | "onboarding" }) {
     { ok: /\d/.test(pw), label: "un número" },
     { ok: pw.length > 0 && pw === cuenta.passwordConfirm, label: "Coinciden" },
   ];
+
+  if (enviadoA) {
+    return (
+      <Card className="mx-auto w-full max-w-lg text-center">
+        <CardContent className="grid justify-items-center gap-4 py-4" role="status">
+          <div className="grid size-12 place-items-center rounded-full bg-primary/15 text-primary">
+            <MailCheck className="size-6" aria-hidden="true" />
+          </div>
+          <CardTitle className="text-xl">Revisá tu email</CardTitle>
+          <p className="text-muted-foreground">
+            Te mandamos un link a <strong className="text-foreground">{enviadoA}</strong> para
+            activar tu cuenta. Abrilo y entrás directo a tu plan: tu perfil y tus eventos ya
+            quedaron guardados.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            ¿No llegó? Revisá la carpeta de spam. El link sirve una sola vez.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="mx-auto w-full max-w-3xl">

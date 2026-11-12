@@ -3,9 +3,15 @@
  * en pasos (app/signup/actions.ts) y el /onboarding de respaldo (app/onboarding/actions.ts).
  * Módulo normal a propósito (no "use server"): así no queda expuesto como Server Action.
  */
+import type { User } from "@supabase/supabase-js";
 import type { createClient } from "@/lib/supabase/server";
 import { edadDesde, toISO, todayNormalized } from "@/lib/date";
-import type { EventoInput, PerfilInput } from "@/lib/validation/onboarding";
+import {
+  eventosSchema,
+  perfilSchema,
+  type EventoInput,
+  type PerfilInput,
+} from "@/lib/validation/onboarding";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -49,9 +55,31 @@ export async function guardarPerfilYEventos(
   if (eventosError) return "No se pudieron guardar los eventos: " + eventosError.message;
 
   const { error: metaError } = await supabase.auth.updateUser({
-    data: { onboarding_completed: true },
+    // registro_pendiente: null → se borra la copia que viajó en el registro (ver completarRegistroPendiente)
+    data: { onboarding_completed: true, registro_pendiente: null },
   });
   if (metaError) return "No se pudo completar el registro: " + metaError.message;
 
   return null;
+}
+
+/**
+ * Si el proyecto exige confirmar el email, el registro no tiene sesión y no puede guardar el perfil
+ * (RLS): perfil y eventos viajan en user_metadata.registro_pendiente. Al confirmar (/auth/confirm)
+ * o al iniciar sesión se crean acá. user_metadata lo puede editar el propio usuario, así que se
+ * re-valida con zod como cualquier input. Devuelve a dónde mandar al usuario.
+ */
+export async function completarRegistroPendiente(
+  supabase: Supabase,
+  user: User,
+): Promise<"/calendario" | "/onboarding"> {
+  const meta = user.user_metadata ?? {};
+  if (meta.onboarding_completed) return "/calendario";
+
+  const perfil = perfilSchema.safeParse(meta.registro_pendiente?.perfil);
+  const eventos = eventosSchema.safeParse(meta.registro_pendiente?.eventos);
+  if (!perfil.success || !eventos.success) return "/onboarding";
+
+  const error = await guardarPerfilYEventos(supabase, user.id, perfil.data, eventos.data);
+  return error ? "/onboarding" : "/calendario";
 }

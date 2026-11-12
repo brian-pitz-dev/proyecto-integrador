@@ -18,6 +18,7 @@ export async function proxy(request: NextRequest) {
       "/login",
       "/signup",
       "/privacidad",
+      "/auth/confirm",
       "/opengraph-image",
       "/twitter-image",
       "/icon",
