@@ -22,6 +22,7 @@ const SECCIONES = [
       "Cuenta: tu nombre, tu email y tu contraseña (cifrada; nadie puede leerla).",
       "Perfil: fecha de nacimiento, sexo, altura, peso, nivel de actividad, metas y, si la cargás, una calibración personal (por ejemplo, de una medición InBody).",
       "Tus eventos y lo que registres en la app: peso, calorías, sueño, tiradas, días completados y resultados.",
+      "Las fotos de progreso que subas. Son privadas: solo vos podés verlas. Antes de subirlas, la app las achica y les borra los datos del archivo, incluida la ubicación.",
       "Los planes que generes con el Coach y un contador de cuántas consultas usaste cada día.",
     ],
   },
@@ -34,14 +35,14 @@ const SECCIONES = [
   {
     titulo: "Quién los procesa",
     texto: [
-      "Supabase guarda la base de datos y las cuentas (servidores en San Pablo, Brasil). Netlify aloja la app. Cloudflare Turnstile verifica que no seas un bot al registrarte o iniciar sesión.",
+      "Supabase guarda la base de datos, las cuentas y las fotos (servidores en San Pablo, Brasil). Netlify aloja la app. Cloudflare Turnstile verifica que no seas un bot al registrarte o iniciar sesión.",
       "El Coach usa Google Gemini en su nivel gratuito. Cuando le escribís o le pedís un plan, Google recibe tu mensaje y un resumen de tu plan (edad, sexo, altura, peso, metas, eventos, fase y registros recientes), pero no tu nombre ni tu email. En el nivel gratuito, Google puede usar ese contenido para mejorar sus productos: no le escribas al Coach datos que no quieras compartir.",
     ],
   },
   {
     titulo: "Tus derechos",
     texto: [
-      "Desde Mi perfil podés corregir tus datos, descargar una copia de todo lo que guardamos y borrar tu cuenta. Al borrar la cuenta se eliminan tu perfil, tus eventos, tus registros y tus planes, y no se puede deshacer.",
+      "Desde Mi perfil podés corregir tus datos, descargar una copia de todo lo que guardamos y borrar tu cuenta. Al borrar la cuenta se eliminan tu perfil, tus eventos, tus registros, tus fotos y tus planes, y no se puede deshacer.",
     ],
   },
   {
@@ -63,7 +64,7 @@ export default function PrivacidadPage() {
         <header className="grid gap-1">
           <h1 className="text-3xl font-bold">Términos y privacidad</h1>
           <p className="text-sm text-muted-foreground">
-            Última actualización: 12 de noviembre de 2026
+            Última actualización: 13 de noviembre de 2026
           </p>
         </header>
         {SECCIONES.map((s) => (

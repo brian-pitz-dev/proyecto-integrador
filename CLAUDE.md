@@ -123,6 +123,11 @@ _configuration_ (profile and events — what used to be hardcoded constants) liv
   PostgREST's 1000-row cap); `borrarCuenta` re-checks the password and calls the
   `borrar_mi_cuenta()` SQL function (security definer, deletes `auth.users` row; every
   table cascades) — no service-role key in the app.
+- Progress photos (`specs/007-fotos-progreso`): no table — Storage bucket `fotos-progreso`
+  (private, owner-folder RLS) holds `{user_id}/{fecha}.jpg`, see `lib/fotos.ts`. The browser
+  resizes to JPEG before `subirFoto` (strips EXIF/GPS; `next.config.ts` raises the Server
+  Action body limit to 2 MB). `borrarCuenta` deletes the photos before `borrar_mi_cuenta()`
+  because Storage doesn't cascade.
 - **Next.js 16 renamed `middleware.ts` to `proxy.ts`** — this is not a typo or a
   custom convention, it's current upstream Next.js. `proxy.ts` is regenerated/kept
   in sync by `next dev`; see `node_modules/next/dist/server/lib/generate-agent-files.js`.

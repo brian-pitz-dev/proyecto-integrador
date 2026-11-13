@@ -53,28 +53,55 @@ export function registrarCambioDisponibilidad(
 
 // "40 min", "10'" o rangos "30-35 min"
 const MINUTOS = /(\d+)(?:-(\d+))?('|\s*min\b)/g;
+// series en km con su pausa por repetición: "5×1 km a 6:00/km (2' trote)"
+const SERIES_KM = /(\d+)×(\d+(?:\.\d+)?) km a (.+?) \((\d+)' trote\)/g;
+const PARTES = new RegExp(`${SERIES_KM.source}|${MINUTOS.source}`, "g");
+
+/** Minutos por km del texto ("6:38/km"); sin ritmo ("a ritmo de series") se estima uno tranquilo. */
+function minPorKm(ritmo: string): number {
+  const r = /(\d+):(\d{2})\/km/.exec(ritmo);
+  return r ? Number(r[1]) + Number(r[2]) / 60 : 6;
+}
 
 /**
  * Achica los minutos de un texto de cardio ("5.5 km/h · 40 min") para que entre en `tope`. Los de
- * un bloque "N×[...]" cuentan N veces. Si ya entra, devuelve el texto igual.
- * shortcut: no estima las partes en km ("5×1 km a 6:00/km"), así que una sesión de series en km
- * puede quedar más larga que `tope`; para eso habría que pasar las sesiones a datos estructurados.
+ * un bloque "N×[...]" cuentan N veces. Las series en km cuentan con su ritmo y su pausa, y se
+ * recortan sacando repeticiones (la distancia y la pausa de cada una no cambian). Si ya entra,
+ * devuelve el texto igual.
  */
 export function ajustarMinutos(detail: string, tope: number): string {
   const suma = (s: string) =>
     [...s.matchAll(MINUTOS)].reduce((acc, m) => acc + Number(m[2] ?? m[1]), 0);
   let total = 0;
-  const fuera = detail.replace(/(\d+)×\[([^\]]*)\]/g, (_, n: string, adentro: string) => {
-    total += Number(n) * suma(adentro);
-    return "";
-  });
+  const fuera = detail
+    .replace(/(\d+)×\[([^\]]*)\]/g, (_, n: string, adentro: string) => {
+      total += Number(n) * suma(adentro);
+      return "";
+    })
+    .replace(SERIES_KM, (_, n: string, km: string, ritmo: string, pausa: string) => {
+      total += Number(n) * (Number(km) * minPorKm(ritmo) + Number(pausa));
+      return "";
+    });
   total += suma(fuera);
   if (total <= tope) return detail;
-  const escala = (v: string) => Math.max(1, Math.round((Number(v) * tope) / total));
+  const f = tope / total;
+  const escala = (v: string) => Math.max(1, Math.round(Number(v) * f));
   return detail.replace(
-    MINUTOS,
-    (_, a: string, b: string | undefined, unidad: string) =>
-      `${escala(a)}${b ? `-${escala(b)}` : ""}${unidad}`,
+    PARTES,
+    (
+      _,
+      n?: string,
+      km?: string,
+      ritmo?: string,
+      pausa?: string,
+      a?: string,
+      b?: string,
+      u?: string,
+    ) =>
+      n
+        ? // hacia abajo: una repetición de más se pasa del tope por varios minutos
+          `${Math.max(1, Math.floor(Number(n) * f))}×${km} km a ${ritmo} (${pausa}' trote)`
+        : `${escala(a!)}${b ? `-${escala(b)}` : ""}${u}`,
   );
 }
 

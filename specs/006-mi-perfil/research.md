@@ -37,9 +37,12 @@ ven cambios. Lo comprueba `lib/training-plan.test.ts` (antes `scripts/check-trai
 Los detalles de cardio son texto libre de la metodología ("5.5 km/h · 40 min"). La primera
 versión no los tocaba. Ahora, con menos de 60 minutos, `ajustarMinutos` suma los minutos del
 texto ("40 min", "10'", rangos "30-35 min"; los de un bloque "N×[...]" cuentan N veces) y, si
-se pasan del tiempo del usuario, los escala en proporción. Las partes en km no se estiman (queda
-como `shortcut:`). La salida larga no se toca. La solución completa sería pasar las duraciones a
-datos estructurados en `phaseNWeek`.
+se pasan del tiempo del usuario, los escala en proporción. Las series en km ("5×1 km a 6:00/km
+(2' trote)") cuentan con el ritmo del texto, o a 6:00/km si el evento no tiene ritmo objetivo,
+más la pausa de cada repetición. Se recortan sacando repeticiones, redondeando hacia abajo y
+dejando al menos una; la distancia y la pausa de cada una no cambian. La salida larga no se
+toca. Si la metodología suma otro formato de texto, habría que sumarlo acá o pasar las
+duraciones a datos estructurados en `phaseNWeek`.
 
 ## Decisión 4 — `updated_at` en `perfil` y `evento`
 

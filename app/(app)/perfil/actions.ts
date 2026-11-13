@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { claveActualSchema, verificarClave } from "@/lib/verificar-clave";
+import { borrarTodasLasFotos } from "@/lib/fotos";
 import {
   eventoSchema,
   historialDisponibilidadSchema,
@@ -194,6 +195,14 @@ export async function borrarCuenta(password: unknown): Promise<ActionResult> {
   const supabase = await createClient();
   const rechazo = await verificarClave(supabase, user.email, parsed.data);
   if (rechazo) return { ok: false, message: rechazo };
+
+  // primero las fotos: Storage no cae en cascada con la cuenta, y si fallan la cuenta queda intacta
+  try {
+    await borrarTodasLasFotos(supabase, user.id);
+  } catch (error) {
+    console.error("borrar fotos", error);
+    return { ok: false, message: "No se pudieron borrar tus fotos. Probá de nuevo." };
+  }
 
   const { error } = await supabase.rpc("borrar_mi_cuenta");
   if (error) {

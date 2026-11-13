@@ -250,4 +250,20 @@ describe("ajustarMinutos", () => {
     );
     expect(ajustarMinutos("8 km, ritmo libre", 30)).toBe("8 km, ritmo libre");
   });
+
+  it("las series en km cuentan su ritmo y su pausa, y se recortan sacando repeticiones", () => {
+    // 10 + 5×(6 + 2) + 10 = 60'
+    expect(ajustarMinutos("10' suave + 5×1 km a 6:00/km (2' trote) + 10' suave", 30)).toBe(
+      "5' suave + 2×1 km a 6:00/km (2' trote) + 5' suave",
+    );
+    // sin ritmo en el texto se estima a 6:00/km: 10 + 4×8 + 10 = 52'
+    const sinRitmo = (n: number, m: number) =>
+      `${m}' suave + ${n}×1 km a ritmo de series (algo más rápido que el de carrera) (2' trote) + ${m}' suave`;
+    expect(ajustarMinutos(sinRitmo(4, 10), 45)).toBe(sinRitmo(3, 9));
+    // nunca menos de una repetición: 10 + 2×(20 + 3) + 5 = 61'
+    expect(ajustarMinutos("10' suave + 2×4 km a 5:00/km (3' trote) + 5' suave", 30)).toBe(
+      "5' suave + 1×4 km a 5:00/km (3' trote) + 2' suave",
+    );
+    expect(ajustarMinutos(sinRitmo(4, 10), 60)).toBe(sinRitmo(4, 10));
+  });
 });

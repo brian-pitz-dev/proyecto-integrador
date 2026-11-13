@@ -15,6 +15,13 @@
 7. Cambiar los días en `/perfil`: las semanas pasadas del Calendario siguen igual y la semana
    en curso ya muestra los días nuevos.
 8. Con 30 minutos, el cardio en cinta de la fase de caminata dice "30 min" y no "40 min".
-9. "Tu cuenta" → Cambiar contraseña con la actual mal da "Contraseña incorrecta"; con la actual
-   bien, cambia y se puede entrar con la nueva. Cambiar email manda el link; al abrirlo vuelve a
-   `/perfil` con "Listo, tu email cambió" (o con el aviso de que falta el otro link).
+9. "Tu cuenta" → Cambiar contraseña: al principio solo se puede escribir la contraseña actual
+   (vacía) y el botón dice "Continuar". Mal da "Contraseña incorrecta", la vacía y deja el foco
+   ahí; bien, la bloquea y habilita la nueva y "Repetila". Al guardar, se puede entrar con la
+   nueva. Cambiar email sigue el mismo flujo (la contraseña antes que el email nuevo) y manda el
+   link; al abrirlo vuelve a `/perfil` con "Listo, tu email cambió" (o con el aviso de que falta
+   el otro link).
+10. "Descargar mis datos" abre un popup que pide la contraseña: mal da "Contraseña incorrecta" y
+    no baja nada; bien, baja `bakata-AAAA-MM-DD.json`. Un GET a `/perfil/exportar` da 405.
+11. "Borrar mi cuenta" abre un popup: primero "Continuar" con la contraseña y recién después el
+    botón rojo "Borrar mi cuenta". Cancelar o Esc lo cierran sin borrar nada.

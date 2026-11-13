@@ -257,7 +257,8 @@ export function CuentaCard({ email }: { email: string }) {
 
         <div className="grid gap-2 border-t pt-5">
           <p className="text-sm text-muted-foreground">
-            Un archivo con tu perfil, tus eventos, todo lo que registraste y tus planes del Coach.
+            Un archivo con tu perfil, tus eventos, todo lo que registraste, tus fotos y tus planes
+            del Coach.
           </p>
           <Button
             variant="outline"
@@ -293,8 +294,8 @@ export function CuentaCard({ email }: { email: string }) {
 
         <div className="grid gap-2 border-t pt-5">
           <p className="text-sm text-muted-foreground">
-            Borra tu cuenta, tu perfil, tus eventos, tus registros y tus planes. No se puede
-            deshacer.
+            Borra tu cuenta, tu perfil, tus eventos, tus registros, tus fotos y tus planes. No se
+            puede deshacer.
           </p>
           <Button
             variant="destructive"
@@ -312,8 +313,8 @@ export function CuentaCard({ email }: { email: string }) {
                 <DialogHeader>
                   <DialogTitle>¿Borrar tu cuenta?</DialogTitle>
                   <DialogDescription>
-                    Se borran tu perfil, tus eventos, tus registros y tus planes. No se puede
-                    deshacer.
+                    Se borran tu perfil, tus eventos, tus registros, tus fotos y tus planes. No se
+                    puede deshacer.
                   </DialogDescription>
                 </DialogHeader>
                 {usuario}

@@ -19,6 +19,9 @@ import { CalorieForm } from "@/components/log-form/calorie-form";
 import { SleepForm } from "@/components/log-form/sleep-form";
 import { EventForm } from "@/components/log-form/event-form";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
+import { listarFotos, type Foto } from "@/lib/fotos";
+import { FotosProgreso } from "@/components/stats/fotos-progreso";
 import { checkGymStreak } from "@/lib/streaks";
 import { calcularMeta, computeBmrCalibrado } from "@/lib/calorie-target";
 import {
@@ -73,6 +76,18 @@ async function fetchData() {
   };
 }
 
+/** Si Storage falla, la página igual se muestra: las fotos son lo único que falta. */
+async function fetchFotos(): Promise<Foto[]> {
+  const user = await getAuthedUser();
+  if (!user) return [];
+  try {
+    return await listarFotos(await createClient(), user.id, 60 * 60);
+  } catch (error) {
+    console.error("listar fotos", error);
+    return [];
+  }
+}
+
 /** Un punto por día, ascendente. `regs` vienen por fecha desc: el primero de cada día es el último cargado. */
 function serie(regs: Registro[], valor: (r: Registro) => number | null): Punto[] {
   const porDia = new Map<string, number>();
@@ -90,8 +105,8 @@ function entriesOf(registros: Registro[], format: (r: Registro) => string) {
 }
 
 export default async function EstadisticasPage() {
-  const [{ completedDates, peso, sueno, calorias, caminata, tirada, evento }, planContext] =
-    await Promise.all([fetchData(), getUserPlanContext()]);
+  const [{ completedDates, peso, sueno, calorias, caminata, tirada, evento }, planContext, fotos] =
+    await Promise.all([fetchData(), getUserPlanContext(), fetchFotos()]);
   if (!planContext) return null; // proxy.ts ya redirige a /onboarding antes de esto
   const { profile, events, weeks } = planContext;
   const today = todayNormalized();
@@ -349,6 +364,15 @@ export default async function EstadisticasPage() {
             </CardContent>
           </Card>
         </div>
+      </section>
+
+      <section className="grid gap-4">
+        <h2 className="text-2xl font-semibold">Fotos de progreso</h2>
+        <Card>
+          <CardContent>
+            <FotosProgreso fotos={fotos} hoy={toISO(today)} />
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid gap-4">

@@ -48,6 +48,12 @@ Lo que la primera versión dejó fuera de alcance:
 - **Email y contraseña desde `/perfil`** (tarjeta "Tu cuenta"): los dos piden la contraseña
   actual. El email cambia cuando se confirma el link que manda Supabase (vuelve por
   `/auth/confirm?type=email_change`). Al cambiar la contraseña se cierran las otras sesiones.
+  Los formularios van en dos pasos: primero solo la contraseña actual (`confirmarClave`) y,
+  si es correcta, se habilita el resto. El servidor la vuelve a verificar al guardar.
+- **Descargar datos y borrar la cuenta piden la contraseña**, en un popup. La descarga pasó a
+  POST (`/perfil/exportar`) para que la contraseña viaje en el body. Borrar usa los dos pasos.
+- **Descansos con nombre**: al adaptar la semana a menos días, los descansos con texto propio
+  (pre-carrera, piernas frescas, carga de carbohidratos) no se usan para entrenar.
 - **Historial de disponibilidad**: si el usuario cambia sus días o minutos, las semanas que ya
   empezaron conservan la disponibilidad de antes. Ver research.md, Decisión 6.
 
