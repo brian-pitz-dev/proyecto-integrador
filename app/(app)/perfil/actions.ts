@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
-import { getClientKey, loginLimiter } from "@/lib/rate-limit";
+import { claveActualSchema, verificarClave } from "@/lib/verificar-clave";
 import {
   eventoSchema,
   historialDisponibilidadSchema,
@@ -101,27 +101,19 @@ export async function guardarEvento(input: unknown): Promise<ActionResult> {
   return { ok: true };
 }
 
-const claveActualSchema = z.string().min(1, "Escribí tu contraseña.").max(200);
-
 /**
- * Vuelve a pedir la contraseña antes de algo delicado: una sesión abierta en otra compu no
- * alcanza. null si es correcta; si no, el mensaje de error. Comparte el rate limit del login.
+ * Primer paso de los cambios delicados de /perfil: la UI habilita el resto del formulario recién
+ * cuando la contraseña es correcta. Solo es UX: cada acción la vuelve a verificar.
  */
-async function verificarClave(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  email: string,
-  password: string,
-): Promise<string | null> {
-  const clientKey = await getClientKey();
-  if (loginLimiter.isLimited(clientKey)) {
-    return "Demasiados intentos. Probá de nuevo en unos minutos.";
-  }
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    loginLimiter.record(clientKey);
-    return "Contraseña incorrecta.";
-  }
-  return null;
+export async function confirmarClave(password: unknown): Promise<ActionResult> {
+  const user = await getAuthedUser();
+  if (!user?.email) return { ok: false, message: "No autenticado." };
+
+  const parsed = claveActualSchema.safeParse(password);
+  if (!parsed.success) return { ok: false, message: "Escribí tu contraseña." };
+
+  const rechazo = await verificarClave(await createClient(), user.email, parsed.data);
+  return rechazo ? { ok: false, message: rechazo } : { ok: true };
 }
 
 /** Cambio de contraseña desde /perfil: pide la actual y cierra las otras sesiones. */

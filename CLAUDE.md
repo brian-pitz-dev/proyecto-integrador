@@ -118,7 +118,8 @@ _configuration_ (profile and events — what used to be hardcoded constants) liv
   `type=recovery` to `app/nueva-clave/` (session required, profile not — exempted in
   `proxy.ts` like `/onboarding`).
 - Account export/deletion live in `/perfil` (`components/perfil/cuenta-card.tsx`):
-  `app/(app)/perfil/exportar/route.ts` returns all the user's rows as JSON (paginated past
+  `app/(app)/perfil/exportar/route.ts` (POST with the password, checked by
+  `lib/verificar-clave.ts`) returns all the user's rows as JSON (paginated past
   PostgREST's 1000-row cap); `borrarCuenta` re-checks the password and calls the
   `borrar_mi_cuenta()` SQL function (security definer, deletes `auth.users` row; every
   table cascades) — no service-role key in the app.

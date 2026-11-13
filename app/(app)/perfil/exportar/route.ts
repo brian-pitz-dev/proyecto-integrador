@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { claveActualSchema, verificarClave } from "@/lib/verificar-clave";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { todayNormalized, toISO } from "@/lib/date";
@@ -19,13 +21,25 @@ async function todas(supabase: Supabase, tabla: string, userId: string, orden: s
   }
 }
 
-/** Descarga de todos los datos del usuario en JSON (derecho de acceso, ver /privacidad). */
-export async function GET() {
+/**
+ * Descarga de todos los datos del usuario en JSON (derecho de acceso, ver /privacidad). POST con
+ * la contraseña en el body: una sesión abierta en otra compu no alcanza para llevarse todo.
+ */
+export async function POST(request: Request) {
   // proxy.ts ya exige sesión, pero cada handler que lee datos lo verifica por su cuenta.
   const user = await getAuthedUser();
-  if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  if (!user?.email) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+
+  const body: unknown = await request.json().catch(() => null);
+  const parsed = z.object({ password: claveActualSchema }).safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Escribí tu contraseña." }, { status: 400 });
+  }
 
   const supabase = await createClient();
+  const rechazo = await verificarClave(supabase, user.email, parsed.data.password);
+  if (rechazo) return NextResponse.json({ error: rechazo }, { status: 403 });
+
   try {
     const [perfil, eventos, registros, planesIa, usoIa] = await Promise.all([
       todas(supabase, "perfil", user.id, ["user_id"]),
