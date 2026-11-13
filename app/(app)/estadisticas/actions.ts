@@ -8,12 +8,30 @@ import {
   BUCKET,
   MAX_BYTES,
   MAX_FOTOS,
+  NOTA_MAX,
   esJpeg,
   fechaFotoValida,
+  fijarDelDia,
   fotoPath,
   hayLugar,
 } from "@/lib/fotos";
+import { datosFotoSchema, type DatosFoto } from "@/lib/validation/registro";
 import type { ActionResult } from "@/lib/types";
+
+/** Valida nota, peso y grasa; con error, el mensaje del primer campo que falla. */
+function datosValidos(input: unknown): { datos: DatosFoto } | { message: string } {
+  const parsed = datosFotoSchema.safeParse(input);
+  if (parsed.success) return { datos: parsed.data };
+  const campo = parsed.error.issues[0]?.path[0];
+  return {
+    message:
+      campo === "peso"
+        ? "El peso va entre 20 y 400 kg."
+        : campo === "grasa"
+          ? "El % de grasa va entre 2 y 70."
+          : `La nota va hasta ${NOTA_MAX} caracteres.`,
+  };
+}
 
 /** Sube (o reemplaza) la foto de progreso de un día. El navegador ya la achicó a JPEG. */
 export async function subirFoto(formData: FormData): Promise<ActionResult> {
@@ -22,9 +40,15 @@ export async function subirFoto(formData: FormData): Promise<ActionResult> {
 
   const fecha = formData.get("fecha");
   const foto = formData.get("foto");
+  const valid = datosValidos({
+    nota: formData.get("nota") ?? "",
+    peso: formData.get("peso") ?? "",
+    grasa: formData.get("grasa") ?? "",
+  });
   if (typeof fecha !== "string" || !fechaFotoValida(fecha, toISO(todayNormalized()))) {
     return { ok: false, message: "Elegí una fecha que no sea futura." };
   }
+  if ("message" in valid) return { ok: false, message: valid.message };
   if (!(foto instanceof File) || foto.size === 0) return { ok: false, message: "Elegí una foto." };
   if (foto.size > MAX_BYTES) return { ok: false, message: "La foto pesa demasiado." };
   const bytes = new Uint8Array(await foto.arrayBuffer());
@@ -52,7 +76,35 @@ export async function subirFoto(formData: FormData): Promise<ActionResult> {
   }
 
   revalidatePath("/estadisticas");
+  // los vacíos no pisan lo que ya había (reemplazar la foto de un día no borra sus datos)
+  const datos = Object.fromEntries(Object.entries(valid.datos).filter(([, v]) => v !== null));
+  try {
+    await fijarDelDia(supabase, user.id, fecha, datos);
+  } catch (error) {
+    console.error("datos de foto", error);
+    return { ok: false, message: "La foto se guardó, pero sus datos no. Probá editarlos." };
+  }
   return { ok: true, message: "Foto guardada." };
+}
+
+/** Cambia la nota, el peso o el % de grasa de una foto: solo los que vienen; vacío los borra. */
+export async function guardarDatosFoto(fecha: unknown, cambios: unknown): Promise<ActionResult> {
+  const user = await getAuthedUser();
+  if (!user) return { ok: false, message: "No autenticado." };
+  if (typeof fecha !== "string" || !fechaFotoValida(fecha, toISO(todayNormalized()))) {
+    return { ok: false, message: "Foto inválida." };
+  }
+  const valid = datosValidos(cambios);
+  if ("message" in valid) return { ok: false, message: valid.message };
+
+  try {
+    await fijarDelDia(await createClient(), user.id, fecha, valid.datos);
+  } catch (error) {
+    console.error("datos de foto", error);
+    return { ok: false, message: "No se pudieron guardar los datos." };
+  }
+  revalidatePath("/estadisticas");
+  return { ok: true, message: "Datos guardados." };
 }
 
 export async function borrarFoto(fecha: unknown): Promise<ActionResult> {
@@ -65,6 +117,10 @@ export async function borrarFoto(fecha: unknown): Promise<ActionResult> {
   const supabase = await createClient();
   const { data, error } = await supabase.storage.from(BUCKET).remove([fotoPath(user.id, fecha)]);
   if (error || !data.length) return { ok: false, message: "No se pudo borrar la foto." };
+  // el peso queda: es un registro de peso más. Si esto falla, nota y grasa quedan sin foto.
+  await fijarDelDia(supabase, user.id, fecha, { nota: null, grasa: null }).catch((e) =>
+    console.error("datos de foto", e),
+  );
 
   revalidatePath("/estadisticas");
   return { ok: true, message: "Foto borrada." };

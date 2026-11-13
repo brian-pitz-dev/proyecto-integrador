@@ -92,7 +92,7 @@ tab (chat + "generar y guardar" meal bank / gym routines into `plan_ia`), using 
 Gemini's free tier with no billing (`lib/ai.ts`, `GEMINI_API_KEY`) and a 20/day
 per-user quota enforced in SQL (`consumir_uso_ia()`; the limit is hardcoded there on
 purpose — read `specs/005-coach-ia/research.md` before touching it). US5 (full event
-CRUD UI) is still open.
+CRUD UI) is implemented in `/perfil` by `specs/006-mi-perfil/` (`guardarEvento`/`borrarEvento`).
 
 Day-to-day data (weight, calories, sleep, runs/walks, completed-day checkmarks, and
 event results) lives in one flat table, `registro` (`categoria`, `fecha`, `valor`,
@@ -124,7 +124,9 @@ _configuration_ (profile and events — what used to be hardcoded constants) liv
   `borrar_mi_cuenta()` SQL function (security definer, deletes `auth.users` row; every
   table cascades) — no service-role key in the app.
 - Progress photos (`specs/007-fotos-progreso`): no table — Storage bucket `fotos-progreso`
-  (private, owner-folder RLS) holds `{user_id}/{fecha}.jpg`, see `lib/fotos.ts`. The browser
+  (private, owner-folder RLS) holds `{user_id}/{fecha}.jpg`, see `lib/fotos.ts`. A photo's note, weight and body fat are `registro`
+  rows of its date (`foto`, `peso`, `grasa`; one each, written by `fijarDelDia`, validated by
+  `datosFotoSchema`). `foto`/`grasa` aren't in `categoriaSchema` on purpose. The browser
   resizes to JPEG before `subirFoto` (strips EXIF/GPS; `next.config.ts` raises the Server
   Action body limit to 2 MB). `borrarCuenta` deletes the photos before `borrar_mi_cuenta()`
   because Storage doesn't cascade.

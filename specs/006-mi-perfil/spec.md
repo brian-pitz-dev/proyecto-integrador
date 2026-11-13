@@ -56,8 +56,11 @@ Lo que la primera versión dejó fuera de alcance:
   (pre-carrera, piernas frescas, carga de carbohidratos) no se usan para entrenar.
 - **Historial de disponibilidad**: si el usuario cambia sus días o minutos, las semanas que ya
   empezaron conservan la disponibilidad de antes. Ver research.md, Decisión 6.
+- **Series en km según el tiempo**: "5×1 km a 6:00/km (2' trote)" cuenta con su ritmo y su
+  pausa, y se recorta sacando repeticiones. Ver research.md, Decisión 3.
+- **Cambio de email desde otro navegador**: si el link se abre sin la sesión de esa cuenta,
+  `/login` avisa si falta el otro link o si el email ya cambió.
 
 ## Fuera de alcance
 
-- Las sesiones de series medidas en km ("5×1 km a 6:00/km") no se reescalan: se achican solo
-  los minutos del texto.
+- La salida larga no se achica con el tiempo disponible.

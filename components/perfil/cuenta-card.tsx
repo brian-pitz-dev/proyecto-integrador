@@ -178,7 +178,7 @@ export function CuentaCard({ email }: { email: string }) {
             >
               {usuario}
               {claveActual("email-password", "password", "Tu contraseña")}
-              <div className="grid gap-1.5">
+              <div className="group grid gap-1.5" data-disabled={!verificada}>
                 <Label htmlFor="nuevo-email">Email nuevo</Label>
                 <Input
                   ref={siguienteRef}
@@ -208,7 +208,7 @@ export function CuentaCard({ email }: { email: string }) {
             >
               {usuario}
               {claveActual("clave-actual", "actual", "Contraseña actual")}
-              <div className="grid gap-1.5">
+              <div className="group grid gap-1.5" data-disabled={!verificada}>
                 <Label htmlFor="clave-nueva">Contraseña nueva</Label>
                 <Input
                   ref={siguienteRef}
@@ -221,7 +221,7 @@ export function CuentaCard({ email }: { email: string }) {
                   disabled={!verificada}
                 />
               </div>
-              <div className="grid gap-1.5">
+              <div className="group grid gap-1.5" data-disabled={!verificada}>
                 <Label htmlFor="clave-repetir">Repetila</Label>
                 <Input
                   id="clave-repetir"

@@ -39,8 +39,16 @@ export async function GET(request: NextRequest) {
   }
 
   // "Secure email change": el primero de los dos links llega sin código, solo con un `message`.
+  // Sin una sesión con perfil (otro navegador, el celular) /perfil rebota y el aviso se pierde.
   if (cambioEmail && params.get("message") && !params.get("code")) {
-    redirect("/perfil?email=falta-otro");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    redirect(
+      user?.user_metadata?.onboarding_completed
+        ? "/perfil?email=falta-otro"
+        : "/login?email=falta-otro",
+    );
   }
 
   const code = params.get("code");
@@ -51,6 +59,8 @@ export async function GET(request: NextRequest) {
     }
     // Recuperación sin la cookie: hay que pedir otro link desde este navegador.
     if (recuperacion) redirect(fallo);
+    // Cambio de email: con el código, Supabase ya lo aplicó; solo falta la sesión.
+    if (cambioEmail) redirect("/login?email=ok");
     // El email ya quedó confirmado; sin la cookie (otro navegador o dispositivo) no hay sesión:
     // al iniciar sesión, el login completa el registro pendiente.
     redirect("/login?confirmada=1");

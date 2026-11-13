@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; confirmada?: string; borrada?: string }>;
+  searchParams: Promise<{ error?: string; confirmada?: string; borrada?: string; email?: string }>;
 }) {
-  const { error, confirmada, borrada } = await searchParams;
+  const { error, confirmada, borrada, email } = await searchParams;
 
   return (
     <div className="relative grid min-h-dvh place-items-center">
@@ -40,6 +40,16 @@ export default async function LoginPage({
             className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm"
           >
             Tu email quedó confirmado. Iniciá sesión para entrar a tu plan.
+          </p>
+        )}
+        {(email === "ok" || email === "falta-otro") && (
+          <p
+            role="status"
+            className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm"
+          >
+            {email === "ok"
+              ? "Listo, tu email cambió. Iniciá sesión con el email nuevo."
+              : "Falta un paso: abrí también el link que te mandamos al otro email. Hasta entonces, seguís entrando con el de antes."}
           </p>
         )}
         {borrada && (

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { esJpeg, fechaDeArchivo, fechaFotoValida, fotoPath } from "@/lib/fotos";
+import { datosFotoSchema } from "@/lib/validation/registro";
 
 describe("fotos de progreso", () => {
   it("el path y la fecha del archivo van y vuelven", () => {
@@ -16,6 +17,18 @@ describe("fotos de progreso", () => {
     expect(fechaFotoValida("2026-02-30", "2026-11-13")).toBe(false);
     expect(fechaFotoValida("13/11/2026", "2026-11-13")).toBe(false);
     expect(fechaFotoValida("../otro/2026-11-13", "2026-11-13")).toBe(false);
+  });
+
+  it("nota, peso y grasa: vacío es null, lo que no viene no aparece, fuera de rango falla", () => {
+    expect(datosFotoSchema.parse({ nota: "  ", peso: "68.5", grasa: "" })).toEqual({
+      nota: null,
+      peso: 68.5,
+      grasa: null,
+    });
+    expect(datosFotoSchema.parse({ grasa: "22" })).toEqual({ grasa: 22 });
+    expect(datosFotoSchema.safeParse({ peso: "5" }).success).toBe(false);
+    expect(datosFotoSchema.safeParse({ grasa: "abc" }).success).toBe(false);
+    expect(datosFotoSchema.safeParse({ nota: "x".repeat(141) }).success).toBe(false);
   });
 
   it("reconoce un JPEG por sus primeros bytes", () => {

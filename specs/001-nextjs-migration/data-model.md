@@ -27,6 +27,8 @@ revés.
 | `peso`       | US1 (dieta)         | peso corporal            | —                         |
 | `sueno`      | US1 (dieta)         | horas de sueño (decimal) | —                         |
 | `completado` | US2 (calendario)    | siempre `1`              | —                         |
+| `foto`       | spec 007 (notas)    | siempre `0`              | nota de la foto del día   |
+| `grasa`      | spec 007 (fotos)    | % de grasa corporal      | —                         |
 
 ### Reglas de validación (heredadas del comportamiento actual, no del schema)
 

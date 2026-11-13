@@ -16,3 +16,11 @@
    descarga la foto.
 9. Con una cuenta de prueba con fotos, "Borrar mi cuenta": en Storage no queda su carpeta.
 10. `/privacidad` menciona las fotos.
+11. "Subir una foto" abre el selector; al elegirla se abre un popup con la vista previa, la
+    fecha, la nota, el peso y el % de grasa. Rotarla: la foto subida queda rotada. Cancelar no
+    sube nada.
+12. Subir con nota, peso y % de grasa: aparecen debajo de la foto, y el peso pasa a ser el
+    "Último peso" del resumen si es el más nuevo. Editarlos con el lápiz; vaciarlos los borra.
+    Borrar la foto: en "Descargar mis datos" no quedan filas `foto` ni `grasa` de ese día.
+13. Con dos fotos o más, "Comparar dos fotos" muestra la primera y la última lado a lado, los
+    días entre las dos y la diferencia de peso y de grasa; los desplegables cambian cuáles.

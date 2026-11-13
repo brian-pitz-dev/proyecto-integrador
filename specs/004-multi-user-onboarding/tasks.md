@@ -119,8 +119,8 @@ código y sin pérdida de datos.
 
 ---
 
-## Pendiente (fases separadas, no parte de este tasks.md)
+## Fases posteriores (fuera de este tasks.md)
 
-Fase B (comidas por IA), Fase C (ejercicios por IA), Fase D (fotos de progreso) —
-diseñadas en `.claude/plans/enumerated-humming-iverson.md` §7-9, implementación
-futura con su propio tasks.md cuando arranquen.
+Fase B (comidas por IA) y Fase C (ejercicios por IA) → `specs/005-coach-ia/`.
+Fase D (fotos de progreso) → `specs/007-fotos-progreso/`. US5 (CRUD de eventos) →
+`specs/006-mi-perfil/`.

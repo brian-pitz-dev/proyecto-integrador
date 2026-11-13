@@ -1,6 +1,6 @@
 # Feature Specification: Fotos de progreso
 
-**Feature**: `007-fotos-progreso` | **Created**: 2026-11-13 | **Status**: Implementado, migración aplicada 2026-11-13; validado en Playwright salvo exportar y borrar la cuenta con fotos (quickstart 8 y 9)
+**Feature**: `007-fotos-progreso` | **Created**: 2026-11-13 | **Status**: Implementado, migración aplicada 2026-11-13; validado en Playwright (quickstart completo)
 
 **Input**: Fase D del roadmap de spec 004 (`~/.claude/plans/enumerated-humming-iverson.md` §9):
 "Fotos de progreso en Estadísticas".
@@ -40,7 +40,25 @@ Cada foto tiene un botón para borrarla, con un popup de confirmación.
 - Hasta 100 fotos por cuenta (el plan gratis de Supabase Storage tiene 1 GB para todos).
 - El bucket es privado: las fotos se sirven con URLs firmadas que vencen en 1 hora.
 
+## Agregado después (2026-11-13)
+
+- **Subir en un popup**: "Subir una foto" abre el selector y, al elegirla, un popup con la vista
+  previa, botones para rotarla 90° (en el mismo canvas que ya la achicaba), la fecha y los datos
+  opcionales.
+- **Nota, peso y % de grasa por foto** (todos opcionales), al subirla o después con el lápiz. No
+  hay tabla nueva: son filas de `registro` de la fecha de la foto, una por dato. La nota es
+  `categoria = "foto"` (`valor = 0`, texto en `nota`); el peso es un `peso` más, así que cuenta
+  en el progreso de peso (y si ya había un peso cargado ese día, la foto lo muestra); el % de
+  grasa es `grasa`. Así entran en "Descargar mis datos" y se borran con la cuenta. Al subir, un
+  campo vacío no toca lo que había; al editar, vaciarlo lo borra. Borrar la foto borra la nota y
+  la grasa, y deja el peso (es un registro de peso del día).
+- **Comparar dos fotos** lado a lado (con dos o más fotos): por defecto la primera (la de fecha
+  más vieja) y la última, con los días entre las dos y la diferencia de peso y de grasa si las
+  dos los tienen.
+
 ## Fuera de alcance
 
-- Notas o etiquetas por foto, y comparar dos fotos lado a lado.
-- Recortar o rotar la foto en la app.
+- Etiquetas (frente, perfil, espalda): con una foto por día no hay dónde poner varias poses;
+  si hace falta, se anota en la nota.
+- Recortar la foto en la app (se probó y se sacó: se hace en el celular antes de subirla).
+- Rotar una foto ya subida: se vuelve a subir con la misma fecha y la reemplaza.
