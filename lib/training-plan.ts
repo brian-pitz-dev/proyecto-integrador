@@ -306,7 +306,10 @@ export function adaptWeek(
   weekNum: number,
   disp: Disponibilidad,
 ): WeekConfig {
-  const dias = [...new Set(disp.dias)].sort((a, b) => a - b);
+  // un descanso con nombre (pre-carrera, piernas frescas, carga de carbohidratos) no se pisa
+  const dias = [...new Set(disp.dias)]
+    .filter((d) => !(cfg[dowKeys[d]] ?? []).some((s) => s.tag === "rest" && s.label !== "Descanso"))
+    .sort((a, b) => a - b);
   const slots = dowKeys.flatMap((dk, day) => {
     const sessions = (cfg[dk] ?? []).filter((s) => s.tag !== "rest");
     if (!sessions.length) return [];

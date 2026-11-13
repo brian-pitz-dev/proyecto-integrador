@@ -113,6 +113,24 @@ describe("adaptación a días y minutos", () => {
     }
   });
 
+  it("los descansos con nombre (pre-carrera, piernas frescas, carbohidratos) no se pisan", () => {
+    const conNombre = (cfg: Cfg, d: number) =>
+      (cfg[days[d]] ?? []).find((s) => s.tag === "rest" && s.label !== "Descanso")?.label;
+    for (const dias of [
+      [1, 3, 5],
+      [3, 4, 5],
+      [0, 1, 2, 3, 4, 5],
+    ]) {
+      for (const w of plan({ dias, minutos: 30 })) {
+        for (let d = 0; d < 7; d++) {
+          const label = conNombre(base[w.num - 1].cfg, d);
+          if (label)
+            expect(w.cfg[days[d]], `semana ${w.num} día ${d}`).toEqual([{ tag: "rest", label }]);
+        }
+      }
+    }
+  });
+
   it("antes de un evento, con 3 días correr le gana al gym", () => {
     const p1 = plan({ dias: [1, 3, 5], minutos: 60 }).find((w) => w.phaseKey === "p1");
     const tags = sesiones(p1!.cfg).map((s) => s.tag);
