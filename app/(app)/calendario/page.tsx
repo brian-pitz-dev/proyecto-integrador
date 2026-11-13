@@ -6,6 +6,7 @@ import { getAuthedUser } from "@/lib/supabase/auth";
 import { guiaEvento, RULE_CARDS } from "@/lib/plan-content";
 import { EventosResumen } from "@/components/eventos-resumen";
 import { toISO, todayNormalized } from "@/lib/date";
+import { HeartPulse } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Calendario · Bakata",
@@ -41,6 +42,20 @@ export default async function CalendarioPage() {
         <h1 className="text-4xl font-bold">Calendario</h1>
       </div>
       <EventosResumen events={planContext.events} />
+      {planContext.retome && (
+        <p
+          role="status"
+          className="mx-auto flex w-full max-w-4xl items-start gap-2 rounded-xl bg-accent/10 p-4 text-sm ring-1 ring-accent/40"
+        >
+          <HeartPulse className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
+          <span>
+            <strong>Semana de retome.</strong> La semana pasada entrenaste{" "}
+            {planContext.retome.hechos} de {planContext.retome.entrenables} días, así que esta
+            semana las sesiones son más cortas para volver de a poco. La que viene vuelve a la
+            normalidad si cumplís al menos la mitad.
+          </span>
+        </p>
+      )}
       <CalendarGrid
         completedDates={completedDates}
         weeks={planContext.weeks}

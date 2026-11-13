@@ -1,5 +1,7 @@
-import { Footprints, Medal } from "lucide-react";
+import Link from "next/link";
+import { Flag, Footprints, Medal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fromISO, todayNormalized } from "@/lib/date";
 import { formatPace } from "@/lib/pace";
@@ -16,9 +18,11 @@ function cuando(fecha: string): { texto: string; pasado: boolean } {
   return { texto: `En ${Math.round(dias / 7)} semanas`, pasado: false };
 }
 
-/** Los eventos del usuario arriba del Calendario: para qué está entrenando y cuánto falta. */
+/**
+ * Los eventos del usuario arriba del Calendario: para qué está entrenando y cuánto falta. Sin
+ * ninguno por delante, invita a cargar el próximo (el plan queda en mantenimiento hasta entonces).
+ */
 export function EventosResumen({ events }: { events: UserEvent[] }) {
-  if (events.length === 0) return null;
   const ordenados = [...events].sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
   const proximo = ordenados.find((e) => !cuando(e.fecha).pasado);
 
@@ -27,6 +31,23 @@ export function EventosResumen({ events }: { events: UserEvent[] }) {
       <h2 id="tus-eventos" className="text-xl font-semibold">
         Tus eventos
       </h2>
+      {!proximo && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-primary/10 p-4 ring-1 ring-primary/50">
+          <div className="grid gap-1">
+            <p className="flex items-center gap-2 font-semibold">
+              <Flag className="size-4 text-primary" aria-hidden="true" />
+              {events.length ? "¡Terminaste tus eventos!" : "No tenés eventos cargados"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Hasta que cargues el próximo, el plan sigue en mantenimiento. Con un objetivo nuevo
+              arma otra preparación hacia esa fecha.
+            </p>
+          </div>
+          <Link href="/perfil" className={buttonVariants()}>
+            Agregar mi próximo evento
+          </Link>
+        </div>
+      )}
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {ordenados.map((ev) => {
           const { texto, pasado } = cuando(ev.fecha);

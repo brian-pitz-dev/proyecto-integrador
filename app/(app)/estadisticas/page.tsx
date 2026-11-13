@@ -22,6 +22,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { listarFotos, type Foto } from "@/lib/fotos";
 import { FotosProgreso } from "@/components/stats/fotos-progreso";
+import { StravaCard } from "@/components/stats/strava-card";
+import { stravaConfigurado } from "@/lib/strava";
 import { checkGymStreak } from "@/lib/streaks";
 import { calcularMeta, computeBmrCalibrado } from "@/lib/calorie-target";
 import {
@@ -88,6 +90,18 @@ async function fetchFotos(): Promise<Foto[]> {
   }
 }
 
+/** null si Strava no está configurado en el servidor (la tarjeta no se muestra); si no, si el usuario lo conectó. */
+async function fetchStrava(): Promise<boolean | null> {
+  if (!stravaConfigurado()) return null;
+  const { data } = await (
+    await createClient()
+  )
+    .from("strava_conexion")
+    .select("user_id")
+    .maybeSingle();
+  return !!data;
+}
+
 /** Un punto por día, ascendente. `regs` vienen por fecha desc: el primero de cada día es el último cargado. */
 function serie(regs: Registro[], valor: (r: Registro) => number | null): Punto[] {
   const porDia = new Map<string, number>();
@@ -104,9 +118,24 @@ function entriesOf(registros: Registro[], format: (r: Registro) => string) {
     .map((r) => ({ id: r.id, label: format(r), date: formatShort(fromISO(r.fecha)) }));
 }
 
-export default async function EstadisticasPage() {
-  const [{ completedDates, peso, sueno, calorias, caminata, tirada, evento }, planContext, fotos] =
-    await Promise.all([fetchData(), getUserPlanContext(), fetchFotos()]);
+export default async function EstadisticasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ strava?: string }>;
+}) {
+  const [
+    { completedDates, peso, sueno, calorias, caminata, tirada, evento },
+    planContext,
+    fotos,
+    strava,
+    { strava: avisoStrava },
+  ] = await Promise.all([
+    fetchData(),
+    getUserPlanContext(),
+    fetchFotos(),
+    fetchStrava(),
+    searchParams,
+  ]);
   if (!planContext) return null; // proxy.ts ya redirige a /onboarding antes de esto
   const { profile, events, weeks } = planContext;
   const today = todayNormalized();
@@ -377,6 +406,7 @@ export default async function EstadisticasPage() {
 
       <section className="grid gap-4">
         <h2 className="text-2xl font-semibold">Registros</h2>
+        {strava !== null && <StravaCard conectado={strava} aviso={avisoStrava} />}
         <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <RegistroCategoryCard
             icon={<Scale className="size-4" aria-hidden="true" />}

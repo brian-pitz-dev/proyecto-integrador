@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { claveActualSchema, verificarClave } from "@/lib/verificar-clave";
 import { borrarTodasLasFotos } from "@/lib/fotos";
+import { desconectar as desconectarStrava } from "@/lib/strava";
 import {
   eventoSchema,
   historialDisponibilidadSchema,
@@ -203,6 +204,9 @@ export async function borrarCuenta(password: unknown): Promise<ActionResult> {
     console.error("borrar fotos", error);
     return { ok: false, message: "No se pudieron borrar tus fotos. Probá de nuevo." };
   }
+
+  // la fila se borra en cascada con la cuenta, pero el permiso en Strava hay que revocarlo
+  await desconectarStrava(supabase, user.id).catch((e) => console.error("strava desconectar", e));
 
   const { error } = await supabase.rpc("borrar_mi_cuenta");
   if (error) {

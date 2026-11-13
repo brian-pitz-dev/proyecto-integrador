@@ -374,7 +374,8 @@ export function adaptWeek(
     }
   }
 
-  const tope = disp.minutos <= 30 ? 3 : 4;
+  // 20' solo existe como semana de retome de quien entrena 30' (minutosRetome)
+  const tope = disp.minutos <= 20 ? 2 : disp.minutos <= 30 ? 3 : 4;
   const recortar = (sessions: Session[]): Session[] => {
     if (disp.minutos >= 60) return sessions;
     const [principal] = [...sessions].sort(
@@ -437,6 +438,8 @@ export interface Week {
   isEventWeek: boolean;
   /** La semana es la inmediata anterior a una semana de evento. */
   isPrepWeek: boolean;
+  /** Semana de retome (spec 009): va con menos minutos porque la anterior quedó a medias. */
+  retome?: boolean;
 }
 
 interface RawWeek {
@@ -517,6 +520,8 @@ export function buildPlan(
   today: Date,
   disp?: Disponibilidad,
   historial: DisponibilidadPasada[] = [],
+  /** Lunes (ISO) de la semana de retome, de semanaDeRetome(). */
+  retome?: string,
 ): Week[] {
   const pasadas = [...historial].sort((a, b) => (a.hasta < b.hasta ? -1 : 1));
   const sorted = [...events].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0));
@@ -630,7 +635,9 @@ export function buildPlan(
   const isoWeeks = out.map((w, i) => {
     const start = toISO(w.start);
     // las semanas que ya empezaron antes de un cambio de días/minutos conservan la disponibilidad de entonces
-    const d = pasadas.find((h) => start < h.hasta) ?? disp;
+    const base = pasadas.find((h) => start < h.hasta) ?? disp;
+    const d = base && start === retome ? { ...base, minutos: minutosRetome(base.minutos) } : base;
+    const esRetome = d !== base;
     const cfg = d ? adaptWeek(w.cfg, w.phaseKey, w.num, d) : w.cfg;
     // Antes del registro no hay sesiones: si no, la alerta de gym (lib/streaks.ts) las cuenta
     // como salteadas y el calendario deja tildar días que Estadísticas no cuenta.
@@ -638,7 +645,7 @@ export function buildPlan(
       i === 0 && diasPrevios > 0
         ? { ...cfg, ...Object.fromEntries(dowKeys.slice(0, diasPrevios).map((dk) => [dk, null])) }
         : cfg;
-    return { ...w, start, cfg: sinPrevios };
+    return { ...w, start, cfg: sinPrevios, ...(esRetome && { retome: true }) };
   });
 
   function containsEvent(weekStartISO: string): boolean {
@@ -655,6 +662,55 @@ export function buildPlan(
     isEventWeek: containsEvent(w.start),
     isPrepWeek: isoWeeks[i + 1] ? containsEvent(isoWeeks[i + 1].start) : false,
   }));
+}
+
+/** Minutos de una semana de retome: un escalón menos (90 y 60 arman la misma semana). */
+export function minutosRetome(minutos: number): number {
+  return minutos >= 60 ? 45 : minutos >= 45 ? 30 : 20;
+}
+
+export interface Retome {
+  /** Lunes (ISO) de la semana en curso, la que va más liviana. */
+  start: string;
+  hechos: number;
+  entrenables: number;
+}
+
+/**
+ * Semana de retome (spec 009): si la semana pasada se entrenó menos de la mitad de sus días (con al
+ * menos 2 entrenables), la semana en curso va con menos minutos para volver de a poco. No toca las
+ * semanas que ya tienen su propia carga (evento, previa, recuperación, taper), ni si la pasada fue
+ * de evento. Se calcula con los días marcados como hechos: marcarlos tarde la deshace.
+ */
+export function semanaDeRetome(
+  weeks: Week[],
+  events: UserEvent[],
+  completados: Set<string>,
+  today: Date,
+): Retome | null {
+  const i = weeks.findIndex((w) => {
+    const start = fromISO(w.start);
+    return today >= start && today <= addDays(start, 6);
+  });
+  const actual = weeks[i];
+  const anterior = weeks[i - 1];
+  if (!actual || !anterior || anterior.isEventWeek) return null;
+  if (actual.isEventWeek || actual.isPrepWeek || ["p3", "p5"].includes(actual.phaseKey)) {
+    return null;
+  }
+
+  let entrenables = 0;
+  let hechos = 0;
+  for (let d = 0; d < 7; d++) {
+    const dia = addDays(fromISO(anterior.start), d);
+    if (getSessionsForDate(weeks, events, dia).some((s) => s.tag !== "rest")) {
+      entrenables++;
+      if (completados.has(toISO(dia))) hechos++;
+    }
+  }
+  return entrenables >= 2 && hechos * 2 < entrenables
+    ? { start: actual.start, hechos, entrenables }
+    : null;
 }
 
 /** Clave de fase (p1..p6) vigente para una fecha, usada por getCalorieTarget(). */

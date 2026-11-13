@@ -43,6 +43,8 @@ export const recuperarLimiter = limiter(15 * 60 * 1000, 5);
 export const saveLogLimiter = limiter(60 * 1000, 20);
 /** Coach: 5 llamadas por minuto, por usuario (protege el límite por minuto del tier gratis de Gemini). */
 export const coachLimiter = limiter(60 * 1000, 5);
+/** Strava: 3 importaciones por minuto, por usuario (la API de Strava da 100 pedidos cada 15'). */
+export const stravaLimiter = limiter(60 * 1000, 3);
 
 /** IP del cliente para los límites de login y registro. */
 export async function getClientKey(): Promise<string> {

@@ -2,8 +2,15 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
-import { buildPlan, type Disponibilidad, type Week, type UserEvent } from "@/lib/training-plan";
-import { edadDesde, todayNormalized } from "@/lib/date";
+import {
+  buildPlan,
+  semanaDeRetome,
+  type Disponibilidad,
+  type Retome,
+  type Week,
+  type UserEvent,
+} from "@/lib/training-plan";
+import { addDays, edadDesde, toISO, todayNormalized } from "@/lib/date";
 import type { UserProfile } from "@/lib/calorie-target";
 import type { MealBank } from "@/lib/meal-plan";
 import type { Routine } from "@/lib/gym-exercises";
@@ -33,6 +40,8 @@ export interface UserPlanContext {
   events: UserEvent[];
   weeks: Week[];
   planIa: PlanIa;
+  /** La semana en curso va más liviana porque la anterior quedó a medias (spec 009). */
+  retome: Retome | null;
 }
 
 /** null si no hay sesión o todavía no completó el onboarding (proxy.ts ya debería haber redirigido antes de llegar acá). */
@@ -41,10 +50,23 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
   if (!user) return null;
 
   const supabase = await createClient();
-  const [{ data: perfilRow }, { data: eventoRows }, { data: planIaRows }] = await Promise.all([
+  const hoy = todayNormalized();
+  const [
+    { data: perfilRow },
+    { data: eventoRows },
+    { data: planIaRows },
+    { data: completadoRows },
+  ] = await Promise.all([
     supabase.from("perfil").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("evento").select("*").eq("user_id", user.id).order("fecha", { ascending: true }),
     supabase.from("plan_ia").select("tipo, contenido, updated_at").eq("user_id", user.id),
+    // la semana pasada entera cae en las últimas dos: alcanza para decidir el retome
+    supabase
+      .from("registro")
+      .select("fecha")
+      .eq("user_id", user.id)
+      .eq("categoria", "completado")
+      .gte("fecha", toISO(addDays(hoy, -14))),
   ]);
 
   if (!perfilRow) return null;
@@ -84,13 +106,11 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
   // si la fila no valida (o falta la columna) las semanas pasadas toman la disponibilidad actual
   const historial =
     historialDisponibilidadSchema.safeParse(perfilRow.disponibilidad_historial).data ?? [];
-  const weeks = buildPlan(
-    profile.planStart,
-    events,
-    todayNormalized(),
-    profile.disponibilidad,
-    historial,
-  );
+  const armar = (semanaRetome?: string) =>
+    buildPlan(profile.planStart, events, hoy, profile.disponibilidad, historial, semanaRetome);
+  const completados = new Set((completadoRows ?? []).map((r) => r.fecha as string));
+  const retome = semanaDeRetome(armar(), events, completados, hoy);
+  const weeks = armar(retome?.start);
 
   // Se re-valida al leer: si una fila no cumple el schema, se ignora y queda el plan base.
   const planIa: PlanIa = {};
@@ -110,5 +130,5 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
     }
   }
 
-  return { profile, events, weeks, planIa };
+  return { profile, events, weeks, planIa, retome };
 }

@@ -32,12 +32,15 @@ npm run build    # next build
 npm run lint     # eslint
 npm run format   # prettier --write .
 npm test         # vitest run (lib/**/*.test.ts)
+npm run e2e      # playwright test (e2e/*.spec.ts) — needs E2E_EMAIL/E2E_PASSWORD, see specs/008
 ```
 
-Tests cover only the pure logic in `lib/` (plan engine, calories, meals, dates, stats) —
-`lib/*.test.ts`, run with Vitest. UI, Server Actions and Supabase are validated manually,
-per `specs/*/quickstart.md`. The old `scripts/check-*.mjs` self-checks were ported into
-those test files.
+Unit tests cover the pure logic in `lib/` (plan engine, calories, meals, dates, stats,
+Strava mapping) — `lib/*.test.ts`, run with Vitest. Key flows (navigation, logging,
+photos, data export) run end-to-end with Playwright in `e2e/` against the real Supabase
+with a dedicated test account (`specs/008-tests-e2e`): `e2e/global-setup.ts` logs in
+directly via `@supabase/ssr` (Turnstile blocks automated browsers) and cleans the year-2020
+data the tests create. Everything else is validated manually per `specs/*/quickstart.md`.
 There's no `node_modules/` checked in or installed by default — run `npm install`
 before anything that needs the Next.js docs mentioned in `AGENTS.md`, or before running
 dev/build/lint.
@@ -80,6 +83,13 @@ events, today)` maps that content onto a specific user's own event dates (see
 - `lib/race-prediction.ts` — Riegel race-time estimate from the user's recent `tirada`/`evento`
   rows (shown in Estadísticas). `lib/stats-summary.ts`'s `resumenSemanal()` builds the
   "Tu semana" card on `/coach` without calling the AI (doesn't spend quota).
+- Semana de retome (`specs/009-semana-retome`): `semanaDeRetome()` decides from last week's
+  `completado` rows whether the current week goes lighter (one minutes tier down, applied by
+  `buildPlan(…, retome)`); `getUserPlanContext()` computes it, so every page sees the same plan.
+- `lib/strava.ts` (`specs/010-strava`): OAuth (`app/strava/conectar` → `app/strava/callback`,
+  `state` cookie) and a manual import that maps runs/walks to `registro` rows. Tokens live in
+  `strava_conexion` (RLS, cascade) and are only used server-side; the card hides without
+  `STRAVA_CLIENT_ID`/`STRAVA_CLIENT_SECRET`.
 
 **`specs/004-multi-user-onboarding/` is implemented for its core scope** (US1-US3:
 signup, onboarding, per-user plan generation, Brian's migration) — `lib/training-plan.ts`
@@ -124,8 +134,8 @@ _configuration_ (profile and events — what used to be hardcoded constants) liv
   `borrar_mi_cuenta()` SQL function (security definer, deletes `auth.users` row; every
   table cascades) — no service-role key in the app.
 - Progress photos (`specs/007-fotos-progreso`): no table — Storage bucket `fotos-progreso`
-  (private, owner-folder RLS) holds `{user_id}/{fecha}.jpg`, see `lib/fotos.ts`. A photo's note, weight and body fat are `registro`
-  rows of its date (`foto`, `peso`, `grasa`; one each, written by `fijarDelDia`, validated by
+  (private, owner-folder RLS) holds `{user_id}/{fecha}.jpg`, see `lib/fotos.ts`. A
+  photo's note, weight and body fat are `registro` rows of its date (`foto`, `peso`, `grasa`; one each, written by `fijarDelDia`, validated by
   `datosFotoSchema`). `foto`/`grasa` aren't in `categoriaSchema` on purpose. The browser
   resizes to JPEG before `subirFoto` (strips EXIF/GPS; `next.config.ts` raises the Server
   Action body limit to 2 MB). `borrarCuenta` deletes the photos before `borrar_mi_cuenta()`

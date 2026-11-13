@@ -16,6 +16,8 @@ import {
   hayLugar,
 } from "@/lib/fotos";
 import { datosFotoSchema, type DatosFoto } from "@/lib/validation/registro";
+import { desconectar, importar } from "@/lib/strava";
+import { stravaLimiter } from "@/lib/rate-limit";
 import type { ActionResult } from "@/lib/types";
 
 /** Valida nota, peso y grasa; con error, el mensaje del primer campo que falla. */
@@ -124,4 +126,43 @@ export async function borrarFoto(fecha: unknown): Promise<ActionResult> {
 
   revalidatePath("/estadisticas");
   return { ok: true, message: "Foto borrada." };
+}
+
+/** Importa las actividades nuevas de Strava a `registro` (specs/010-strava). */
+export async function importarStrava(): Promise<ActionResult> {
+  const user = await getAuthedUser();
+  if (!user) return { ok: false, message: "No autenticado." };
+  if (stravaLimiter.isLimited(user.id)) {
+    return { ok: false, message: "Esperá un minuto antes de volver a importar." };
+  }
+  stravaLimiter.record(user.id);
+
+  let cargadas: number | null;
+  try {
+    cargadas = await importar(await createClient(), user.id);
+  } catch (error) {
+    console.error("strava importar", error);
+    return { ok: false, message: "No se pudo importar de Strava. Probá de nuevo más tarde." };
+  }
+  if (cargadas === null) return { ok: false, message: "Tu cuenta de Strava no está conectada." };
+  revalidatePath("/estadisticas");
+  return {
+    ok: true,
+    message: cargadas
+      ? `Listo: ${cargadas} ${cargadas === 1 ? "actividad nueva" : "actividades nuevas"}.`
+      : "No hay corridas ni caminatas nuevas.",
+  };
+}
+
+export async function desconectarStrava(): Promise<ActionResult> {
+  const user = await getAuthedUser();
+  if (!user) return { ok: false, message: "No autenticado." };
+  try {
+    await desconectar(await createClient(), user.id);
+  } catch (error) {
+    console.error("strava desconectar", error);
+    return { ok: false, message: "No se pudo desconectar Strava." };
+  }
+  revalidatePath("/estadisticas");
+  return { ok: true, message: "Strava desconectado. Lo que ya importaste queda." };
 }

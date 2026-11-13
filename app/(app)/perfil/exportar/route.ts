@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   if (rechazo) return NextResponse.json({ error: rechazo }, { status: 403 });
 
   try {
-    const [perfil, eventos, registros, planesIa, usoIa, fotos] = await Promise.all([
+    const [perfil, eventos, registros, planesIa, usoIa, fotos, strava] = await Promise.all([
       todas(supabase, "perfil", user.id, ["user_id"]),
       todas(supabase, "evento", user.id, ["fecha", "id"]),
       todas(supabase, "registro", user.id, ["fecha", "id"]),
@@ -50,6 +50,16 @@ export async function POST(request: Request) {
       todas(supabase, "uso_ia", user.id, ["fecha"]),
       // links y no las fotos en base64: el JSON pesaría decenas de MB (spec 007, Decisión 5)
       listarFotos(supabase, user.id, 7 * 24 * 60 * 60),
+      // sin los tokens: son credenciales de Strava, no datos tuyos
+      supabase
+        .from("strava_conexion")
+        .select("athlete_id, ultima_actividad, created_at")
+        .maybeSingle()
+        // si falla (ej. la migración de Strava todavía no se aplicó) no frena el resto
+        .then(({ data, error }) => {
+          if (error) console.error("exportar strava", error);
+          return data;
+        }),
     ]);
     const datos = {
       exportado: new Date().toISOString(),
@@ -63,6 +73,7 @@ export async function POST(request: Request) {
         aviso: "Links para descargar tus fotos de progreso. Vencen a los 7 días de exportar.",
         lista: fotos,
       },
+      strava,
     };
     return new NextResponse(JSON.stringify(datos, null, 2), {
       headers: {

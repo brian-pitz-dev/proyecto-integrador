@@ -5,10 +5,11 @@ import {
   registrarCambioDisponibilidad,
   getPhaseKeyForDate,
   getSessionsForDate,
+  semanaDeRetome,
   type Disponibilidad,
   type UserEvent,
 } from "@/lib/training-plan";
-import { addDays, fromISO } from "@/lib/date";
+import { addDays, fromISO, toISO } from "@/lib/date";
 
 const REGISTRO = "2026-11-04"; // miércoles
 const hoy = fromISO(REGISTRO);
@@ -265,5 +266,52 @@ describe("ajustarMinutos", () => {
       "5' suave + 1×4 km a 5:00/km (3' trote) + 2' suave",
     );
     expect(ajustarMinutos(sinRitmo(4, 10), 60)).toBe(sinRitmo(4, 10));
+  });
+});
+
+describe("semana de retome", () => {
+  // plan desde el lunes 5/10, sin eventos; hoy es el miércoles de la semana 3 (19/10)
+  const INICIO = "2026-10-05";
+  const HOY = fromISO("2026-10-21");
+  const disp: Disponibilidad = { dias: [0, 1, 2, 3, 4, 5], minutos: 60 };
+  const plan = (eventos: UserEvent[] = [], retome?: string) =>
+    buildPlan(INICIO, eventos, HOY, disp, [], retome);
+  /** Días entrenables de la semana pasada (12 al 18/10). */
+  const entrenablesPasada = (weeks = plan()) =>
+    Array.from({ length: 7 }, (_, d) => addDays(fromISO("2026-10-12"), d)).filter((dia) =>
+      getSessionsForDate(weeks, [], dia).some((s) => s.tag !== "rest"),
+    );
+
+  it("con menos de la mitad hecha la semana pasada, la de hoy es de retome", () => {
+    const hechos = new Set([toISO(entrenablesPasada()[0])]);
+    expect(semanaDeRetome(plan(), [], hechos, HOY)).toEqual({
+      start: "2026-10-19",
+      hechos: 1,
+      entrenables: entrenablesPasada().length,
+    });
+  });
+
+  it("con la mitad o más hecha, no", () => {
+    const dias = entrenablesPasada();
+    const mitad = new Set(dias.slice(0, Math.ceil(dias.length / 2)).map(toISO));
+    expect(semanaDeRetome(plan(), [], mitad, HOY)).toBeNull();
+  });
+
+  it("no toca la semana de un evento ni la primera del plan", () => {
+    const carrera = [evento("carrera", "2026-10-25", 10)];
+    expect(semanaDeRetome(plan(carrera), carrera, new Set(), HOY)).toBeNull();
+    expect(semanaDeRetome(plan(), [], new Set(), fromISO("2026-10-07"))).toBeNull();
+  });
+
+  it("la semana de retome va con un escalón menos de minutos, y solo esa", () => {
+    const normal = plan();
+    const retome = plan([], "2026-10-19");
+    const semana = (weeks: typeof normal, start: string) => weeks.find((w) => w.start === start)!;
+    expect(semana(retome, "2026-10-19").retome).toBe(true);
+    // con 45' (60 → 45) cada día queda con su sesión principal y rutinas de 4 ejercicios
+    const sesiones = Object.values(semana(retome, "2026-10-19").cfg).flatMap((s) => s ?? []);
+    expect(sesiones.some((s) => s.maxEjercicios === 4)).toBe(true);
+    expect(semana(retome, "2026-10-26")).toEqual(semana(normal, "2026-10-26"));
+    expect(semana(retome, "2026-10-12")).toEqual(semana(normal, "2026-10-12"));
   });
 });

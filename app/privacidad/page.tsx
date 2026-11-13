@@ -36,6 +36,7 @@ const SECCIONES = [
     titulo: "Quién los procesa",
     texto: [
       "Supabase guarda la base de datos, las cuentas y las fotos (servidores en San Pablo, Brasil). Netlify aloja la app. Cloudflare Turnstile verifica que no seas un bot al registrarte o iniciar sesión.",
+      "Si conectás Strava, guardamos el permiso que nos da para leer tus actividades y, cuando tocás Importar, traemos tus corridas y caminatas a tus registros. No le mandamos nada a Strava. Al desconectarlo o borrar tu cuenta, le pedimos a Strava que revoque ese permiso.",
       "El Coach usa Google Gemini en su nivel gratuito. Cuando le escribís o le pedís un plan, Google recibe tu mensaje y un resumen de tu plan (edad, sexo, altura, peso, metas, eventos, fase y registros recientes), pero no tu nombre ni tu email. En el nivel gratuito, Google puede usar ese contenido para mejorar sus productos: no le escribas al Coach datos que no quieras compartir.",
     ],
   },
