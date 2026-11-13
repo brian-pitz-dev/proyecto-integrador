@@ -27,6 +27,57 @@ export interface Disponibilidad {
   minutos: number;
 }
 
+/** Disponibilidad anterior del usuario: vale para las semanas que arrancan antes de `hasta` (un lunes ISO). */
+export interface DisponibilidadPasada extends Disponibilidad {
+  hasta: string;
+}
+
+/**
+ * Cambio de disponibilidad hecho `hoy`: guarda la anterior para las semanas ya empezadas, así el
+ * calendario pasado no se reacomoda. La semana en curso ya toma la nueva. Si ya se cambió esta
+ * semana, se conserva la de antes del primer cambio.
+ */
+export function registrarCambioDisponibilidad(
+  historial: DisponibilidadPasada[],
+  anterior: Disponibilidad,
+  nueva: Disponibilidad,
+  hoy: Date,
+): DisponibilidadPasada[] {
+  const clave = (d: Disponibilidad) => `${[...d.dias].sort((a, b) => a - b)}|${d.minutos}`;
+  const hasta = toISO(addDays(hoy, -((hoy.getDay() + 6) % 7)));
+  if (clave(anterior) === clave(nueva) || historial.some((h) => h.hasta === hasta)) {
+    return historial;
+  }
+  return [...historial, { ...anterior, hasta }];
+}
+
+// "40 min", "10'" o rangos "30-35 min"
+const MINUTOS = /(\d+)(?:-(\d+))?('|\s*min\b)/g;
+
+/**
+ * Achica los minutos de un texto de cardio ("5.5 km/h · 40 min") para que entre en `tope`. Los de
+ * un bloque "N×[...]" cuentan N veces. Si ya entra, devuelve el texto igual.
+ * shortcut: no estima las partes en km ("5×1 km a 6:00/km"), así que una sesión de series en km
+ * puede quedar más larga que `tope`; para eso habría que pasar las sesiones a datos estructurados.
+ */
+export function ajustarMinutos(detail: string, tope: number): string {
+  const suma = (s: string) =>
+    [...s.matchAll(MINUTOS)].reduce((acc, m) => acc + Number(m[2] ?? m[1]), 0);
+  let total = 0;
+  const fuera = detail.replace(/(\d+)×\[([^\]]*)\]/g, (_, n: string, adentro: string) => {
+    total += Number(n) * suma(adentro);
+    return "";
+  });
+  total += suma(fuera);
+  if (total <= tope) return detail;
+  const escala = (v: string) => Math.max(1, Math.round((Number(v) * tope) / total));
+  return detail.replace(
+    MINUTOS,
+    (_, a: string, b: string | undefined, unidad: string) =>
+      `${escala(a)}${b ? `-${escala(b)}` : ""}${unidad}`,
+  );
+}
+
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 type WeekConfig = Record<DayKey, Session[] | null>;
 
@@ -245,7 +296,8 @@ function prioridad(s: Session, phaseKey: string): number {
  * 1. se quedan las sesiones más prioritarias que entran en sus días (a igual prioridad, rota
  *    según la semana para no repetir siempre la misma rutina de gym);
  * 2. se reparten en sus días conservando el orden de la semana y moviéndolas lo menos posible;
- * 3. con menos de 60', cada día queda con su sesión principal y la rutina con menos ejercicios.
+ * 3. con menos de 60', cada día queda con su sesión principal: la rutina con menos ejercicios y
+ *    el cardio con los minutos achicados (ajustarMinutos).
  * Con los días de la plantilla y 60' o más devuelve la semana tal cual.
  */
 export function adaptWeek(
@@ -298,8 +350,14 @@ export function adaptWeek(
     const [principal] = [...sessions].sort(
       (a, b) => prioridad(a, phaseKey) - prioridad(b, phaseKey),
     );
-    const conRutina = principal.tag === "gym" || principal.tag === "core";
-    return [conRutina ? { ...principal, maxEjercicios: tope } : principal];
+    if (principal.tag === "gym" || principal.tag === "core") {
+      return [{ ...principal, maxEjercicios: tope }];
+    }
+    // la salida larga (tag "long") queda como está: es la sesión del finde, la que no se recorta
+    if (principal.tag === "run" && principal.detail) {
+      return [{ ...principal, detail: ajustarMinutos(principal.detail, disp.minutos) }];
+    }
+    return [principal];
   };
 
   return Object.fromEntries(
@@ -428,7 +486,9 @@ export function buildPlan(
   events: UserEvent[],
   today: Date,
   disp?: Disponibilidad,
+  historial: DisponibilidadPasada[] = [],
 ): Week[] {
+  const pasadas = [...historial].sort((a, b) => (a.hasta < b.hasta ? -1 : 1));
   const sorted = [...events].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0));
   const out: RawWeek[] = [];
   // Las semanas arrancan el lunes (de la semana del registro): las claves mon..sun y los días que
@@ -538,14 +598,17 @@ export function buildPlan(
   );
 
   const isoWeeks = out.map((w, i) => {
-    const cfg = disp ? adaptWeek(w.cfg, w.phaseKey, w.num, disp) : w.cfg;
+    const start = toISO(w.start);
+    // las semanas que ya empezaron antes de un cambio de días/minutos conservan la disponibilidad de entonces
+    const d = pasadas.find((h) => start < h.hasta) ?? disp;
+    const cfg = d ? adaptWeek(w.cfg, w.phaseKey, w.num, d) : w.cfg;
     // Antes del registro no hay sesiones: si no, la alerta de gym (lib/streaks.ts) las cuenta
     // como salteadas y el calendario deja tildar días que Estadísticas no cuenta.
     const sinPrevios =
       i === 0 && diasPrevios > 0
         ? { ...cfg, ...Object.fromEntries(dowKeys.slice(0, diasPrevios).map((dk) => [dk, null])) }
         : cfg;
-    return { ...w, start: toISO(w.start), cfg: sinPrevios };
+    return { ...w, start, cfg: sinPrevios };
   });
 
   function containsEvent(weekStartISO: string): boolean {

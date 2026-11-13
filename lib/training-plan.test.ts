@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  ajustarMinutos,
   buildPlan,
+  registrarCambioDisponibilidad,
   getPhaseKeyForDate,
   getSessionsForDate,
   type Disponibilidad,
@@ -162,5 +164,72 @@ describe("adaptación a días y minutos", () => {
     expect(
       getSessionsForDate(sabado, events, fromISO("2026-11-14")).some((s) => s.tag !== "rest"),
     ).toBe(true);
+  });
+
+  it("con 30' el cardio en cinta dice 30 min, no los 40 de la plantilla", () => {
+    const p2 = plan({ dias: [0, 1, 2, 3, 4, 5], minutos: 30 }).find((w) => w.phaseKey === "p2")!;
+    expect(p2.cfg.tue?.[0].detail).toBe(
+      "5.5 km/h con inclinación 8-10% · 30 min · caminata en cinta",
+    );
+  });
+
+  it("si cambia la disponibilidad, las semanas anteriores al cambio quedan como estaban", () => {
+    const nueva = { dias: [1, 3, 5], minutos: 30 };
+    const conHistorial = buildPlan("2026-11-09", events, today, nueva, [
+      { hasta: "2026-11-23", dias: [0, 1, 2, 3, 4, 5], minutos: 60 },
+    ]);
+    const todoNuevo = plan(nueva);
+    conHistorial.forEach((w, i) =>
+      expect(w).toEqual(w.start < "2026-11-23" ? base[i] : todoNuevo[i]),
+    );
+  });
+});
+
+describe("registrarCambioDisponibilidad", () => {
+  const jueves = fromISO("2026-11-12");
+  const antes = { dias: [0, 1, 2, 3, 4, 5], minutos: 60 };
+
+  it("guarda la anterior hasta el lunes de la semana del cambio", () => {
+    expect(registrarCambioDisponibilidad([], antes, { dias: [1, 3], minutos: 60 }, jueves)).toEqual(
+      [{ ...antes, hasta: "2026-11-09" }],
+    );
+  });
+
+  it("sin cambios reales (o con los días en otro orden) no agrega nada", () => {
+    expect(
+      registrarCambioDisponibilidad([], antes, { dias: [5, 4, 3, 2, 1, 0], minutos: 60 }, jueves),
+    ).toEqual([]);
+  });
+
+  it("un segundo cambio en la misma semana conserva la de antes del primero", () => {
+    const h = registrarCambioDisponibilidad([], antes, { dias: [1, 3], minutos: 60 }, jueves);
+    expect(
+      registrarCambioDisponibilidad(
+        h,
+        { dias: [1, 3], minutos: 60 },
+        { dias: [2], minutos: 30 },
+        jueves,
+      ),
+    ).toBe(h);
+  });
+});
+
+describe("ajustarMinutos", () => {
+  it("achica minutos y rangos al tope", () => {
+    expect(ajustarMinutos("8.0 km/h · 30-35 min · continuo", 30)).toBe(
+      "8.0 km/h · 26-30 min · continuo",
+    );
+    expect(ajustarMinutos("Caminata inclinada 50' · 5.5 km/h · 8-10%", 45)).toBe(
+      "Caminata inclinada 45' · 5.5 km/h · 8-10%",
+    );
+  });
+
+  it("cuenta los bloques N×[...] N veces y no toca lo que ya entra", () => {
+    const series = "5' a 7 km/h · 5×[2' a 10 km/h / 1' a 7 km/h] · 5' a 7 km/h"; // 25'
+    expect(ajustarMinutos(series, 30)).toBe(series);
+    expect(ajustarMinutos(series, 20)).toBe(
+      "4' a 7 km/h · 5×[2' a 10 km/h / 1' a 7 km/h] · 4' a 7 km/h",
+    );
+    expect(ajustarMinutos("8 km, ritmo libre", 30)).toBe("8 km, ritmo libre");
   });
 });

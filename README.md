@@ -57,7 +57,7 @@ gratis alcanza).
    ```
 
 2. Crear el esquema: correr en orden los archivos de `supabase/migrations/` en el SQL
-   editor de Supabase, o con la CLI: `supabase link` y después `supabase db push`.
+   editor de Supabase, o con la CLI: `supabase link` y después `supabase db push --remote`.
 
 3. Variables de entorno: copiar `.env.example` a `.env.local` y completarlo (Supabase,
    Cloudflare Turnstile y Google Gemini).

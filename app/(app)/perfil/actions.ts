@@ -1,13 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { getClientKey, loginLimiter } from "@/lib/rate-limit";
-import { eventoSchema, perfilSchema } from "@/lib/validation/onboarding";
-import { filaEvento, filaPerfil } from "@/lib/perfil";
+import {
+  eventoSchema,
+  historialDisponibilidadSchema,
+  nuevaClaveSchema,
+  perfilSchema,
+} from "@/lib/validation/onboarding";
+import { filaEvento, filaPerfil, mensajeClaveRechazada } from "@/lib/perfil";
+import { registrarCambioDisponibilidad } from "@/lib/training-plan";
+import { todayNormalized } from "@/lib/date";
 import type { ActionResult } from "@/lib/types";
 
 const actualizarSchema = z.object({
@@ -32,9 +40,24 @@ export async function actualizarPerfil(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return { ok: false, message: primerError(parsed.error) };
 
   const supabase = await createClient();
+  const { data: actual } = await supabase
+    .from("perfil")
+    .select("dias_entrenamiento, minutos_sesion, disponibilidad_historial")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const fila = filaPerfil(parsed.data.perfil);
+  const historial = actual
+    ? registrarCambioDisponibilidad(
+        historialDisponibilidadSchema.safeParse(actual.disponibilidad_historial).data ?? [],
+        { dias: actual.dias_entrenamiento, minutos: actual.minutos_sesion },
+        { dias: fila.dias_entrenamiento, minutos: fila.minutos_sesion },
+        todayNormalized(),
+      )
+    : [];
+
   const { error } = await supabase
     .from("perfil")
-    .update(filaPerfil(parsed.data.perfil))
+    .update({ ...fila, disponibilidad_historial: historial })
     .eq("user_id", user.id);
   if (error) return { ok: false, message: "No se pudo guardar el perfil." };
 
@@ -78,6 +101,93 @@ export async function guardarEvento(input: unknown): Promise<ActionResult> {
   return { ok: true };
 }
 
+const claveActualSchema = z.string().min(1, "Escribí tu contraseña.").max(200);
+
+/**
+ * Vuelve a pedir la contraseña antes de algo delicado: una sesión abierta en otra compu no
+ * alcanza. null si es correcta; si no, el mensaje de error. Comparte el rate limit del login.
+ */
+async function verificarClave(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  email: string,
+  password: string,
+): Promise<string | null> {
+  const clientKey = await getClientKey();
+  if (loginLimiter.isLimited(clientKey)) {
+    return "Demasiados intentos. Probá de nuevo en unos minutos.";
+  }
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    loginLimiter.record(clientKey);
+    return "Contraseña incorrecta.";
+  }
+  return null;
+}
+
+/** Cambio de contraseña desde /perfil: pide la actual y cierra las otras sesiones. */
+export async function actualizarClave(input: unknown): Promise<ActionResult> {
+  const user = await getAuthedUser();
+  if (!user?.email) return { ok: false, message: "No autenticado." };
+
+  const parsed = z.object({ actual: claveActualSchema }).and(nuevaClaveSchema).safeParse(input);
+  if (!parsed.success) return { ok: false, message: primerError(parsed.error) };
+
+  const supabase = await createClient();
+  const rechazo = await verificarClave(supabase, user.email, parsed.data.actual);
+  if (rechazo) return { ok: false, message: rechazo };
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    console.error("updateUser password", error);
+    return { ok: false, message: mensajeClaveRechazada(error.code) };
+  }
+  await supabase.auth.signOut({ scope: "others" });
+  return { ok: true, message: "Listo, tu contraseña cambió." };
+}
+
+/**
+ * Cambio de email: Supabase manda el link de confirmación (al email nuevo y, con "secure email
+ * change", también al actual) y el cambio se aplica al confirmar, en /auth/confirm.
+ */
+export async function actualizarEmail(input: unknown): Promise<ActionResult> {
+  const user = await getAuthedUser();
+  if (!user?.email) return { ok: false, message: "No autenticado." };
+
+  const parsed = z
+    .object({
+      email: z.string().trim().toLowerCase().email("Email inválido"),
+      password: claveActualSchema,
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, message: primerError(parsed.error) };
+  const { email, password } = parsed.data;
+  if (email === user.email.toLowerCase()) return { ok: false, message: "Ese ya es tu email." };
+
+  const supabase = await createClient();
+  const rechazo = await verificarClave(supabase, user.email, password);
+  if (rechazo) return { ok: false, message: rechazo };
+
+  const origin = (await headers()).get("origin");
+  const { error } = await supabase.auth.updateUser(
+    { email },
+    { emailRedirectTo: origin ? `${origin}/auth/confirm?type=email_change` : undefined },
+  );
+  if (error) {
+    if (error.code === "email_exists") {
+      return { ok: false, message: "Ya hay una cuenta con ese email." };
+    }
+    if (error.code === "over_email_send_rate_limit") {
+      return { ok: false, message: "Mandamos demasiados mails. Probá de nuevo en un rato." };
+    }
+    console.error("updateUser email", error);
+    return { ok: false, message: "No se pudo cambiar el email." };
+  }
+  return {
+    ok: true,
+    message: `Te mandamos un link a ${email}. Si también te llega uno a tu email actual, confirmá los dos.`,
+  };
+}
+
 /**
  * Baja de la cuenta con todos sus datos (supabase/migrations/..._borrar_cuenta.sql). Pide la
  * contraseña: una sesión abierta en otra compu no alcanza para borrar todo.
@@ -86,23 +196,12 @@ export async function borrarCuenta(password: unknown): Promise<ActionResult> {
   const user = await getAuthedUser();
   if (!user?.email) return { ok: false, message: "No autenticado." };
 
-  const parsed = z.string().min(1).max(200).safeParse(password);
+  const parsed = claveActualSchema.safeParse(password);
   if (!parsed.success) return { ok: false, message: "Escribí tu contraseña." };
 
-  const clientKey = await getClientKey();
-  if (loginLimiter.isLimited(clientKey)) {
-    return { ok: false, message: "Demasiados intentos. Probá de nuevo en unos minutos." };
-  }
-
   const supabase = await createClient();
-  const { error: authError } = await supabase.auth.signInWithPassword({
-    email: user.email,
-    password: parsed.data,
-  });
-  if (authError) {
-    loginLimiter.record(clientKey);
-    return { ok: false, message: "Contraseña incorrecta." };
-  }
+  const rechazo = await verificarClave(supabase, user.email, parsed.data);
+  if (rechazo) return { ok: false, message: rechazo };
 
   const { error } = await supabase.rpc("borrar_mi_cuenta");
   if (error) {

@@ -8,6 +8,7 @@ import type { UserProfile } from "@/lib/calorie-target";
 import type { MealBank } from "@/lib/meal-plan";
 import type { Routine } from "@/lib/gym-exercises";
 import { mealBankSchema, routinesSchema } from "@/lib/validation/coach";
+import { historialDisponibilidadSchema } from "@/lib/validation/onboarding";
 
 export interface Perfil extends UserProfile {
   pesoInicialKg: number;
@@ -80,7 +81,16 @@ export async function getUserPlanContext(): Promise<UserPlanContext | null> {
     detalle: e.detalle,
   }));
 
-  const weeks = buildPlan(profile.planStart, events, todayNormalized(), profile.disponibilidad);
+  // si la fila no valida (o falta la columna) las semanas pasadas toman la disponibilidad actual
+  const historial =
+    historialDisponibilidadSchema.safeParse(perfilRow.disponibilidad_historial).data ?? [];
+  const weeks = buildPlan(
+    profile.planStart,
+    events,
+    todayNormalized(),
+    profile.disponibilidad,
+    historial,
+  );
 
   // Se re-valida al leer: si una fila no cumple el schema, se ignora y queda el plan base.
   const planIa: PlanIa = {};

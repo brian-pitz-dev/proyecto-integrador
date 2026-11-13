@@ -124,7 +124,7 @@ export function PerfilClient({
                 {...invalid(errors, "nombre", "nombre")}
               />
             </Field>
-            <Field id="email" label="Email" hint="El email de tu cuenta no se puede cambiar acá.">
+            <Field id="email" label="Email" hint="Lo cambiás abajo, en Tu cuenta.">
               <Input id="email" value={email} readOnly disabled />
             </Field>
           </div>

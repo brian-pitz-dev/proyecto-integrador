@@ -39,10 +39,19 @@ sesiones solo en esos días:
 - Lunes a sábado con 60 minutos o más da exactamente el plan de siempre (y es el default
   de las cuentas existentes).
 
+## Agregado después (2026-11-13)
+
+Lo que la primera versión dejó fuera de alcance:
+
+- **Cardio según el tiempo disponible**: con menos de 60 minutos, los minutos del texto de
+  cardio se achican para que entren ("40 min" pasa a "30 min"). Ver research.md, Decisión 3.
+- **Email y contraseña desde `/perfil`** (tarjeta "Tu cuenta"): los dos piden la contraseña
+  actual. El email cambia cuando se confirma el link que manda Supabase (vuelve por
+  `/auth/confirm?type=email_change`). Al cambiar la contraseña se cierran las otras sesiones.
+- **Historial de disponibilidad**: si el usuario cambia sus días o minutos, las semanas que ya
+  empezaron conservan la disponibilidad de antes. Ver research.md, Decisión 6.
+
 ## Fuera de alcance
 
-- Reescalar los textos de cardio (por ejemplo, "40 min de cinta") al tiempo disponible:
-  con 30 minutos el texto sigue diciendo 40. Ver research.md, Decisión 3.
-- Cambiar el email o la contraseña desde `/perfil`.
-- Historial de disponibilidad: si cambia los días, también se reacomodan las semanas
-  pasadas del calendario. Los registros y los tildes no se pierden, porque van por fecha.
+- Las sesiones de series medidas en km ("5×1 km a 6:00/km") no se reescalan: se achican solo
+  los minutos del texto.

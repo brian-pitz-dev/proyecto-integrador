@@ -35,6 +35,13 @@ export function filaPerfil(perfil: PerfilInput) {
   };
 }
 
+/** Mensaje para el usuario cuando Supabase rechaza la contraseña nueva (recuperación o /perfil). */
+export function mensajeClaveRechazada(code: string | undefined): string {
+  if (code === "same_password") return "La contraseña nueva tiene que ser distinta de la anterior.";
+  if (code === "weak_password") return "Esa contraseña es muy fácil de adivinar. Elegí otra.";
+  return "No se pudo cambiar la contraseña.";
+}
+
 export function filaEvento(e: EventoInput) {
   return {
     tipo: e.tipo,

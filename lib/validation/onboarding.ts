@@ -75,6 +75,15 @@ export const perfilSchema = z.object({
     .default(60),
 });
 
+/** perfil.disponibilidad_historial (jsonb, lo escribe actualizarPerfil): se re-valida al leer. */
+export const historialDisponibilidadSchema = z.array(
+  z.object({
+    hasta: z.iso.date(),
+    dias: z.array(z.int().min(0).max(6)).min(1).max(7),
+    minutos: z.int().min(1).max(600),
+  }),
+);
+
 export const eventoSchema = z.object({
   tipo: z.enum(["carrera", "caminata"]),
   nombre: z.string().trim().min(1, "Falta el nombre").max(100),

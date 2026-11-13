@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { nuevaClaveSchema } from "@/lib/validation/onboarding";
-import { completarRegistroPendiente } from "@/lib/perfil";
+import { completarRegistroPendiente, mensajeClaveRechazada } from "@/lib/perfil";
 import type { ActionResult } from "@/lib/types";
 
 /** Guarda la contraseña nueva (la sesión viene del link de recuperación) y entra a la app. */
@@ -20,14 +20,8 @@ export async function cambiarClave(input: unknown): Promise<ActionResult> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error || !data.user) {
-    if (error?.code === "same_password") {
-      return { ok: false, message: "La contraseña nueva tiene que ser distinta de la anterior." };
-    }
-    if (error?.code === "weak_password") {
-      return { ok: false, message: "Esa contraseña es muy fácil de adivinar. Elegí otra." };
-    }
     console.error("updateUser password", error);
-    return { ok: false, message: "No se pudo cambiar la contraseña." };
+    return { ok: false, message: mensajeClaveRechazada(error?.code) };
   }
 
   // Si alguien más tenía la sesión abierta (por eso se recupera), se la cierra.

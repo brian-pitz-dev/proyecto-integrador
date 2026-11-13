@@ -32,12 +32,14 @@ entrenamiento.
 tocar. El default de la columna es ese, así que las cuentas existentes (Brian incluido) no
 ven cambios. Lo comprueba `lib/training-plan.test.ts` (antes `scripts/check-training-days.mjs`).
 
-## Decisión 3 — El tiempo no reescribe los textos de cardio
+## Decisión 3 — El tiempo achica los minutos del texto de cardio
 
-Los detalles de cardio son texto libre de la metodología ("5.5 km/h · 40 min"). Reescalarlos
-exigiría parsear y reescribir cada string. Se aceptó que con 30 minutos el usuario haga la
-versión que le entre. Para mejorarlo, habría que pasar las duraciones de cardio a datos
-estructurados en `phaseNWeek`.
+Los detalles de cardio son texto libre de la metodología ("5.5 km/h · 40 min"). La primera
+versión no los tocaba. Ahora, con menos de 60 minutos, `ajustarMinutos` suma los minutos del
+texto ("40 min", "10'", rangos "30-35 min"; los de un bloque "N×[...]" cuentan N veces) y, si
+se pasan del tiempo del usuario, los escala en proporción. Las partes en km no se estiman (queda
+como `shortcut:`). La salida larga no se toca. La solución completa sería pasar las duraciones a
+datos estructurados en `phaseNWeek`.
 
 ## Decisión 4 — `updated_at` en `perfil` y `evento`
 
@@ -55,3 +57,13 @@ mostraba como "Lun" (por ejemplo, un registro de jueves 12 mostraba "Lun 12"). C
 elegidos por el usuario el error se volvía visible: el "martes" caía viernes. Ahora la
 semana 1 arranca el lunes de la semana de `plan_start`. La cuenta de Brian arranca un lunes
 (2026-08-17), así que no cambia. Lo comprueba `lib/training-plan.test.ts` ("arranca un jueves").
+
+## Decisión 6 — Historial de disponibilidad en una columna jsonb
+
+`perfil.disponibilidad_historial` guarda `[{hasta, dias, minutos}]`. Cuando el usuario cambia
+sus días o minutos, `actualizarPerfil` agrega la disponibilidad anterior con `hasta` = el lunes
+de la semana del cambio (`registrarCambioDisponibilidad`). `buildPlan` usa, para cada semana,
+la primera entrada con `hasta` posterior a su inicio, o la actual si no hay ninguna. La semana en
+curso ya toma la nueva, porque el usuario la cambió pensando en esa semana. Se eligió una
+columna y no una tabla porque `perfil` ya tiene RLS y el historial se lee junto con el perfil.
+Se re-valida al leer, igual que `plan_ia`.
